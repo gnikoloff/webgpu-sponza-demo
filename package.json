@@ -1,0 +1,31 @@
+{
+	"name": "webgpu-ssr",
+	"version": "1.0.0",
+	"description": "WebGPU Screen Space Reflections",
+	"main": "index.js",
+	"scripts": {
+		"dev": "vite",
+		"build": "vite build",
+		"preview": "vite preview"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/gnikoloff/webgpu-ssr.git"
+	},
+	"keywords": [
+		"webgpu",
+		"ssr",
+		"hi-z"
+	],
+	"author": "Georgi Nikolov",
+	"license": "ISC",
+	"bugs": {
+		"url": "https://github.com/gnikoloff/webgpu-ssr/issues"
+	},
+	"homepage": "https://github.com/gnikoloff/webgpu-ssr#readme",
+	"devDependencies": {
+		"@webgpu/types": "^0.1.51",
+		"vite": "^5.4.11",
+		"vite-plugin-top-level-await": "^1.4.4"
+	}
+}
