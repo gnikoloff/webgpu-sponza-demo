@@ -30,8 +30,8 @@
 		"vite-plugin-top-level-await": "^1.4.4"
 	},
 	"dependencies": {
-		"gl-matrix": "^3.4.3",
 		"webgpu-utils": "^1.9.3",
+		"wgpu-matrix": "^3.3.0",
 		"wgsl-preprocessor": "^1.0.1"
 	}
 }
