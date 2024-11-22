@@ -31,7 +31,7 @@ export default class RenderPass {
 		});
 	}
 
-	public resize(_width: number, _height: number) {
+	public onResize(_width: number, _height: number) {
 		// noop
 	}
 

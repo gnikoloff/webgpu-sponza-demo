@@ -1,7 +1,31 @@
 import Renderer from "./app/Renderer";
 
+import * as dat from "dat.gui";
+
 const $canvas = document.getElementById("c") as HTMLCanvasElement;
 const renderer = await Renderer.initialize($canvas);
+
+const GUI_PARAMS = {
+	"Enable Anim": true,
+	"Enable TAA": true,
+	"Debug G-Buffer": true,
+};
+
+renderer.enableAnimation = GUI_PARAMS["Enable Anim"];
+renderer.enableTAA = GUI_PARAMS["Enable TAA"];
+renderer.debugGBuffer = GUI_PARAMS["Debug G-Buffer"];
+
+const gui = new dat.GUI();
+
+gui.add(GUI_PARAMS, "Enable Anim").onChange((v: boolean) => {
+	renderer.enableAnimation = v;
+});
+gui.add(GUI_PARAMS, "Enable TAA").onChange((v: boolean) => {
+	renderer.enableTAA = v;
+});
+gui.add(GUI_PARAMS, "Debug G-Buffer").onChange((v: boolean) => {
+	renderer.debugGBuffer = v;
+});
 
 let oldTimeMs = 0;
 
@@ -10,12 +34,11 @@ window.addEventListener("resize", resize);
 resize();
 
 function renderFrame() {
-	const nowMs = performance.now() * 0.001;
-	const diff = nowMs - oldTimeMs;
-	oldTimeMs = nowMs;
+	const nowMs = performance.now();
+
 	requestAnimationFrame(renderFrame);
 
-	renderer.renderFrame(nowMs, diff);
+	renderer.renderFrame(nowMs);
 }
 
 function resize() {

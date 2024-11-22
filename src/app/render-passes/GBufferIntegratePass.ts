@@ -5,8 +5,8 @@ import Renderer from "../Renderer";
 import {
 	GBUFFER_FRAGMENT_SHADER_ENTRY_NAME,
 	GBUFFER_FRAGMENT_SHADER_SRC,
-	GBUFFER_VERTEX_SHADER_ENTRY_NAME,
-	GBUFFER_VERTEX_SHADER_SRC,
+	FULLSCREEN_TRIANGLE_VERTEX_SHADER_ENTRY_NAME,
+	FULLSCREEN_TRIANGLE_VERTEX_SHADER_SRC,
 } from "../shaders/GBufferShader";
 
 export default class GBufferIntegratePass extends RenderPass {
@@ -16,12 +16,15 @@ export default class GBufferIntegratePass extends RenderPass {
 	private renderPSO: GPURenderPipeline;
 	private gbufferTexturesBindGroup: GPUBindGroup;
 
+	private gbufferTexturesBindGroupLayout: GPUBindGroupLayout;
+
 	// private normalReflectanceTextureView: GPUTextureView;
 	// private colorTextureView: GPUTextureView;
 
 	constructor(
-		normalReflectanceTextureView: GPUTextureView,
-		colorTextureView: GPUTextureView,
+		private normalReflectanceTextureView: GPUTextureView,
+		private colorTextureView: GPUTextureView,
+		private velocityTextureView: GPUTextureView,
 	) {
 		super();
 
@@ -29,7 +32,7 @@ export default class GBufferIntegratePass extends RenderPass {
 		// this.colorTextureView = colorTextureView;
 
 		const vertexShaderModule = PipelineStates.createShaderModule(
-			GBUFFER_VERTEX_SHADER_SRC,
+			FULLSCREEN_TRIANGLE_VERTEX_SHADER_SRC,
 		);
 		const fragmentShaderModule = PipelineStates.createShaderModule(
 			GBUFFER_FRAGMENT_SHADER_SRC,
@@ -54,21 +57,12 @@ export default class GBufferIntegratePass extends RenderPass {
 			},
 		];
 
-		const gbufferTexturesBindGroupLayout =
-			Renderer.device.createBindGroupLayout({
+		this.gbufferTexturesBindGroupLayout = Renderer.device.createBindGroupLayout(
+			{
 				label: "GBuffer Textures Bind Group",
 				entries: gbufferTexturesBindGroupLayoutEntries,
-			});
-		const gbufferTexturesBindGroupEntries: GPUBindGroupEntry[] = [
-			{
-				binding: 0,
-				resource: normalReflectanceTextureView,
 			},
-			{
-				binding: 1,
-				resource: colorTextureView,
-			},
-		];
+		);
 
 		// const gbufferTexturesBindGroupLayout = Renderer.device.createBindGroupLayout({
 		// 	label: "Camera GPUBindGroupLayout",
@@ -77,11 +71,11 @@ export default class GBufferIntegratePass extends RenderPass {
 
 		const renderPSODescriptor: GPURenderPipelineDescriptor = {
 			layout: Renderer.device.createPipelineLayout({
-				bindGroupLayouts: [gbufferTexturesBindGroupLayout],
+				bindGroupLayouts: [this.gbufferTexturesBindGroupLayout],
 			}),
 			vertex: {
 				module: vertexShaderModule,
-				entryPoint: GBUFFER_VERTEX_SHADER_ENTRY_NAME,
+				entryPoint: FULLSCREEN_TRIANGLE_VERTEX_SHADER_ENTRY_NAME,
 			},
 			fragment: {
 				module: fragmentShaderModule,
@@ -95,14 +89,9 @@ export default class GBufferIntegratePass extends RenderPass {
 		};
 
 		this.renderPSO = PipelineStates.createRenderPipeline(renderPSODescriptor);
-
-		this.gbufferTexturesBindGroup = Renderer.device.createBindGroup({
-			layout: gbufferTexturesBindGroupLayout,
-			entries: gbufferTexturesBindGroupEntries,
-		});
 	}
 
-	public override resize(width: number, height: number): void {
+	public override onResize(width: number, height: number): void {
 		if (this.outTexture) {
 			this.outTexture.destroy();
 		}
@@ -119,6 +108,30 @@ export default class GBufferIntegratePass extends RenderPass {
 			label: "GBuffer Result Texture",
 		});
 		this.outTextureView = this.outTexture.createView();
+
+		const gbufferTexturesBindGroupEntries: GPUBindGroupEntry[] = [
+			{
+				binding: 0,
+				resource: this.normalReflectanceTextureView,
+			},
+			{
+				binding: 1,
+				resource: this.colorTextureView,
+			},
+			// {
+			// 	binding: 2,
+			// 	resource: this.velocityTextureView,
+			// },
+			// {
+			// 	binding: 3,
+			// 	resource: this.historyTextureView,
+			// },
+		];
+
+		this.gbufferTexturesBindGroup = Renderer.device.createBindGroup({
+			layout: this.gbufferTexturesBindGroupLayout,
+			entries: gbufferTexturesBindGroupEntries,
+		});
 	}
 
 	protected override createRenderPassDescriptor(): GPURenderPassDescriptor {
@@ -143,8 +156,7 @@ export default class GBufferIntegratePass extends RenderPass {
 
 		renderPassEncoder.setPipeline(this.renderPSO);
 		renderPassEncoder.setBindGroup(0, this.gbufferTexturesBindGroup);
-		renderPassEncoder.draw(6);
-
+		renderPassEncoder.draw(3);
 		renderPassEncoder.end();
 	}
 }

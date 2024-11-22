@@ -27,6 +27,15 @@ export default class OrthographicCamera extends Camera {
 		this.updateProjectionMatrix();
 	}
 
+	public override onResize(w: number, h: number): void {
+		super.onResize(w, h);
+		this.left = 0;
+		this.right = w;
+		this.top = h;
+		this.bottom = 0;
+		this.updateProjectionMatrix();
+	}
+
 	override updateProjectionMatrix(): this {
 		mat4.ortho(
 			this.left,

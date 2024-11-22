@@ -22,6 +22,23 @@ ${SHADER_CHUNKS.CameraUniform}
     var out: GBufferOutput;
     out.normalReflectance = vec4f(normalize(in.normal), f32(model.isReflective));
     out.color = vec4f(model.baseColor, 1.0);
+
+    var oldPos = in.prevFrameClipPos;
+    var newPos = in.currFrameClipPos;
+    
+    oldPos /= oldPos.w;
+    oldPos.x = (oldPos.x+1)/2.0;
+    oldPos.y = (oldPos.y+1)/2.0;
+    oldPos.y = 1 - oldPos.y;
+    
+    newPos /= newPos.w;
+    newPos.x = (newPos.x+1)/2.0;
+    newPos.y = (newPos.y+1)/2.0;
+    newPos.y = 1 - newPos.y;
+
+    out.velocity = vec4f((newPos - oldPos).xy, 0, 1);
+  
+
     return out;
   }
 `;
@@ -51,9 +68,7 @@ export const getDebugFragmentShader = (
     color = vec4f(textureSample(myTexture, mySampler, uv).rgb, 1.0);
     #elif ${debugTexType === TextureDebugMeshType.Reflectance}
     color = vec4f(textureSample(myTexture, mySampler, uv).a, 0.0, 0.0, 1.0);
-    #elif ${debugTexType === TextureDebugMeshType.Albedo}
-    color = textureSample(myTexture, mySampler, uv);
-    #else
+    #elif ${debugTexType === TextureDebugMeshType.Depth}
     var depth = textureSample(myTexture, mySampler, uv);
 
     let near: f32 = 0.1; // Example near plane
@@ -67,6 +82,10 @@ export const getDebugFragmentShader = (
 
 
     color = vec4f(vec3f(depth_ndc), 1);
+    #elif ${debugTexType === TextureDebugMeshType.Velocity}
+    color = vec4f(textureSample(myTexture, mySampler, uv).rg * 100, 0, 1);
+    #else
+    color = textureSample(myTexture, mySampler, uv);
     #endif
     return color;
   }

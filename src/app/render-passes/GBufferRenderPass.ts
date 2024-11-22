@@ -2,8 +2,11 @@ import Renderer from "../Renderer";
 import RenderPass from "../../renderer/core/RenderPass";
 
 export default class GBufferRenderPass extends RenderPass {
-	public normalTexture: GPUTexture;
+	public normalReflectanceTexture: GPUTexture;
 	public normalReflectanceTextureView: GPUTextureView;
+
+	public velocityTexture: GPUTexture;
+	public velocityTextureView: GPUTextureView;
 
 	public colorTexture: GPUTexture;
 	public colorTextureView: GPUTextureView;
@@ -11,7 +14,7 @@ export default class GBufferRenderPass extends RenderPass {
 	public depthTexture: GPUTexture;
 	public depthTextureView: GPUTextureView;
 
-	public override resize(width: number, height: number): void {
+	public override onResize(width: number, height: number): void {
 		if (this.colorTexture) {
 			this.colorTexture.destroy();
 		}
@@ -28,10 +31,25 @@ export default class GBufferRenderPass extends RenderPass {
 		});
 		this.colorTextureView = this.colorTexture.createView();
 
-		if (this.normalTexture) {
-			this.normalTexture.destroy();
+		if (this.velocityTexture) {
+			this.velocityTexture.destroy();
 		}
-		this.normalTexture = Renderer.device.createTexture({
+		this.velocityTexture = Renderer.device.createTexture({
+			dimension: "2d",
+			format: "rg16float",
+			mipLevelCount: 1,
+			sampleCount: 1,
+			size: { width, height, depthOrArrayLayers: 1 },
+			usage:
+				GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
+			label: "Velocity GBuffer Texture",
+		});
+		this.velocityTextureView = this.velocityTexture.createView();
+
+		if (this.normalReflectanceTexture) {
+			this.normalReflectanceTexture.destroy();
+		}
+		this.normalReflectanceTexture = Renderer.device.createTexture({
 			dimension: "2d",
 			format: "rgba16float",
 			mipLevelCount: 1,
@@ -41,7 +59,8 @@ export default class GBufferRenderPass extends RenderPass {
 				GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
 			label: "Normal + Reflectance GBuffer Texture",
 		});
-		this.normalReflectanceTextureView = this.normalTexture.createView();
+		this.normalReflectanceTextureView =
+			this.normalReflectanceTexture.createView();
 
 		if (this.depthTexture) {
 			this.depthTexture.destroy();
@@ -71,6 +90,12 @@ export default class GBufferRenderPass extends RenderPass {
 				view: this.colorTextureView,
 				loadOp: "clear",
 				clearValue: [0.1, 0.1, 0.1, 1],
+				storeOp: "store",
+			},
+			{
+				view: this.velocityTextureView,
+				loadOp: "clear",
+				clearValue: [0, 0, 0, 0],
 				storeOp: "store",
 			},
 		];

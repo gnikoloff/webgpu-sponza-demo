@@ -33,15 +33,27 @@ export const getVertexShader = (
     var position = in.position;
 
     var worldMatrix: mat4x4f;
+    var prevWorldMatrix: mat4x4f;
 
     #if ${isInstanced}
       worldMatrix = instanceMatrices[instanceId] * model.worldMatrix;
+      prevWorldMatrix = instanceMatrices[instanceId] * model.prevFrameWorldMatrix;
     #else
       worldMatrix = model.worldMatrix;
+      prevWorldMatrix = model.prevFrameWorldMatrix;
     #endif
 
     var out: VertexOutput;
-    out.position = camera.projectionMatrix * camera.viewMatrix * worldMatrix * in.position;
+    out.position = camera.projectionViewMatrix * worldMatrix * in.position;
+
+    // var jitterOffset = camera.jitterOffset;
+    // jitterOffset.x = ((jitterOffset.x - 0.5) / f32(camera.viewportWidth)) * 2;
+    // jitterOffset.y = ((jitterOffset.y - 0.5) / f32(camera.viewportHeight)) * 2;
+
+    out.position += vec4f(camera.jitterOffset * out.position.w, 0, 0);
+
+    out.currFrameClipPos = out.position;
+    out.prevFrameClipPos = camera.prevFrameProjectionViewMatrix * prevWorldMatrix * in.position;
     out.uv = in.uv;
     out.normal = model.normalMatrix * in.normal;
     return out;

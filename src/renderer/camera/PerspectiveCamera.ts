@@ -17,6 +17,12 @@ export default class PerspectiveCamera extends Camera {
 		this.updateProjectionMatrix();
 	}
 
+	public override onResize(w: number, h: number): void {
+		super.onResize(w, h);
+		this.aspect = w / h;
+		this.updateProjectionMatrix();
+	}
+
 	override updateProjectionMatrix(): this {
 		mat4.perspective(
 			this.fieldOfView,

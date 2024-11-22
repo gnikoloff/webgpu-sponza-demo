@@ -1,8 +1,10 @@
+import { mat4 } from "wgpu-matrix";
 import {
 	StructuredView,
 	makeShaderDataDefinitions,
 	makeStructuredView,
 } from "webgpu-utils";
+
 import { BIND_GROUP_LOCATIONS } from "../../app/constants";
 import { SHADER_CHUNKS } from "../../app/shaders/chunks";
 import Renderer from "../../app/Renderer";
@@ -27,6 +29,8 @@ export default class Drawable extends Transform {
 	private modelBuffer: GPUBuffer;
 	private modelBindGroup: GPUBindGroup;
 	private uploadModelBufferToGPU = true;
+
+	private prevFrameModelMatrix = mat4.create();
 
 	protected bufferUniformValues: StructuredView;
 
@@ -82,6 +86,7 @@ export default class Drawable extends Transform {
 		if (this.uploadModelBufferToGPU) {
 			this.bufferUniformValues.set({
 				worldMatrix: this.modelMatrix,
+				prevFrameWorldMatrix: this.prevFrameModelMatrix,
 				normalMatrix: this.normalMatrix,
 				isReflective: this.materialProps.isReflective ? 1 : 0,
 				baseColor: this.materialProps.baseColor,
@@ -105,7 +110,6 @@ export default class Drawable extends Transform {
 	override onRender(renderEncoder: GPURenderPassEncoder) {
 		this.material.bind(renderEncoder);
 
-		// console.log(this.instanceCount);
 		renderEncoder.drawIndexed(
 			this.geometry.vertexCount,
 			this.instanceCount,
@@ -117,5 +121,8 @@ export default class Drawable extends Transform {
 
 	override postRender(renderEncoder: GPURenderPassEncoder): void {
 		renderEncoder.popDebugGroup();
+
+		mat4.copy(this.modelMatrix, this.prevFrameModelMatrix);
+		this.uploadModelBufferToGPU = true;
 	}
 }

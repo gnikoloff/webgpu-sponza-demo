@@ -36,4 +36,7 @@ export const RENDER_TARGET_LOCATIONS = {
 	get Color(): number {
 		return 1;
 	},
+	get Velocity(): number {
+		return 2;
+	},
 };

@@ -20,13 +20,15 @@ import CubeGeometry from "../renderer/geometry/CubeGeometry";
 import MaterialCache from "./utils/MaterialCache";
 import Transform from "../renderer/scene/Transform";
 import ReflectionComputePass from "./render-passes/ReflectionComputePass";
-import BlitPass from "./render-passes/BlitPass";
 import SphereGeometry from "../renderer/geometry/SphereGeometry";
+import TAAResolvePass from "./render-passes/TAAResolvePass";
 
 export default class Renderer {
 	public static $canvas: HTMLCanvasElement;
 	public static canvasContext: GPUCanvasContext;
 	public static device: GPUDevice;
+	public static elapsedTimeMs = 0;
+	private static prevTimeMs = 0;
 
 	public static pixelFormat: GPUTextureFormat;
 	public static readonly depthFormat: GPUTextureFormat = "depth32float";
@@ -44,13 +46,33 @@ export default class Renderer {
 	private debugReflectanceTextureMesh?: TextureDebugMesh;
 	private debugColorTextureMesh?: TextureDebugMesh;
 	private debugDepthTextureMesh?: TextureDebugMesh;
+	private debugVelocityTextureMesh?: TextureDebugMesh;
 
 	private gbufferRenderPass: GBufferRenderPass;
 	private gbufferIntegratePass: GBufferIntegratePass;
 	private reflectionComputePass: ReflectionComputePass;
-	private blitRenderPass: BlitPass;
+	private taaResolvePass: TAAResolvePass;
 
 	private orthoCameraBindGroup: GPUBindGroup;
+
+	private _enableTAA = true;
+	public get enableTAA(): boolean {
+		return this._enableTAA;
+	}
+	public set enableTAA(v: boolean) {
+		this._enableTAA = v;
+		this.mainCamera.shouldJitter = v;
+	}
+
+	public debugGBuffer = false;
+
+	private _enableAnimation = true;
+	public get enableAnimation(): boolean {
+		return this._enableAnimation;
+	}
+	public set enableAnimation(v: boolean) {
+		this._enableAnimation = v;
+	}
 
 	public static initialize = async (
 		canvas: HTMLCanvasElement,
@@ -87,13 +109,14 @@ export default class Renderer {
 			MAIN_CAMERA_NEAR,
 			MAIN_CAMERA_FAR,
 		);
+		this.mainCamera.shouldJitter = true;
 		this.mainCamera.setPosition(0, 2, 4);
 		this.mainCamera.setLookAt(0, 0, 0);
 		this.mainCamera.updateViewMatrix();
 		this.mainCameraCtrl = new CameraController(
 			this.mainCamera,
 			Renderer.$canvas,
-			true,
+			false,
 		);
 		this.mainCameraCtrl.startTick();
 
@@ -147,42 +170,35 @@ export default class Renderer {
 	}
 
 	public resize(w: number, h: number) {
-		const aspect = w / h;
-		this.mainCamera.aspect = aspect;
-		this.mainCamera.updateProjectionMatrix();
-
-		this.orthoCamera.left = 0;
-		this.orthoCamera.right = w;
-		this.orthoCamera.top = h;
-		this.orthoCamera.bottom = 0;
-		this.orthoCamera.updateProjectionMatrix();
-
-		const debugMeshWidth = w * 0.2;
-		const debugMeshHeight = h * 0.2;
+		this.mainCamera.onResize(w, h);
+		this.orthoCamera.onResize(w, h);
 
 		if (!this.gbufferRenderPass) {
 			this.gbufferRenderPass = new GBufferRenderPass();
 			this.gbufferRenderPass.setCamera(this.mainCamera);
 		}
-		this.gbufferRenderPass.resize(w, h);
+		this.gbufferRenderPass.onResize(w, h);
 		if (!this.gbufferIntegratePass) {
 			this.gbufferIntegratePass = new GBufferIntegratePass(
 				this.gbufferRenderPass.normalReflectanceTextureView,
 				this.gbufferRenderPass.colorTextureView,
+				this.gbufferRenderPass.velocityTextureView,
 			);
 		}
-		this.gbufferIntegratePass.resize(w, h);
+		this.gbufferIntegratePass.onResize(w, h);
+
+		if (!this.taaResolvePass) {
+			this.taaResolvePass = new TAAResolvePass(
+				this.gbufferIntegratePass.outTextureView,
+				this.gbufferRenderPass.velocityTextureView,
+			);
+		}
+		this.taaResolvePass.onResize(w, h);
 
 		if (!this.reflectionComputePass) {
-			this.reflectionComputePass = new ReflectionComputePass(
-				this.gbufferIntegratePass.outTexture,
-			);
+			this.reflectionComputePass = new ReflectionComputePass();
 		}
-		this.reflectionComputePass.resize(w, h);
-
-		if (!this.blitRenderPass) {
-			this.blitRenderPass = new BlitPass(this.reflectionComputePass.texture);
-		}
+		this.reflectionComputePass.onResize(w, h);
 
 		this.debugReflectanceTextureMesh = new TextureDebugMesh(
 			TextureDebugMeshType.Reflectance,
@@ -204,88 +220,108 @@ export default class Renderer {
 			this.gbufferRenderPass.depthTextureView,
 		);
 
+		this.debugVelocityTextureMesh = new TextureDebugMesh(
+			TextureDebugMeshType.Velocity,
+			this.gbufferRenderPass.velocityTextureView,
+		);
+
+		const debugMeshWidth = w * 0.175;
+		const debugMeshHeight = h * 0.175;
+
 		var offsetX = debugMeshWidth * 0.5 + 10;
 
-		this.debugNormalTextureMesh
-			.setPosition(offsetX, debugMeshHeight * 0.5 + 10, 0)
-			.setScale(debugMeshWidth, debugMeshHeight, 1)
-			.updateWorldMatrix();
+		const debugMeshes: TextureDebugMesh[] = [
+			this.debugNormalTextureMesh,
+			this.debugReflectanceTextureMesh,
+			this.debugColorTextureMesh,
+			this.debugDepthTextureMesh,
+			this.debugVelocityTextureMesh,
+		];
 
-		offsetX += debugMeshWidth;
-
-		this.debugReflectanceTextureMesh
-			.setPosition(offsetX, debugMeshHeight * 0.5 + 10, 0)
-			.setScale(debugMeshWidth, debugMeshHeight, 1)
-			.updateWorldMatrix();
-
-		offsetX += debugMeshWidth;
-
-		this.debugColorTextureMesh
-			.setPosition(offsetX, debugMeshHeight * 0.5 + 10, 0)
-			.setScale(debugMeshWidth, debugMeshHeight, 1)
-			.updateWorldMatrix();
-
-		offsetX += debugMeshWidth;
-
-		this.debugDepthTextureMesh
-			.setPosition(offsetX, debugMeshHeight * 0.5 + 10, 0)
-			.setScale(debugMeshWidth, debugMeshHeight, 1)
-			.updateWorldMatrix();
+		for (const debugMesh of debugMeshes) {
+			debugMesh
+				.setPosition(offsetX, debugMeshHeight * 0.5 + 10, 0)
+				.setScale(debugMeshWidth, debugMeshHeight, 1)
+				.updateWorldMatrix();
+			offsetX += debugMeshWidth;
+		}
 	}
 
-	public renderFrame(elapsedTime: number, deltaTime: number) {
-		const device = Renderer.device;
+	public renderFrame(elapsedTime: number) {
+		const now = (elapsedTime - Renderer.elapsedTimeMs) * 0.001;
+		const deltaDiff = now - Renderer.prevTimeMs;
+		Renderer.prevTimeMs = now;
+		Renderer.elapsedTimeMs += this.enableAnimation ? deltaDiff : 0;
 
-		const x = Math.cos(elapsedTime) * 1;
-		const y = Math.sin(elapsedTime) * 1;
+		const device = Renderer.device;
 
 		// console.log({ x, y });
 
-		this.mainCamera.update();
-		this.orthoCamera.update();
+		this.mainCamera.onFrameStart();
+		this.orthoCamera.onFrameStart();
 
-		this.cube.setPositionY(0.5).setRotationY(elapsedTime).updateWorldMatrix();
+		if (this.enableAnimation) {
+			this.cube
+				.setPositionY(0.5)
+				.setRotationX(Renderer.elapsedTimeMs)
+				.updateWorldMatrix();
+
+			this.sphere
+				.setScale(0.5, 0.5, 0.5)
+				.setPositionX(Math.cos(Renderer.elapsedTimeMs) * 2)
+				.setPositionZ(Math.sin(Renderer.elapsedTimeMs) * 2)
+				.updateWorldMatrix();
+		}
 
 		const commandEncoder = device.createCommandEncoder();
-		const textureView = Renderer.canvasContext.getCurrentTexture().createView();
 
 		this.gbufferRenderPass.render(commandEncoder, this.rootTransform);
-		// this.gbufferIntegratePass.outOutTextureView = textureView;
 		this.gbufferIntegratePass.render(commandEncoder);
-
-		this.reflectionComputePass.computeReflections(commandEncoder, textureView);
-
-		// this.blitRenderPass.renderFrame(commandEncoder, textureView);
-
-		const hudRenderPassColorAttachments: GPURenderPassColorAttachment[] = [
-			{
-				view: textureView,
-				loadOp: "load",
-				storeOp: "store",
-			},
-		];
-
-		const hudRenderPassDescriptor: GPURenderPassDescriptor = {
-			colorAttachments: hudRenderPassColorAttachments,
-			depthStencilAttachment: undefined,
-			label: "HUD Render Pass",
-		};
-		const hudRenderEncoder = commandEncoder.beginRenderPass(
-			hudRenderPassDescriptor,
+		if (this.enableTAA) {
+			this.taaResolvePass.render(commandEncoder);
+		}
+		this.reflectionComputePass.computeReflections(
+			commandEncoder,
+			Renderer.canvasContext.getCurrentTexture(),
+			this.enableTAA
+				? this.taaResolvePass.outTextureView
+				: this.gbufferIntegratePass.outTextureView,
 		);
 
-		hudRenderEncoder.setBindGroup(
-			BIND_GROUP_LOCATIONS.Camera,
-			this.orthoCameraBindGroup,
-		);
+		if (this.debugGBuffer) {
+			const hudRenderPassColorAttachments: GPURenderPassColorAttachment[] = [
+				{
+					view: Renderer.canvasContext.getCurrentTexture().createView(),
+					loadOp: "load",
+					storeOp: "store",
+				},
+			];
 
-		this.debugNormalTextureMesh?.render(hudRenderEncoder);
-		this.debugColorTextureMesh?.render(hudRenderEncoder);
-		this.debugReflectanceTextureMesh?.render(hudRenderEncoder);
-		this.debugDepthTextureMesh?.render(hudRenderEncoder);
+			const hudRenderPassDescriptor: GPURenderPassDescriptor = {
+				colorAttachments: hudRenderPassColorAttachments,
+				depthStencilAttachment: undefined,
+				label: "HUD Render Pass",
+			};
+			const hudRenderEncoder = commandEncoder.beginRenderPass(
+				hudRenderPassDescriptor,
+			);
 
-		hudRenderEncoder.end();
+			hudRenderEncoder.setBindGroup(
+				BIND_GROUP_LOCATIONS.Camera,
+				this.orthoCameraBindGroup,
+			);
 
+			this.debugNormalTextureMesh?.render(hudRenderEncoder);
+			this.debugColorTextureMesh?.render(hudRenderEncoder);
+			this.debugReflectanceTextureMesh?.render(hudRenderEncoder);
+			this.debugDepthTextureMesh?.render(hudRenderEncoder);
+			this.debugVelocityTextureMesh?.render(hudRenderEncoder);
+
+			hudRenderEncoder.end();
+		}
 		device.queue.submit([commandEncoder.finish()]);
+
+		this.mainCamera.onFrameEnd();
+		this.orthoCamera.onFrameEnd();
 	}
 }

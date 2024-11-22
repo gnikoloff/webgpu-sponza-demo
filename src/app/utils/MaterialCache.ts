@@ -30,6 +30,9 @@ const MaterialCache = {
 				{
 					format: "bgra8unorm",
 				},
+				{
+					format: "rg16float",
+				},
 			],
 		});
 		return _defaultDeferredMaterial;
@@ -56,6 +59,9 @@ const MaterialCache = {
 				},
 				{
 					format: "bgra8unorm",
+				},
+				{
+					format: "rg16float",
 				},
 			],
 		});

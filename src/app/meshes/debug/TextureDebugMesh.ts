@@ -19,18 +19,23 @@ export enum TextureDebugMeshType {
 	Reflectance,
 	Albedo,
 	Depth,
+	Velocity,
 }
 
 export default class TextureDebugMesh extends Drawable {
+	private static sampler: GPUSampler;
+
 	private samplerTextureBindGroup: GPUBindGroup;
 
 	constructor(type: TextureDebugMeshType, debugTextureView: GPUTextureView) {
 		super(GeometryCache.defaultPlaneGeometry);
 
-		const sampler = Renderer.device.createSampler({
-			magFilter: "nearest",
-			minFilter: "nearest",
-		});
+		if (!TextureDebugMesh.sampler) {
+			TextureDebugMesh.sampler = Renderer.device.createSampler({
+				magFilter: "nearest",
+				minFilter: "nearest",
+			});
+		}
 
 		const samplerTextureBindGroupLayoutEntries: GPUBindGroupLayoutEntry[] = [
 			{
@@ -58,7 +63,7 @@ export default class TextureDebugMesh extends Drawable {
 		const samplerTextureBindGroupEntries = [
 			{
 				binding: 0,
-				resource: sampler,
+				resource: TextureDebugMesh.sampler,
 			},
 			{
 				binding: 1,

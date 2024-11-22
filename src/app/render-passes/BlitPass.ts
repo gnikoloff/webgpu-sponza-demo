@@ -7,8 +7,8 @@ import {
 	BLIT_FRAGMENT_SHADER_SRC,
 } from "../shaders/BlitShader";
 import {
-	GBUFFER_VERTEX_SHADER_ENTRY_NAME,
-	GBUFFER_VERTEX_SHADER_SRC,
+	FULLSCREEN_TRIANGLE_VERTEX_SHADER_ENTRY_NAME,
+	FULLSCREEN_TRIANGLE_VERTEX_SHADER_SRC,
 } from "../shaders/GBufferShader";
 
 export default class BlitPass extends RenderPass {
@@ -18,7 +18,7 @@ export default class BlitPass extends RenderPass {
 	constructor(public textureToBlit: GPUTexture) {
 		super();
 		const vertexShaderModule = PipelineStates.createShaderModule(
-			GBUFFER_VERTEX_SHADER_SRC,
+			FULLSCREEN_TRIANGLE_VERTEX_SHADER_SRC,
 		);
 		const fragmentShaderModule = PipelineStates.createShaderModule(
 			BLIT_FRAGMENT_SHADER_SRC,
@@ -56,7 +56,7 @@ export default class BlitPass extends RenderPass {
 			}),
 			vertex: {
 				module: vertexShaderModule,
-				entryPoint: GBUFFER_VERTEX_SHADER_ENTRY_NAME,
+				entryPoint: FULLSCREEN_TRIANGLE_VERTEX_SHADER_ENTRY_NAME,
 			},
 			fragment: {
 				module: fragmentShaderModule,

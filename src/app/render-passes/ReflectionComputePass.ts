@@ -14,7 +14,7 @@ export default class ReflectionComputePass extends RenderPass {
 	private settingsGpuBuffer: GPUBuffer;
 	private computePSOBindGroupLayout: GPUBindGroupLayout;
 
-	constructor(public texture: GPUTexture) {
+	constructor() {
 		super();
 		this.settingsGpuBuffer = Renderer.device.createBuffer({
 			label: "Reflection Pass Settings GPUBuffer",
@@ -68,7 +68,7 @@ export default class ReflectionComputePass extends RenderPass {
 		});
 	}
 
-	public resize(w: number, h: number) {
+	public onResize(w: number, h: number) {
 		Renderer.device.queue.writeBuffer(
 			this.settingsGpuBuffer,
 			0,
@@ -78,16 +78,17 @@ export default class ReflectionComputePass extends RenderPass {
 
 	public computeReflections(
 		commandEncoder: GPUCommandEncoder,
-		outTextureView: GPUTextureView,
+		outTexture: GPUTexture,
+		inTextureView: GPUTextureView,
 	) {
 		const bindGroupEntries: GPUBindGroupEntry[] = [
 			{
 				binding: 0,
-				resource: this.texture.createView(),
+				resource: inTextureView,
 			},
 			{
 				binding: 1,
-				resource: outTextureView,
+				resource: outTexture.createView(),
 			},
 			{
 				binding: 2,
@@ -108,10 +109,10 @@ export default class ReflectionComputePass extends RenderPass {
 		computeEncoder.setBindGroup(0, texturesBindGroup);
 		computeEncoder.dispatchWorkgroups(
 			Math.ceil(
-				this.texture.width / ReflectionComputePass.COMPUTE_WORKGROUP_SIZE_X,
+				outTexture.width / ReflectionComputePass.COMPUTE_WORKGROUP_SIZE_X,
 			),
 			Math.ceil(
-				this.texture.width / ReflectionComputePass.COMPUTE_WORKGROUP_SIZE_Y,
+				outTexture.width / ReflectionComputePass.COMPUTE_WORKGROUP_SIZE_Y,
 			),
 			1,
 		);

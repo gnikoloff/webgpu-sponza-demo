@@ -1,15 +1,15 @@
 import { SHADER_CHUNKS } from "./chunks";
 
-export const GBUFFER_VERTEX_SHADER_ENTRY_NAME = "gbufferVertexShader";
+export const FULLSCREEN_TRIANGLE_VERTEX_SHADER_ENTRY_NAME =
+	"fullScreeenTriVertex";
 
-export const GBUFFER_VERTEX_SHADER_SRC = /* wgsl */ `
+export const FULLSCREEN_TRIANGLE_VERTEX_SHADER_SRC = /* wgsl */ `
   ${SHADER_CHUNKS.VertexOutput}
 
   @vertex
-  fn ${GBUFFER_VERTEX_SHADER_ENTRY_NAME}(@builtin(vertex_index) VertexIndex : u32) -> VertexOutput {
+  fn ${FULLSCREEN_TRIANGLE_VERTEX_SHADER_ENTRY_NAME}(@builtin(vertex_index) VertexIndex : u32) -> VertexOutput {
     const pos = array(
-      vec2(-1.0, -1.0), vec2(1.0, -1.0), vec2(-1.0, 1.0),
-      vec2(-1.0, 1.0), vec2(1.0, -1.0), vec2(1.0, 1.0),
+      vec2(-1.0, -1.0), vec2(3, -1.0), vec2(-1.0, 3),
     );
   
     var out: VertexOutput;
@@ -26,7 +26,8 @@ export const GBUFFER_FRAGMENT_SHADER_SRC = /* wgsl */ `
 
   @fragment
   fn ${GBUFFER_FRAGMENT_SHADER_ENTRY_NAME}(@builtin(position) coord : vec4f) -> @location(0) vec4f {
-    let normal = textureLoad(normalTexture, vec2i(floor(coord.xy)), 0).xyz;
+    let pixelCoords = vec2i(floor(coord.xy));
+    let normal = textureLoad(normalTexture, pixelCoords, 0).xyz;
     return vec4f(normal, 1.0);
   }
 `;
