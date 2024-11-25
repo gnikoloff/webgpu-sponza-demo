@@ -9,7 +9,7 @@ import {
 import {
 	FULLSCREEN_TRIANGLE_VERTEX_SHADER_ENTRY_NAME,
 	FULLSCREEN_TRIANGLE_VERTEX_SHADER_SRC,
-} from "../shaders/GBufferShader";
+} from "../shaders/VertexShader";
 
 export default class BlitPass extends RenderPass {
 	private renderPSO: GPURenderPipeline;

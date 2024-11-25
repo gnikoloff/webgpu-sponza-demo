@@ -6,7 +6,7 @@ import {
 } from "webgpu-utils";
 
 import { BIND_GROUP_LOCATIONS } from "../../app/constants";
-import { SHADER_CHUNKS } from "../../app/shaders/chunks";
+import { SHADER_CHUNKS } from "../shader/chunks";
 import Renderer from "../../app/Renderer";
 import Geometry from "../geometry/Geometry";
 import Material from "../material/Material";
@@ -15,7 +15,7 @@ import PipelineStates from "../core/PipelineStates";
 import Transform from "./Transform";
 
 export default class Drawable extends Transform {
-	private static readonly INDEX_FORMAT: GPUIndexFormat = "uint16";
+	public static readonly INDEX_FORMAT: GPUIndexFormat = "uint16";
 
 	public geometry: Geometry;
 	public material: Material;
@@ -89,7 +89,7 @@ export default class Drawable extends Transform {
 				prevFrameWorldMatrix: this.prevFrameModelMatrix,
 				normalMatrix: this.normalMatrix,
 				isReflective: this.materialProps.isReflective ? 1 : 0,
-				baseColor: this.materialProps.baseColor,
+				baseColor: this.materialProps.color,
 			});
 			Renderer.device.queue.writeBuffer(
 				this.modelBuffer,

@@ -23,7 +23,7 @@ export default class GroundPipes extends InstancedDrawable {
 
 		this.material = MaterialCache.defaultDeferredInstancedMaterial;
 		this.materialProps.isReflective = false;
-		this.materialProps.baseColor = [1, 1, 1];
+		this.materialProps.setColor(1, 1, 1);
 
 		let instanceOffset = 0;
 		let translateMat = mat4.create();

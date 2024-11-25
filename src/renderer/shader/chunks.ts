@@ -1,4 +1,7 @@
-import { RENDER_TARGET_LOCATIONS, SHADER_ATTRIB_LOCATIONS } from "../constants";
+import {
+	RENDER_TARGET_LOCATIONS,
+	SHADER_ATTRIB_LOCATIONS,
+} from "../../app/constants";
 
 export const SHADER_CHUNKS = {
 	get VertexInput(): string {
@@ -22,6 +25,7 @@ export const SHADER_CHUNKS = {
         @location(1) uv: vec2f,
         @location(2) currFrameClipPos: vec4f,
         @location(3) prevFrameClipPos: vec4f,
+        @location(4) @interpolate(flat) instanceId: u32,
       };
 
     `;
@@ -45,9 +49,11 @@ export const SHADER_CHUNKS = {
 		return /* wgsl */ `
 
       struct CameraUniform {
+        position: vec3f,
         projectionMatrix: mat4x4f,
         viewMatrix: mat4x4f,
         projectionViewMatrix: mat4x4f,
+        inverseProjectionViewMatrix: mat4x4f,
         prevFrameProjectionViewMatrix: mat4x4f,
         viewportWidth: u32,
         viewportHeight: u32,
@@ -66,6 +72,33 @@ export const SHADER_CHUNKS = {
         @location(${RENDER_TARGET_LOCATIONS.Velocity}) velocity: vec4f,
       };
       
+    `;
+	},
+
+	get Light(): string {
+		return /* wgsl */ `
+
+      struct Light {
+        lightType: u32, // 0 - Directional Light, 1 - Point Light
+        intensity: f32,
+        radius: f32,
+        position: vec3f,
+        color: vec3f,
+      };
+
+    `;
+	},
+
+	get Material(): string {
+		return /* wgsl */ `
+    
+      struct Material {
+        metallic: f32,
+        albedo: vec3f,
+        roughness: f32,
+        ambientOcclusion: f32,
+      };
+
     `;
 	},
 };

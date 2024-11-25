@@ -22,6 +22,9 @@ import Transform from "../renderer/scene/Transform";
 import ReflectionComputePass from "./render-passes/ReflectionComputePass";
 import SphereGeometry from "../renderer/geometry/SphereGeometry";
 import TAAResolvePass from "./render-passes/TAAResolvePass";
+import PointLight from "../renderer/lighting/PointLight";
+import Light from "../renderer/lighting/Light";
+import DirectionalLight from "../renderer/lighting/DirectionalLight";
 
 export default class Renderer {
 	public static $canvas: HTMLCanvasElement;
@@ -31,7 +34,8 @@ export default class Renderer {
 	private static prevTimeMs = 0;
 
 	public static pixelFormat: GPUTextureFormat;
-	public static readonly depthFormat: GPUTextureFormat = "depth32float";
+	public static readonly depthStencilFormat: GPUTextureFormat =
+		"depth32float-stencil8";
 
 	public orthoCamera: OrthographicCamera;
 	public mainCamera: PerspectiveCamera;
@@ -53,6 +57,8 @@ export default class Renderer {
 	private reflectionComputePass: ReflectionComputePass;
 	private taaResolvePass: TAAResolvePass;
 
+	private lights: Light[];
+
 	private orthoCameraBindGroup: GPUBindGroup;
 
 	private _enableTAA = true;
@@ -65,6 +71,8 @@ export default class Renderer {
 	}
 
 	public debugGBuffer = false;
+
+	public debugPointLights = false;
 
 	private _enableAnimation = true;
 	public get enableAnimation(): boolean {
@@ -86,10 +94,14 @@ export default class Renderer {
 			? navigator.gpu.getPreferredCanvasFormat()
 			: "rgba8unorm";
 
+		const depth32Stencil8RenderFeature: GPUFeatureName =
+			"depth32float-stencil8";
 		const bgra8UnormStorageFeature: GPUFeatureName = "bgra8unorm-storage";
 		Renderer.device = await adapter.requestDevice({
 			requiredFeatures:
-				Renderer.pixelFormat === "bgra8unorm" ? [bgra8UnormStorageFeature] : [],
+				Renderer.pixelFormat === "bgra8unorm"
+					? [bgra8UnormStorageFeature, depth32Stencil8RenderFeature]
+					: [depth32Stencil8RenderFeature],
 		});
 
 		Renderer.canvasContext.configure({
@@ -153,11 +165,11 @@ export default class Renderer {
 		this.cube = new Drawable(new CubeGeometry(1, 1, 1));
 		this.cube.material = MaterialCache.defaultDeferredMaterial;
 		this.cube.materialProps.isReflective = false;
-		this.cube.materialProps.baseColor[1] = 1;
+		this.cube.materialProps.setColor(0.2, 0.2, 0.2);
 
 		this.sphere = new Drawable(new SphereGeometry());
 		this.sphere.material = MaterialCache.defaultDeferredMaterial;
-		this.sphere.materialProps.baseColor[0] = 1;
+		this.sphere.materialProps.setColor(0.3, 0.3, 0.3);
 		// this.sphere.materialProps.isReflective = false;
 		this.sphere
 			.setScale(0.5, 0.5, 0.5)
@@ -167,6 +179,44 @@ export default class Renderer {
 
 		this.rootTransform.addChild(this.cube);
 		this.rootTransform.addChild(this.sphere);
+
+		// const pa = new PointLight();
+		// pa.setPosition(3, 0.1, 0);
+		// const pb = new PointLight();
+		// pb.setPosition(-3, 0.1, 0);
+		// const pc = new PointLight();
+		// pc.setPosition(0, 0.1, 3);
+		// const pd = new PointLight();
+		// pd.setPosition(0, 0.1, -3);
+		// const pe = new PointLight();
+		// pe.setPosition(3, 0.1, -3);
+		// const pf = new PointLight();
+		// pf.setPosition(-3, 0.1, -3);
+
+		const pointLights: PointLight[] = [];
+		const pointLightsCount = 20;
+		const pointLightsCircleStep = (Math.PI * 2) / pointLightsCount;
+		const radiusStep = pointLightsCount / 4;
+		for (let i = 0; i < pointLightsCount; i++) {
+			const p = new PointLight();
+			const r = i * radiusStep;
+			p.setPosition(
+				Math.cos(i * pointLightsCircleStep) * 4,
+				0.2,
+				Math.sin(i * pointLightsCircleStep) * 4,
+			);
+			p.intensity = 3;
+			p.radius = 1;
+			p.setColor(10, 10, 10);
+			pointLights.push(p);
+		}
+
+		// this.pointLights = [pa, pb, pc, pd];
+		const dirLight = new DirectionalLight();
+		// dirLight.intensity = ;
+		dirLight.setPosition(2, 2, 2);
+		dirLight.setColor(4, 4, 4);
+		this.lights = [...pointLights, dirLight];
 	}
 
 	public resize(w: number, h: number) {
@@ -182,9 +232,13 @@ export default class Renderer {
 			this.gbufferIntegratePass = new GBufferIntegratePass(
 				this.gbufferRenderPass.normalReflectanceTextureView,
 				this.gbufferRenderPass.colorTextureView,
-				this.gbufferRenderPass.velocityTextureView,
+				this.gbufferRenderPass.depthTextureView,
+				this.gbufferRenderPass.depthStencilTextureView,
+				this.gbufferRenderPass.stencilTextureView,
 			);
 		}
+		this.gbufferIntegratePass.setLights(this.lights);
+		this.gbufferIntegratePass.setCamera(this.mainCamera);
 		this.gbufferIntegratePass.onResize(w, h);
 
 		if (!this.taaResolvePass) {
@@ -257,23 +311,29 @@ export default class Renderer {
 
 		// console.log({ x, y });
 
+		this.gbufferIntegratePass.debugPointLights = this.debugPointLights;
+		this.gbufferIntegratePass.setLights(this.lights);
+
 		this.mainCamera.onFrameStart();
 		this.orthoCamera.onFrameStart();
 
 		if (this.enableAnimation) {
 			this.cube
-				.setPositionY(0.5)
-				.setRotationX(Renderer.elapsedTimeMs)
+				.setPositionY(1)
+				.setScale(2, 2, 2)
+				.setRotationY(Renderer.elapsedTimeMs)
 				.updateWorldMatrix();
 
 			this.sphere
-				.setScale(0.5, 0.5, 0.5)
-				.setPositionX(Math.cos(Renderer.elapsedTimeMs) * 2)
-				.setPositionZ(Math.sin(Renderer.elapsedTimeMs) * 2)
+				.setScale(1, 1, 1)
+				.setPositionX(Math.cos(Renderer.elapsedTimeMs) * 3)
+				.setPositionZ(Math.sin(Renderer.elapsedTimeMs) * 3)
 				.updateWorldMatrix();
 		}
 
-		const commandEncoder = device.createCommandEncoder();
+		const commandEncoder = device.createCommandEncoder({
+			label: "Render Loop Command Encoder",
+		});
 
 		this.gbufferRenderPass.render(commandEncoder, this.rootTransform);
 		this.gbufferIntegratePass.render(commandEncoder);

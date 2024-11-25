@@ -1,7 +1,7 @@
 import { wgsl } from "wgsl-preprocessor/wgsl-preprocessor.js";
 import { BIND_GROUP_LOCATIONS } from "../constants";
 import { TextureDebugMeshType } from "../meshes/debug/TextureDebugMesh";
-import { SHADER_CHUNKS } from "./chunks";
+import { SHADER_CHUNKS } from "../../renderer/shader/chunks";
 
 export const FRAGMENT_SHADER_DEBUG_TEX_COORDS_ENTRY_FN =
 	"fragmentMainTexCoords";

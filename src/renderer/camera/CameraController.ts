@@ -287,9 +287,11 @@ export default class CameraController {
 		const s = this._spherical;
 		const sinPhiRadius = Math.sin(s.phi) * s.radius;
 
-		this.camera.position[0] = sinPhiRadius * Math.sin(s.theta) + this.target[0];
-		this.camera.position[1] = Math.cos(s.phi) * s.radius + this.target[1];
-		this.camera.position[2] = sinPhiRadius * Math.cos(s.theta) + this.target[2];
+		this.camera.setPosition(
+			sinPhiRadius * Math.sin(s.theta) + this.target[0],
+			Math.cos(s.phi) * s.radius + this.target[1],
+			sinPhiRadius * Math.cos(s.theta) + this.target[2],
+		);
 		// console.log(this.camera.position);
 		// console.log(this.target);
 

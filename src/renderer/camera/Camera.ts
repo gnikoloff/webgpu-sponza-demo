@@ -5,7 +5,7 @@ import {
 	makeStructuredView,
 } from "webgpu-utils";
 import Renderer from "../../app/Renderer";
-import { SHADER_CHUNKS } from "../../app/shaders/chunks";
+import { SHADER_CHUNKS } from "../shader/chunks";
 
 const HAMILTON_SEQUENCE = [
 	[0.5, 0.333333],
@@ -36,6 +36,7 @@ export default class Camera {
 	public viewMatrix = mat4.create();
 	public viewMatrixInverse = mat4.create();
 	public projectionViewMatrix = mat4.create();
+	public inverseProjectionViewMatrix = mat4.create();
 
 	public gpuBuffer: GPUBuffer;
 	public get shouldJitter(): boolean {
@@ -82,6 +83,9 @@ export default class Camera {
 
 	public set x(v: number) {
 		this.position[0] = v;
+		this.bufferUniformValues.set({
+			position: this.position,
+		});
 	}
 
 	public get x(): number {
@@ -90,6 +94,9 @@ export default class Camera {
 
 	public set y(v: number) {
 		this.position[1] = v;
+		this.bufferUniformValues.set({
+			position: this.position,
+		});
 	}
 
 	public get y(): number {
@@ -98,6 +105,9 @@ export default class Camera {
 
 	public set z(v: number) {
 		this.position[2] = v;
+		this.bufferUniformValues.set({
+			position: this.position,
+		});
 	}
 
 	public get z(): number {
@@ -108,6 +118,9 @@ export default class Camera {
 		this.position[0] = x;
 		this.position[1] = y;
 		this.position[2] = z;
+		this.bufferUniformValues.set({
+			position: this.position,
+		});
 	}
 
 	public setLookAt(x: number, y: number, z: number) {
@@ -139,8 +152,10 @@ export default class Camera {
 
 	public updateProjectionViewMatrix(): this {
 		mat4.mul(this.projectionMatrix, this.viewMatrix, this.projectionViewMatrix);
+		mat4.inverse(this.projectionViewMatrix, this.inverseProjectionViewMatrix);
 		this.bufferUniformValues.set({
 			projectionViewMatrix: this.projectionViewMatrix,
+			inverseProjectionViewMatrix: this.inverseProjectionViewMatrix,
 			prevFrameProjectionViewMatrix: this.prevFrameProjectionViewMatrix,
 		});
 		// this.needsUploadToGPU = true;

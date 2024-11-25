@@ -9,11 +9,14 @@ const GUI_PARAMS = {
 	"Enable Anim": true,
 	"Enable TAA": true,
 	"Debug G-Buffer": true,
+	"Debug Point Lights": true,
 };
 
 renderer.enableAnimation = GUI_PARAMS["Enable Anim"];
 renderer.enableTAA = GUI_PARAMS["Enable TAA"];
 renderer.debugGBuffer = GUI_PARAMS["Debug G-Buffer"];
+
+renderer.debugPointLights = GUI_PARAMS["Debug Point Lights"];
 
 const gui = new dat.GUI();
 
@@ -25,6 +28,9 @@ gui.add(GUI_PARAMS, "Enable TAA").onChange((v: boolean) => {
 });
 gui.add(GUI_PARAMS, "Debug G-Buffer").onChange((v: boolean) => {
 	renderer.debugGBuffer = v;
+});
+gui.add(GUI_PARAMS, "Debug Point Lights").onChange((v: boolean) => {
+	renderer.debugPointLights = v;
 });
 
 let oldTimeMs = 0;

@@ -10,7 +10,7 @@ export interface IMaterial {
 	fragmentShaderEntryFn: string;
 	bindGroupLayouts?: GPUBindGroupLayout[];
 	targets: GPUColorTargetState[];
-	depthFormat?: GPUTextureFormat;
+	depthStencilFormat?: GPUTextureFormat;
 	hasDepthStencilState?: boolean;
 	depthWriteEnabled?: boolean;
 	depthCompareFn?: GPUCompareFunction;
@@ -32,7 +32,7 @@ export default class Material {
 			PipelineStates.defaultModelBindGroupLayout,
 		],
 		targets = [],
-		depthFormat = Renderer.depthFormat,
+		depthStencilFormat = Renderer.depthStencilFormat,
 		hasDepthStencilState = true,
 		depthWriteEnabled = true,
 		depthCompareFn = "less",
@@ -61,16 +61,27 @@ export default class Material {
 			},
 			primitive: {
 				topology,
-				cullMode: "none",
+				cullMode: "back",
 			},
 		};
 
 		if (hasDepthStencilState) {
-			descriptor.depthStencil = {
-				format: depthFormat,
+			const stencilDescriptor: GPUStencilFaceState = {
+				compare: "always",
+				failOp: "keep",
+				depthFailOp: "keep",
+				passOp: "replace",
+			};
+			const depthStencilState: GPUDepthStencilState = {
+				format: depthStencilFormat,
 				depthWriteEnabled,
 				depthCompare: depthCompareFn,
+				stencilReadMask: 0x0,
+				stencilWriteMask: 0xff,
+				stencilBack: stencilDescriptor,
+				stencilFront: stencilDescriptor,
 			};
+			descriptor.depthStencil = depthStencilState;
 		}
 
 		this.renderPSO = PipelineStates.createRenderPipeline(descriptor);

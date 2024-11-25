@@ -1,14 +1,15 @@
 import PipelineStates from "../../renderer/core/PipelineStates";
 import RenderPass from "../../renderer/core/RenderPass";
 import Renderer from "../Renderer";
-import {
-	FULLSCREEN_TRIANGLE_VERTEX_SHADER_ENTRY_NAME,
-	FULLSCREEN_TRIANGLE_VERTEX_SHADER_SRC,
-} from "../shaders/GBufferShader";
+
 import {
 	TAA_RESOLVE_FRAGMENT_SHADER_ENTRY_NAME,
 	TAA_RESOLVE_FRAGMENT_SHADER_SRC,
 } from "../shaders/TAAResolveShader";
+import {
+	FULLSCREEN_TRIANGLE_VERTEX_SHADER_ENTRY_NAME,
+	FULLSCREEN_TRIANGLE_VERTEX_SHADER_SRC,
+} from "../shaders/VertexShader";
 
 export default class TAAResolvePass extends RenderPass {
 	public outTexture: GPUTexture;

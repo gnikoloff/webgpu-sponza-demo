@@ -34,6 +34,7 @@ const MaterialCache = {
 					format: "rg16float",
 				},
 			],
+			hasDepthStencilState: true,
 		});
 		return _defaultDeferredMaterial;
 	},
