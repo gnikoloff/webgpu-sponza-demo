@@ -1,5 +1,6 @@
 import PipelineStates from "../../renderer/core/PipelineStates";
 import Material from "../../renderer/material/Material";
+import Renderer from "../Renderer";
 import {
 	DEBUG_FRAGMENT_SHADER_SRC,
 	FRAGMENT_SHADER_DEBUG_TEX_COORDS_ENTRY_FN,
@@ -11,12 +12,19 @@ import {
 
 let _defaultDeferredMaterial: Material;
 let _defaultDeferredInstancedMaterial: Material;
+let _defaultShadowMaterial: Material;
 
 const MaterialCache = {
 	get defaultDeferredMaterial(): Material {
 		if (_defaultDeferredMaterial) {
 			return _defaultDeferredMaterial;
 		}
+		const stencilDescriptor: GPUStencilFaceState = {
+			compare: "always",
+			failOp: "keep",
+			depthFailOp: "keep",
+			passOp: "replace",
+		};
 		_defaultDeferredMaterial = new Material({
 			debugLabel: "Material",
 			vertexShaderSrc: getVertexShader(),
@@ -34,7 +42,15 @@ const MaterialCache = {
 					format: "rg16float",
 				},
 			],
-			hasDepthStencilState: true,
+			depthStencilState: {
+				format: Renderer.depthStencilFormat,
+				depthWriteEnabled: true,
+				depthCompare: "less",
+				stencilReadMask: 0x0,
+				stencilWriteMask: 0xff,
+				stencilBack: stencilDescriptor,
+				stencilFront: stencilDescriptor,
+			},
 		});
 		return _defaultDeferredMaterial;
 	},
@@ -67,6 +83,22 @@ const MaterialCache = {
 			],
 		});
 		return _defaultDeferredInstancedMaterial;
+	},
+
+	get defaultShadowMaterial(): Material {
+		if (_defaultShadowMaterial) {
+			return _defaultShadowMaterial;
+		}
+		_defaultShadowMaterial = new Material({
+			debugLabel: "Default Shadow Material",
+			vertexShaderSrc: getVertexShader(),
+			vertexShaderEntryFn: VERTEX_SHADER_DEFAULT_ENTRY_FN,
+			// primitive: {
+			// 	cullMode: "back",
+			// },
+		});
+
+		return _defaultShadowMaterial;
 	},
 };
 

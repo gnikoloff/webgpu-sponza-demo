@@ -6,15 +6,12 @@ export interface IMaterial {
 	vertexShaderSrc: string;
 	vertexShaderEntryFn: string;
 	vertexBuffers?: GPUVertexBufferLayout[];
-	fragmentShaderSrc: string;
-	fragmentShaderEntryFn: string;
+	fragmentShaderSrc?: string;
+	fragmentShaderEntryFn?: string;
 	bindGroupLayouts?: GPUBindGroupLayout[];
-	targets: GPUColorTargetState[];
-	depthStencilFormat?: GPUTextureFormat;
-	hasDepthStencilState?: boolean;
-	depthWriteEnabled?: boolean;
-	depthCompareFn?: GPUCompareFunction;
-	topology?: GPUPrimitiveTopology;
+	targets?: GPUColorTargetState[];
+	depthStencilState?: GPUDepthStencilState;
+	primitive?: GPUPrimitiveState;
 	debugLabel?: string;
 }
 
@@ -32,17 +29,19 @@ export default class Material {
 			PipelineStates.defaultModelBindGroupLayout,
 		],
 		targets = [],
-		depthStencilFormat = Renderer.depthStencilFormat,
-		hasDepthStencilState = true,
-		depthWriteEnabled = true,
-		depthCompareFn = "less",
-		topology = "triangle-list",
+		depthStencilState = {
+			format: "depth32float",
+			depthWriteEnabled: true,
+			depthCompare: "less",
+		},
+		primitive = {
+			cullMode: "back",
+			topology: "triangle-list",
+		},
 		debugLabel,
 	}: IMaterial) {
 		const vertexShaderModule =
 			PipelineStates.createShaderModule(vertexShaderSrc);
-		const fragmentShaderModule =
-			PipelineStates.createShaderModule(fragmentShaderSrc);
 
 		const descriptor: GPURenderPipelineDescriptor = {
 			label: debugLabel,
@@ -54,34 +53,25 @@ export default class Material {
 				entryPoint: vertexShaderEntryFn,
 				buffers: vertexBuffers,
 			},
-			fragment: {
+		};
+
+		if (fragmentShaderEntryFn && fragmentShaderSrc && targets.length) {
+			const fragmentShaderModule =
+				PipelineStates.createShaderModule(fragmentShaderSrc);
+
+			descriptor.fragment = {
 				module: fragmentShaderModule,
 				entryPoint: fragmentShaderEntryFn,
 				targets,
-			},
-			primitive: {
-				topology,
-				cullMode: "back",
-			},
-		};
+			};
+		}
 
-		if (hasDepthStencilState) {
-			const stencilDescriptor: GPUStencilFaceState = {
-				compare: "always",
-				failOp: "keep",
-				depthFailOp: "keep",
-				passOp: "replace",
-			};
-			const depthStencilState: GPUDepthStencilState = {
-				format: depthStencilFormat,
-				depthWriteEnabled,
-				depthCompare: depthCompareFn,
-				stencilReadMask: 0x0,
-				stencilWriteMask: 0xff,
-				stencilBack: stencilDescriptor,
-				stencilFront: stencilDescriptor,
-			};
+		if (depthStencilState) {
 			descriptor.depthStencil = depthStencilState;
+		}
+
+		if (primitive) {
+			descriptor.primitive = primitive;
 		}
 
 		this.renderPSO = PipelineStates.createRenderPipeline(descriptor);

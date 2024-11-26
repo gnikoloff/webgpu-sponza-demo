@@ -1,4 +1,4 @@
-import { mat4, vec3 } from "wgpu-matrix";
+import { Vec4, mat4, vec3, vec4 } from "wgpu-matrix";
 import {
 	StructuredView,
 	makeShaderDataDefinitions,
@@ -27,10 +27,13 @@ const HAMILTON_SEQUENCE = [
 ];
 
 export default class Camera {
-	private static readonly UP_VECTOR = vec3.fromValues(0, 1, 0);
+	public static readonly UP_VECTOR = vec3.fromValues(0, 1, 0);
 
 	public position = vec3.fromValues(0, 0, 0);
 	public lookAt = vec3.fromValues(0, 0, 0);
+
+	public near: number;
+	public far: number;
 
 	public projectionMatrix = mat4.create();
 	public viewMatrix = mat4.create();
@@ -112,6 +115,29 @@ export default class Camera {
 
 	public get z(): number {
 		return this.position[2];
+	}
+
+	public get frustumCornersWorldSpace(): Vec4[] {
+		const inv = this.inverseProjectionViewMatrix;
+		let frustumCorners: Vec4[] = [];
+
+		for (let x = 0; x < 2; x++) {
+			for (let y = 0; y < 2; y++) {
+				for (let z = 0; z < 2; z++) {
+					const px = 2 * x - 1;
+					const py = 2 * y - 1;
+					const pz = z;
+					const pw = 1;
+					const pt = vec4.create(px, py, pz, pw);
+					vec4.transformMat4(pt, inv, pt);
+					pt[0] /= pt[3];
+					pt[1] /= pt[3];
+					pt[2] /= pt[3];
+					frustumCorners.push(pt);
+				}
+			}
+		}
+		return frustumCorners;
 	}
 
 	public setPosition(x: number, y: number, z: number) {

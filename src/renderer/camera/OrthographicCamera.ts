@@ -2,12 +2,10 @@ import { mat4 } from "wgpu-matrix";
 import Camera from "./Camera";
 
 export default class OrthographicCamera extends Camera {
-	left: number;
-	right: number;
-	bottom: number;
-	top: number;
-	near: number;
-	far: number;
+	public left: number;
+	public right: number;
+	public bottom: number;
+	public top: number;
 
 	constructor(
 		left: number,

@@ -1,4 +1,3 @@
-import { mat4 } from "wgpu-matrix";
 import PipelineStates from "../../renderer/core/PipelineStates";
 import { VertexDescriptor } from "../../renderer/core/VertexDescriptor";
 import RenderPass from "../../renderer/core/RenderPass";
@@ -23,6 +22,7 @@ import {
 import PointLight from "../../renderer/lighting/PointLight";
 import DirectionalLight from "../../renderer/lighting/DirectionalLight";
 import TextureController from "../../renderer/texture/TextureController";
+import ShadowPass from "./ShadowPass";
 
 export default class GBufferIntegratePass extends RenderPass {
 	public outTexture: GPUTexture;
@@ -33,16 +33,21 @@ export default class GBufferIntegratePass extends RenderPass {
 	private pointLightMaskPSO: GPURenderPipeline;
 
 	private gbufferTexturesBindGroup: GPUBindGroup;
-	private gbufferTexturesBindGroupLayout: GPUBindGroupLayout;
+	private gbufferCommonBindGroupLayout: GPUBindGroupLayout;
 
 	private lightMaskBindGroup: GPUBindGroup;
 	private lightsMaskBindGroupLayout: GPUBindGroupLayout;
+
+	private dirLightShadowBindGroup: GPUBindGroup;
+	private dirLightShadowBindGroupLayout: GPUBindGroupLayout;
 
 	private dirLights: DirectionalLight[] = [];
 	private pointLights: PointLight[] = [];
 
 	private lightsBuffer!: GPUBuffer;
 	private debugLightsBuffer: GPUBuffer;
+
+	private shadowMapSampler: GPUSampler;
 
 	private _debugPointLights = false;
 	public get debugPointLights(): boolean {
@@ -59,26 +64,49 @@ export default class GBufferIntegratePass extends RenderPass {
 		this._debugPointLights = v;
 	}
 
+	private _debugShadowCascadeIndex = false;
+	public get debugShadowCascadeIndex(): boolean {
+		return this._debugShadowCascadeIndex;
+	}
+	public set debugShadowCascadeIndex(v: boolean) {
+		if (v !== this.debugShadowCascadeIndex) {
+			Renderer.device.queue.writeBuffer(
+				this.debugLightsBuffer,
+				Float32Array.BYTES_PER_ELEMENT,
+				new Float32Array([v ? 1 : 0]),
+			);
+		}
+		this._debugShadowCascadeIndex = v;
+	}
+
 	constructor(
 		private normalReflectanceTextureView: GPUTextureView,
 		private colorTextureView: GPUTextureView,
 		private depthTextureView: GPUTextureView,
 		private depthStencilTextureView: GPUTextureView,
-		private stencilTextureView: GPUTextureView,
+		private shadowDepthTextureView: GPUTextureView,
+		private shadowCascadesBuffer: GPUBuffer,
 	) {
 		super();
+
+		this.shadowMapSampler = Renderer.device.createSampler({
+			addressModeU: "clamp-to-edge",
+			addressModeV: "clamp-to-edge",
+			minFilter: "nearest",
+			magFilter: "nearest",
+		});
 
 		const dirLightVertexShaderModule = PipelineStates.createShaderModule(
 			FULLSCREEN_TRIANGLE_VERTEX_SHADER_SRC,
 		);
 		const gbufferDirLightingShaderModule = PipelineStates.createShaderModule(
-			getGBufferFragShader(0),
+			getGBufferFragShader(true, ShadowPass.TEXTURE_SIZE, 0),
 		);
 		const gbufferPointLightingShaderModule = PipelineStates.createShaderModule(
-			getGBufferFragShader(1),
+			getGBufferFragShader(false, ShadowPass.TEXTURE_SIZE, 1),
 		);
 
-		const gbufferTexturesBindGroupLayoutEntries: GPUBindGroupLayoutEntry[] = [
+		const gbufferCommonBindGroupLayoutEntries: GPUBindGroupLayoutEntry[] = [
 			{
 				binding: 0,
 				visibility: GPUShaderStage.FRAGMENT,
@@ -129,12 +157,40 @@ export default class GBufferIntegratePass extends RenderPass {
 			},
 		];
 
-		this.gbufferTexturesBindGroupLayout = Renderer.device.createBindGroupLayout(
+		this.gbufferCommonBindGroupLayout = Renderer.device.createBindGroupLayout({
+			label: "GBuffer Textures Bind Group",
+			entries: gbufferCommonBindGroupLayoutEntries,
+		});
+
+		const dirLightShadowBindGroupLayoutEntries: GPUBindGroupLayoutEntry[] = [
 			{
-				label: "GBuffer Textures Bind Group",
-				entries: gbufferTexturesBindGroupLayoutEntries,
+				binding: 0,
+				visibility: GPUShaderStage.FRAGMENT,
+				buffer: {
+					type: "read-only-storage",
+				},
 			},
-		);
+			{
+				binding: 1,
+				visibility: GPUShaderStage.FRAGMENT,
+				sampler: {
+					type: "filtering",
+				},
+			},
+			{
+				binding: 2,
+				visibility: GPUShaderStage.FRAGMENT,
+				texture: {
+					sampleType: "depth",
+					viewDimension: "2d-array",
+				},
+			},
+		];
+
+		this.dirLightShadowBindGroupLayout = Renderer.device.createBindGroupLayout({
+			label: "Direcional Light Shadow Bind Group Layout",
+			entries: dirLightShadowBindGroupLayoutEntries,
+		});
 
 		const lightsMaskBindGroupLayoutEntries: GPUBindGroupLayoutEntry[] = [
 			{
@@ -158,9 +214,17 @@ export default class GBufferIntegratePass extends RenderPass {
 			entries: lightsMaskBindGroupLayoutEntries,
 		});
 
-		const lightRenderPSOLayout = Renderer.device.createPipelineLayout({
+		const pointLightRenderPSOLayout = Renderer.device.createPipelineLayout({
 			label: "Render Lights PSO Layout",
-			bindGroupLayouts: [this.gbufferTexturesBindGroupLayout],
+			bindGroupLayouts: [this.gbufferCommonBindGroupLayout],
+		});
+
+		const dirLightRenderPSOLayout = Renderer.device.createPipelineLayout({
+			label: "Dir Light PSO Layout",
+			bindGroupLayouts: [
+				this.gbufferCommonBindGroupLayout,
+				this.dirLightShadowBindGroupLayout,
+			],
 		});
 
 		const lightMaskPSOLayout = Renderer.device.createPipelineLayout({
@@ -186,15 +250,9 @@ export default class GBufferIntegratePass extends RenderPass {
 			},
 		];
 
-		const dirLightRenderStencilState: GPUStencilFaceState = {
-			compare: "equal",
-			failOp: "keep",
-			depthFailOp: "keep",
-			passOp: "keep",
-		};
 		const dirLightRenderPSODescriptor: GPURenderPipelineDescriptor = {
 			label: "Directional Light Render PSO",
-			layout: lightRenderPSOLayout,
+			layout: dirLightRenderPSOLayout,
 			vertex: {
 				module: dirLightVertexShaderModule,
 				entryPoint: FULLSCREEN_TRIANGLE_VERTEX_SHADER_ENTRY_NAME,
@@ -225,7 +283,7 @@ export default class GBufferIntegratePass extends RenderPass {
 		};
 		const pointLightRenderPSODescriptor: GPURenderPipelineDescriptor = {
 			label: "Point Light Render PSO",
-			layout: lightRenderPSOLayout,
+			layout: pointLightRenderPSOLayout,
 			vertex: {
 				module: pointLightRenderVertexShaderModule,
 				entryPoint: POINT_LIGHT_VERTEX_SHADER_ENTRY_NAME,
@@ -301,13 +359,13 @@ export default class GBufferIntegratePass extends RenderPass {
 
 		this.debugLightsBuffer = Renderer.device.createBuffer({
 			label: "Debug Lights GPUBuffer",
-			size: 1 * Float32Array.BYTES_PER_ELEMENT,
+			size: 4 * Float32Array.BYTES_PER_ELEMENT,
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 			mappedAtCreation: true,
 		});
 
 		new Float32Array(this.debugLightsBuffer.getMappedRange()).set(
-			new Float32Array([0]),
+			new Float32Array([0, 0]),
 		);
 		this.debugLightsBuffer.unmap();
 	}
@@ -383,7 +441,7 @@ export default class GBufferIntegratePass extends RenderPass {
 		];
 
 		this.gbufferTexturesBindGroup = Renderer.device.createBindGroup({
-			layout: this.gbufferTexturesBindGroupLayout,
+			layout: this.gbufferCommonBindGroupLayout,
 			entries: gbufferTexturesBindGroupEntries,
 		});
 
@@ -405,6 +463,28 @@ export default class GBufferIntegratePass extends RenderPass {
 		this.lightMaskBindGroup = Renderer.device.createBindGroup({
 			layout: this.lightsMaskBindGroupLayout,
 			entries: lightsMaskBindGroupEntries,
+		});
+
+		const dirLightShadowBindGroupEntries: GPUBindGroupEntry[] = [
+			{
+				binding: 0,
+				resource: {
+					buffer: this.shadowCascadesBuffer,
+				},
+			},
+			{
+				binding: 1,
+				resource: this.shadowMapSampler,
+			},
+			{
+				binding: 2,
+				resource: this.shadowDepthTextureView,
+			},
+		];
+
+		this.dirLightShadowBindGroup = Renderer.device.createBindGroup({
+			layout: this.dirLightShadowBindGroupLayout,
+			entries: dirLightShadowBindGroupEntries,
 		});
 	}
 
@@ -497,6 +577,26 @@ export default class GBufferIntegratePass extends RenderPass {
 	}
 
 	public render(commandEncoder: GPUCommandEncoder): void {
+		let lightIdx = 0;
+		const lightStructByteSize =
+			this.dirLights[0].lightsStorageView.arrayBuffer.byteLength;
+		for (let i = 0; i < this.dirLights.length; i++) {
+			Renderer.device.queue.writeBuffer(
+				this.lightsBuffer,
+				lightIdx * lightStructByteSize,
+				this.dirLights[i].lightsStorageView.arrayBuffer,
+			);
+			lightIdx++;
+		}
+		for (let i = 0; i < this.pointLights.length; i++) {
+			Renderer.device.queue.writeBuffer(
+				this.lightsBuffer,
+				lightIdx * lightStructByteSize,
+				this.pointLights[i].lightsStorageView.arrayBuffer,
+			);
+			lightIdx++;
+		}
+
 		// Mask Point Lights
 		const lightMaskPassDescriptor = this.createLightMaskPassDescriptor();
 		const lightMaskEncoder = commandEncoder.beginRenderPass(
@@ -525,6 +625,12 @@ export default class GBufferIntegratePass extends RenderPass {
 		const renderPassEncoder =
 			commandEncoder.beginRenderPass(renderPassDescriptor);
 
+		// Directional Lights
+		renderPassEncoder.setPipeline(this.dirLightPSO);
+		renderPassEncoder.setBindGroup(0, this.gbufferTexturesBindGroup);
+		renderPassEncoder.setBindGroup(1, this.dirLightShadowBindGroup);
+		renderPassEncoder.draw(3);
+
 		// Render Point Lights
 		renderPassEncoder.setPipeline(this.pointLightRenderPSO);
 		// renderPassEncoder.setStencilReference(128);
@@ -542,11 +648,6 @@ export default class GBufferIntegratePass extends RenderPass {
 			GeometryCache.pointLightSphereGeometry.vertexCount,
 			this.pointLights.length,
 		);
-
-		// Directional Lights
-		renderPassEncoder.setPipeline(this.dirLightPSO);
-		renderPassEncoder.setBindGroup(0, this.gbufferTexturesBindGroup);
-		renderPassEncoder.draw(3);
 
 		renderPassEncoder.end();
 	}

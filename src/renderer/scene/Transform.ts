@@ -1,18 +1,19 @@
-import { mat3, mat4, quat, vec3 } from "wgpu-matrix";
+import { Vec3, mat3, mat4, quat, vec3 } from "wgpu-matrix";
 import { MAT4x4_IDENTITY_MATRIX, QUATERNION_COMP_ORDER } from "../utils/math";
+import { RenderPassType } from "../core/RenderPass";
 
 export default class Transform {
 	private _position = vec3.fromValues(0, 0, 0);
 	private _rotation = vec3.fromValues(0, 0, 0);
 	private _scale = vec3.fromValues(1, 1, 1);
-	private _worldPosition: Float32Array;
+	private _worldPosition = vec3.create();
 
 	private translateMatrix = mat4.identity();
 	private scaleMatrix = mat4.identity();
 	private rotationMatrix = mat4.identity();
 	private quaterion = quat.create();
 	private cachedMatrix = mat4.create();
-	private worldMatrix = mat4.create();
+	private worldMatrix = mat4.identity();
 
 	protected normalMatrix = mat3.create();
 
@@ -21,9 +22,17 @@ export default class Transform {
 	public id = self.crypto.randomUUID();
 	public label = "Object";
 
-	public visible = true;
 	public parent?: Transform;
 	public children: Transform[] = [];
+
+	protected _visible = true;
+	public get visible(): boolean {
+		return this._visible;
+	}
+	public set visible(v: boolean) {
+		this.onVisibilityChange(v);
+		this._visible = v;
+	}
 
 	public get modelMatrix(): Float32Array {
 		return this.worldMatrix;
@@ -66,6 +75,10 @@ export default class Transform {
 		return true;
 	}
 
+	public onVisibilityChange(v: boolean) {
+		// ...
+	}
+
 	public addChild(child: Transform) {
 		child.parent = this;
 		this.children.push(child);
@@ -101,12 +114,17 @@ export default class Transform {
 		if (!this.visible) {
 			return;
 		}
+
 		this.preRender(renderEncoder);
 		this.onRender(renderEncoder);
 		this.postRender(renderEncoder);
 	}
 
-	public getWorldPosition(): Float32Array {
+	public get worldPosition(): Vec3 {
+		return this.getWorldPosition();
+	}
+
+	public getWorldPosition(): Vec3 {
 		this._worldPosition[0] = this.worldMatrix[12];
 		this._worldPosition[1] = this.worldMatrix[13];
 		this._worldPosition[2] = this.worldMatrix[14];

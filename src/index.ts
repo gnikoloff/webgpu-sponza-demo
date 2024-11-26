@@ -6,31 +6,45 @@ const $canvas = document.getElementById("c") as HTMLCanvasElement;
 const renderer = await Renderer.initialize($canvas);
 
 const GUI_PARAMS = {
-	"Enable Anim": true,
+	"Play Animation": true,
 	"Enable TAA": true,
-	"Debug G-Buffer": true,
-	"Debug Point Lights": true,
+	"Debug G-Buffer": false,
+	"Debug Shadow Map": false,
+	"Debug Point Lights Mask": false,
+	"Debug Shadow Cascade Index": false,
 };
 
-renderer.enableAnimation = GUI_PARAMS["Enable Anim"];
-renderer.enableTAA = GUI_PARAMS["Enable TAA"];
-renderer.debugGBuffer = GUI_PARAMS["Debug G-Buffer"];
+const gui = new dat.GUI({ width: 350 });
+const shadowFolder = gui.addFolder("Shadow");
+shadowFolder.open();
+shadowFolder.add(GUI_PARAMS, "Debug Shadow Map").onChange((v: boolean) => {
+	renderer.debugShadowMap = v;
+});
+shadowFolder
+	.add(GUI_PARAMS, "Debug Shadow Cascade Index")
+	.onChange((v: boolean) => {
+		renderer.debugShadowCascadeIndex = v;
+	});
 
-renderer.debugPointLights = GUI_PARAMS["Debug Point Lights"];
+const deferredRendererFolder = gui.addFolder("Deferred Renderer");
+deferredRendererFolder.open();
 
-const gui = new dat.GUI();
+deferredRendererFolder
+	.add(GUI_PARAMS, "Debug G-Buffer")
+	.onChange((v: boolean) => {
+		renderer.debugGBuffer = v;
+	});
+deferredRendererFolder
+	.add(GUI_PARAMS, "Debug Point Lights Mask")
+	.onChange((v: boolean) => {
+		renderer.debugPointLights = v;
+	});
 
-gui.add(GUI_PARAMS, "Enable Anim").onChange((v: boolean) => {
+gui.add(GUI_PARAMS, "Play Animation").onChange((v: boolean) => {
 	renderer.enableAnimation = v;
 });
 gui.add(GUI_PARAMS, "Enable TAA").onChange((v: boolean) => {
 	renderer.enableTAA = v;
-});
-gui.add(GUI_PARAMS, "Debug G-Buffer").onChange((v: boolean) => {
-	renderer.debugGBuffer = v;
-});
-gui.add(GUI_PARAMS, "Debug Point Lights").onChange((v: boolean) => {
-	renderer.debugPointLights = v;
 });
 
 let oldTimeMs = 0;
@@ -56,4 +70,10 @@ function resize() {
 	$canvas.style.setProperty("height", `${h}px`);
 
 	renderer.resize(w, h);
+
+	renderer.enableAnimation = GUI_PARAMS["Play Animation"];
+	renderer.enableTAA = GUI_PARAMS["Enable TAA"];
+	renderer.debugGBuffer = GUI_PARAMS["Debug G-Buffer"];
+	renderer.debugShadowMap = GUI_PARAMS["Debug Shadow Map"];
+	renderer.debugPointLights = GUI_PARAMS["Debug Point Lights Mask"];
 }

@@ -1,6 +1,6 @@
 import { wgsl } from "wgsl-preprocessor/wgsl-preprocessor.js";
 import { BIND_GROUP_LOCATIONS } from "../constants";
-import { TextureDebugMeshType } from "../meshes/debug/TextureDebugMesh";
+import { TextureDebugMeshType } from "../debug/TextureDebugMesh";
 import { SHADER_CHUNKS } from "../../renderer/shader/chunks";
 
 export const FRAGMENT_SHADER_DEBUG_TEX_COORDS_ENTRY_FN =
@@ -53,7 +53,11 @@ export const getDebugFragmentShader = (
 
   @group(2) @binding(0) var mySampler: sampler;
 
-  #if ${debugTexType === TextureDebugMeshType.Depth}
+  #if ${
+		debugTexType === TextureDebugMeshType.Depth ||
+		debugTexType === TextureDebugMeshType.ShadowDepthCascade0 ||
+		debugTexType === TextureDebugMeshType.ShadowDepthCascade1
+	}
     @group(2) @binding(1) var myTexture: texture_depth_2d;
   #else
     @group(2) @binding(1) var myTexture: texture_2d<f32>;
@@ -69,7 +73,7 @@ export const getDebugFragmentShader = (
     #elif ${debugTexType === TextureDebugMeshType.Reflectance}
     color = vec4f(textureSample(myTexture, mySampler, uv).a, 0.0, 0.0, 1.0);
     #elif ${debugTexType === TextureDebugMeshType.Depth}
-    var depth = textureSample(myTexture, mySampler, uv);
+    let depth = textureSample(myTexture, mySampler, uv);
 
     let near: f32 = 0.1; // Example near plane
     let far: f32 = 10.0; // Example far plane
@@ -79,9 +83,24 @@ export const getDebugFragmentShader = (
 
     // Normalize the linear depth to [0, 1] (NDC space)
     let depth_ndc = (depth_linear - near) / (far - near);
-
-
     color = vec4f(vec3f(depth_ndc), 1);
+
+    #elif ${
+			debugTexType === TextureDebugMeshType.ShadowDepthCascade0 ||
+			debugTexType === TextureDebugMeshType.ShadowDepthCascade1
+		}
+    let depth = textureSample(myTexture, mySampler, uv);
+
+    let near: f32 = 0.1; // Example near plane
+    let far: f32 = 100.0; // Example far plane
+
+    // Linearize the depth (from clip space depth to linear depth)
+    let depth_linear = near * far / (far - depth * (far - near));
+
+    // Normalize the linear depth to [0, 1] (NDC space)
+    let depth_ndc = (depth_linear - near) / (far - near);
+    color = vec4f(vec3f(depth_ndc), 1);
+
     #elif ${debugTexType === TextureDebugMeshType.Velocity}
     color = vec4f(textureSample(myTexture, mySampler, uv).rg * 100, 0, 1);
     #else

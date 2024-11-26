@@ -12,7 +12,7 @@ import PipelineStates from "../renderer/core/PipelineStates";
 import OrthographicCamera from "../renderer/camera/OrthographicCamera";
 import TextureDebugMesh, {
 	TextureDebugMeshType,
-} from "./meshes/debug/TextureDebugMesh";
+} from "./debug/TextureDebugMesh";
 import GBufferRenderPass from "./render-passes/GBufferRenderPass";
 import GBufferIntegratePass from "./render-passes/GBufferIntegratePass";
 import GroundContainer from "./meshes/ground/GroundContainer";
@@ -25,12 +25,18 @@ import TAAResolvePass from "./render-passes/TAAResolvePass";
 import PointLight from "../renderer/lighting/PointLight";
 import Light from "../renderer/lighting/Light";
 import DirectionalLight from "../renderer/lighting/DirectionalLight";
+import { RenderPassType } from "../renderer/core/RenderPass";
+import ShadowPass from "./render-passes/ShadowPass";
+import TextureDebugContainer from "./debug/TextureDebugContainer";
 
 export default class Renderer {
 	public static $canvas: HTMLCanvasElement;
 	public static canvasContext: GPUCanvasContext;
 	public static device: GPUDevice;
 	public static elapsedTimeMs = 0;
+
+	public static activeRenderPass?: RenderPassType;
+
 	private static prevTimeMs = 0;
 
 	public static pixelFormat: GPUTextureFormat;
@@ -44,18 +50,19 @@ export default class Renderer {
 	private rootTransform = new Transform();
 	private ground: GroundContainer;
 	private cube: Drawable;
+	private cube1: Drawable;
 	private sphere: Drawable;
 
-	private debugNormalTextureMesh?: TextureDebugMesh;
-	private debugReflectanceTextureMesh?: TextureDebugMesh;
-	private debugColorTextureMesh?: TextureDebugMesh;
-	private debugDepthTextureMesh?: TextureDebugMesh;
-	private debugVelocityTextureMesh?: TextureDebugMesh;
+	private sceneDirectionalLight = new DirectionalLight();
+
+	private gBufferDebugTexturesContainer?: TextureDebugContainer;
+	private shadowMapDebugTexturesContainer?: TextureDebugContainer;
 
 	private gbufferRenderPass: GBufferRenderPass;
-	private gbufferIntegratePass: GBufferIntegratePass;
+	private gbufferIntegratePass?: GBufferIntegratePass;
 	private reflectionComputePass: ReflectionComputePass;
 	private taaResolvePass: TAAResolvePass;
+	private shadowPass: ShadowPass;
 
 	private lights: Light[];
 
@@ -70,7 +77,49 @@ export default class Renderer {
 		this.mainCamera.shouldJitter = v;
 	}
 
-	public debugGBuffer = false;
+	private _debugGBuffer = false;
+	public get debugGBuffer(): boolean {
+		return this._debugGBuffer;
+	}
+	public set debugGBuffer(v: boolean) {
+		this._debugGBuffer = v;
+		if (this.gBufferDebugTexturesContainer) {
+			this.gBufferDebugTexturesContainer.visible = v;
+
+			if (
+				this.shadowMapDebugTexturesContainer &&
+				this.shadowMapDebugTexturesContainer.visible
+			) {
+				this.shadowMapDebugTexturesContainer
+					.setPositionY(v ? 170 : 0)
+					.updateWorldMatrix();
+			}
+		}
+	}
+
+	private _debugShadowMap = false;
+	public get debugShadowMap(): boolean {
+		return this._debugShadowMap;
+	}
+	public set debugShadowMap(v: boolean) {
+		this._debugShadowMap = v;
+		if (this.shadowMapDebugTexturesContainer) {
+			this.shadowMapDebugTexturesContainer.visible = v;
+
+			const offsetY = this.debugGBuffer ? 170 : 0;
+
+			this.shadowMapDebugTexturesContainer
+				.setPositionY(offsetY)
+				.updateWorldMatrix();
+		}
+	}
+
+	public get debugShadowCascadeIndex(): boolean {
+		return this.gbufferIntegratePass.debugShadowCascadeIndex;
+	}
+	public set debugShadowCascadeIndex(v: boolean) {
+		this.gbufferIntegratePass.debugShadowCascadeIndex = v;
+	}
 
 	public debugPointLights = false;
 
@@ -122,7 +171,7 @@ export default class Renderer {
 			MAIN_CAMERA_FAR,
 		);
 		this.mainCamera.shouldJitter = true;
-		this.mainCamera.setPosition(0, 2, 4);
+		this.mainCamera.setPosition(0, 5, 10);
 		this.mainCamera.setLookAt(0, 0, 0);
 		this.mainCamera.updateViewMatrix();
 		this.mainCameraCtrl = new CameraController(
@@ -163,13 +212,41 @@ export default class Renderer {
 		this.rootTransform.addChild(this.ground);
 
 		this.cube = new Drawable(new CubeGeometry(1, 1, 1));
-		this.cube.material = MaterialCache.defaultDeferredMaterial;
+		this.cube.setMaterial(
+			MaterialCache.defaultDeferredMaterial,
+			RenderPassType.Deferred,
+		);
+		this.cube.setMaterial(
+			MaterialCache.defaultShadowMaterial,
+			RenderPassType.Shadow,
+		);
 		this.cube.materialProps.isReflective = false;
 		this.cube.materialProps.setColor(0.2, 0.2, 0.2);
 
+		this.cube1 = new Drawable(new CubeGeometry(1, 1, 1));
+		this.cube1.setMaterial(
+			MaterialCache.defaultDeferredMaterial,
+			RenderPassType.Deferred,
+		);
+		this.cube1.setMaterial(
+			MaterialCache.defaultShadowMaterial,
+			RenderPassType.Shadow,
+		);
+		this.cube1.materialProps.isReflective = false;
+		this.cube1.materialProps.setColor(0.1, 0.8, 0.2);
+		this.cube1.setPosition(-5, 1, -6);
+		this.cube1.updateWorldMatrix();
+
 		this.sphere = new Drawable(new SphereGeometry());
-		this.sphere.material = MaterialCache.defaultDeferredMaterial;
-		this.sphere.materialProps.setColor(0.3, 0.3, 0.3);
+		this.sphere.setMaterial(
+			MaterialCache.defaultDeferredMaterial,
+			RenderPassType.Deferred,
+		);
+		this.sphere.setMaterial(
+			MaterialCache.defaultShadowMaterial,
+			RenderPassType.Shadow,
+		);
+		this.sphere.materialProps.setColor(0.8, 0.3, 0.3);
 		// this.sphere.materialProps.isReflective = false;
 		this.sphere
 			.setScale(0.5, 0.5, 0.5)
@@ -178,6 +255,7 @@ export default class Renderer {
 			.updateWorldMatrix();
 
 		this.rootTransform.addChild(this.cube);
+		this.rootTransform.addChild(this.cube1);
 		this.rootTransform.addChild(this.sphere);
 
 		// const pa = new PointLight();
@@ -212,11 +290,14 @@ export default class Renderer {
 		}
 
 		// this.pointLights = [pa, pb, pc, pd];
-		const dirLight = new DirectionalLight();
+		// const dirLight = new DirectionalLight();
 		// dirLight.intensity = ;
-		dirLight.setPosition(2, 2, 2);
-		dirLight.setColor(4, 4, 4);
-		this.lights = [...pointLights, dirLight];
+		this.sceneDirectionalLight.setPosition(2, 2, 2);
+		this.sceneDirectionalLight.setColor(4, 4, 4);
+		this.lights = [...pointLights, this.sceneDirectionalLight];
+
+		this.shadowPass = new ShadowPass(this.sceneDirectionalLight);
+		this.shadowPass.setCamera(this.mainCamera);
 	}
 
 	public resize(w: number, h: number) {
@@ -234,7 +315,8 @@ export default class Renderer {
 				this.gbufferRenderPass.colorTextureView,
 				this.gbufferRenderPass.depthTextureView,
 				this.gbufferRenderPass.depthStencilTextureView,
-				this.gbufferRenderPass.stencilTextureView,
+				this.shadowPass.shadowTextureViewCascadesAll,
+				this.shadowPass.shadowCascadesBuffer,
 			);
 		}
 		this.gbufferIntegratePass.setLights(this.lights);
@@ -254,51 +336,61 @@ export default class Renderer {
 		}
 		this.reflectionComputePass.onResize(w, h);
 
-		this.debugReflectanceTextureMesh = new TextureDebugMesh(
+		const debugReflectanceTextureMesh = new TextureDebugMesh(
 			TextureDebugMeshType.Reflectance,
 			this.gbufferRenderPass.normalReflectanceTextureView,
 		);
 
-		this.debugNormalTextureMesh = new TextureDebugMesh(
+		const debugNormalTextureMesh = new TextureDebugMesh(
 			TextureDebugMeshType.Normal,
 			this.gbufferRenderPass.normalReflectanceTextureView,
 		);
 
-		this.debugColorTextureMesh = new TextureDebugMesh(
+		const debugColorTextureMesh = new TextureDebugMesh(
 			TextureDebugMeshType.Albedo,
 			this.gbufferRenderPass.colorTextureView,
 		);
 
-		this.debugDepthTextureMesh = new TextureDebugMesh(
+		const debugDepthTextureMesh = new TextureDebugMesh(
 			TextureDebugMeshType.Depth,
 			this.gbufferRenderPass.depthTextureView,
 		);
 
-		this.debugVelocityTextureMesh = new TextureDebugMesh(
+		const debugVelocityTextureMesh = new TextureDebugMesh(
 			TextureDebugMeshType.Velocity,
 			this.gbufferRenderPass.velocityTextureView,
 		);
 
-		const debugMeshWidth = w * 0.175;
-		const debugMeshHeight = h * 0.175;
+		this.gBufferDebugTexturesContainer = new TextureDebugContainer([
+			debugNormalTextureMesh,
+			debugReflectanceTextureMesh,
+			debugColorTextureMesh,
+			debugDepthTextureMesh,
+			debugVelocityTextureMesh,
+		]);
 
-		var offsetX = debugMeshWidth * 0.5 + 10;
+		const debugShadowCascade0MapTextureMesh = new TextureDebugMesh(
+			TextureDebugMeshType.ShadowDepthCascade0,
+			this.shadowPass.shadowTextureViewCascade0,
+		);
 
-		const debugMeshes: TextureDebugMesh[] = [
-			this.debugNormalTextureMesh,
-			this.debugReflectanceTextureMesh,
-			this.debugColorTextureMesh,
-			this.debugDepthTextureMesh,
-			this.debugVelocityTextureMesh,
-		];
+		const debugShadowCascade1MapTextureMesh = new TextureDebugMesh(
+			TextureDebugMeshType.ShadowDepthCascade1,
+			this.shadowPass.shadowTextureViewCascade1,
+		);
 
-		for (const debugMesh of debugMeshes) {
-			debugMesh
-				.setPosition(offsetX, debugMeshHeight * 0.5 + 10, 0)
-				.setScale(debugMeshWidth, debugMeshHeight, 1)
-				.updateWorldMatrix();
-			offsetX += debugMeshWidth;
-		}
+		this.shadowMapDebugTexturesContainer = new TextureDebugContainer([
+			debugShadowCascade0MapTextureMesh,
+			debugShadowCascade1MapTextureMesh,
+		]);
+
+		this.gBufferDebugTexturesContainer?.relayout(w, h);
+		this.shadowMapDebugTexturesContainer.relayout(
+			w,
+			h,
+			Math.min(w * 0.175, 230),
+			Math.min(w * 0.175, 230),
+		);
 	}
 
 	public renderFrame(elapsedTime: number) {
@@ -314,20 +406,26 @@ export default class Renderer {
 		this.gbufferIntegratePass.debugPointLights = this.debugPointLights;
 		this.gbufferIntegratePass.setLights(this.lights);
 
+		this.sceneDirectionalLight.setPosition(
+			Math.cos(Renderer.elapsedTimeMs) * 3,
+			2,
+			Math.sin(Renderer.elapsedTimeMs) * 3,
+		);
+
 		this.mainCamera.onFrameStart();
 		this.orthoCamera.onFrameStart();
 
 		if (this.enableAnimation) {
 			this.cube
-				.setPositionY(1)
+				.setPositionY(2)
 				.setScale(2, 2, 2)
 				.setRotationY(Renderer.elapsedTimeMs)
 				.updateWorldMatrix();
 
 			this.sphere
 				.setScale(1, 1, 1)
-				.setPositionX(Math.cos(Renderer.elapsedTimeMs) * 3)
-				.setPositionZ(Math.sin(Renderer.elapsedTimeMs) * 3)
+				.setPositionX(Math.cos(Renderer.elapsedTimeMs) * 2.75)
+				.setPositionZ(Math.sin(Renderer.elapsedTimeMs) * 2.75)
 				.updateWorldMatrix();
 		}
 
@@ -335,6 +433,7 @@ export default class Renderer {
 			label: "Render Loop Command Encoder",
 		});
 
+		this.shadowPass.render(commandEncoder, this.rootTransform);
 		this.gbufferRenderPass.render(commandEncoder, this.rootTransform);
 		this.gbufferIntegratePass.render(commandEncoder);
 		if (this.enableTAA) {
@@ -348,37 +447,33 @@ export default class Renderer {
 				: this.gbufferIntegratePass.outTextureView,
 		);
 
-		if (this.debugGBuffer) {
-			const hudRenderPassColorAttachments: GPURenderPassColorAttachment[] = [
-				{
-					view: Renderer.canvasContext.getCurrentTexture().createView(),
-					loadOp: "load",
-					storeOp: "store",
-				},
-			];
+		const hudRenderPassColorAttachments: GPURenderPassColorAttachment[] = [
+			{
+				view: Renderer.canvasContext.getCurrentTexture().createView(),
+				loadOp: "load",
+				storeOp: "store",
+			},
+		];
 
-			const hudRenderPassDescriptor: GPURenderPassDescriptor = {
-				colorAttachments: hudRenderPassColorAttachments,
-				depthStencilAttachment: undefined,
-				label: "HUD Render Pass",
-			};
-			const hudRenderEncoder = commandEncoder.beginRenderPass(
-				hudRenderPassDescriptor,
-			);
+		const hudRenderPassDescriptor: GPURenderPassDescriptor = {
+			colorAttachments: hudRenderPassColorAttachments,
+			depthStencilAttachment: undefined,
+			label: "HUD Render Pass",
+		};
+		const hudRenderEncoder = commandEncoder.beginRenderPass(
+			hudRenderPassDescriptor,
+		);
 
-			hudRenderEncoder.setBindGroup(
-				BIND_GROUP_LOCATIONS.Camera,
-				this.orthoCameraBindGroup,
-			);
+		hudRenderEncoder.setBindGroup(
+			BIND_GROUP_LOCATIONS.Camera,
+			this.orthoCameraBindGroup,
+		);
 
-			this.debugNormalTextureMesh?.render(hudRenderEncoder);
-			this.debugColorTextureMesh?.render(hudRenderEncoder);
-			this.debugReflectanceTextureMesh?.render(hudRenderEncoder);
-			this.debugDepthTextureMesh?.render(hudRenderEncoder);
-			this.debugVelocityTextureMesh?.render(hudRenderEncoder);
+		this.gBufferDebugTexturesContainer?.render(hudRenderEncoder);
+		this.shadowMapDebugTexturesContainer.render(hudRenderEncoder);
 
-			hudRenderEncoder.end();
-		}
+		hudRenderEncoder.end();
+
 		device.queue.submit([commandEncoder.finish()]);
 
 		this.mainCamera.onFrameEnd();

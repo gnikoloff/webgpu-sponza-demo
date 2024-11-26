@@ -101,4 +101,13 @@ export const SHADER_CHUNKS = {
 
     `;
 	},
+
+	get ShadowCascade(): string {
+		return /* wgsl */ `
+      struct ShadowCascade {
+        projViewMatrix: mat4x4<f32>,
+        distance: f32,
+      };
+    `;
+	},
 };

@@ -1,5 +1,5 @@
 import Renderer from "../Renderer";
-import RenderPass from "../../renderer/core/RenderPass";
+import RenderPass, { RenderPassType } from "../../renderer/core/RenderPass";
 import Transform from "../../renderer/scene/Transform";
 import { BIND_GROUP_LOCATIONS } from "../constants";
 
@@ -17,6 +17,11 @@ export default class GBufferRenderPass extends RenderPass {
 	public depthStencilTextureView: GPUTextureView;
 	public depthTextureView: GPUTextureView;
 	public stencilTextureView: GPUTextureView;
+
+	constructor() {
+		super();
+		this.type = RenderPassType.Deferred;
+	}
 
 	public override onResize(width: number, height: number): void {
 		if (this.colorTexture) {
@@ -129,7 +134,8 @@ export default class GBufferRenderPass extends RenderPass {
 		commandEncoder: GPUCommandEncoder,
 		scene: Transform,
 	): void {
-		// G-Buffer Render Pass
+		Renderer.activeRenderPass = this.type;
+
 		const renderPassDescriptor = this.createRenderPassDescriptor();
 		const renderPassEncoder =
 			commandEncoder.beginRenderPass(renderPassDescriptor);

@@ -8,7 +8,7 @@ export default class GroundPlane extends Drawable {
 		let geometry = GeometryCache.defaultPlaneGeometry;
 		super(geometry);
 
-		this.material = MaterialCache.defaultDeferredMaterial;
+		this.setMaterial(MaterialCache.defaultDeferredMaterial);
 
 		this.materialProps.isReflective = true;
 		this.materialProps.setColor(0.4, 0.4, 0.4);

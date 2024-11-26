@@ -13,12 +13,13 @@ import Material from "../material/Material";
 import MaterialProps from "../material/MaterialProps";
 import PipelineStates from "../core/PipelineStates";
 import Transform from "./Transform";
+import { RenderPassType } from "../core/RenderPass";
 
 export default class Drawable extends Transform {
 	public static readonly INDEX_FORMAT: GPUIndexFormat = "uint16";
 
 	public geometry: Geometry;
-	public material: Material;
+	// public material: Material;
 	public materialProps = new MaterialProps();
 
 	public firstIndex = 0;
@@ -29,6 +30,12 @@ export default class Drawable extends Transform {
 	private modelBuffer: GPUBuffer;
 	private modelBindGroup: GPUBindGroup;
 	private uploadModelBufferToGPU = true;
+
+	private materials: Map<RenderPassType, Material> = new Map();
+
+	public get material(): Material {
+		return this.materials.get(Renderer.activeRenderPass);
+	}
 
 	private prevFrameModelMatrix = mat4.create();
 
@@ -71,6 +78,16 @@ export default class Drawable extends Transform {
 			layout: PipelineStates.defaultModelBindGroupLayout,
 			entries: modelBindGroupEntries,
 		});
+	}
+
+	public setMaterial(material: Material, forRenderPassType?: RenderPassType) {
+		let renderPassType = forRenderPassType ?? RenderPassType.Deferred;
+		this.materials.set(renderPassType, material);
+	}
+
+	public getMaterial(forRenderPassType?: RenderPassType): Material {
+		let renderPassType = forRenderPassType ?? RenderPassType.Deferred;
+		return this.materials.get(renderPassType);
 	}
 
 	override updateWorldMatrix(): boolean {
@@ -124,5 +141,12 @@ export default class Drawable extends Transform {
 
 		mat4.copy(this.modelMatrix, this.prevFrameModelMatrix);
 		this.uploadModelBufferToGPU = true;
+	}
+
+	override render(renderEncoder: GPURenderPassEncoder): void {
+		if (!this.material) {
+			return;
+		}
+		super.render(renderEncoder);
 	}
 }

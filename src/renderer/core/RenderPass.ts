@@ -4,9 +4,16 @@ import Camera from "../camera/Camera";
 import PipelineStates from "./PipelineStates";
 import Transform from "../scene/Transform";
 
+export enum RenderPassType {
+	Deferred,
+	Shadow,
+}
+
 export default class RenderPass {
 	protected cameraBindGroup?: GPUBindGroup;
 	protected camera?: Camera;
+
+	public type?: RenderPassType;
 
 	constructor() {}
 

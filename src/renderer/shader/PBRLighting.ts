@@ -39,11 +39,12 @@ const PBR_LIGHTING_UTILS_SHADER_CHUNK_SRC = /* wgsl */ `
 
   @must_use
   fn PBRLighting(
-    material: Material,
+    material: ptr<function, Material>,
     instanceId: u32,
     worldPos: vec3f,
     N: vec3f,
     V: vec3f,
+    shadow: f32
   ) -> vec4f {
     let albedo = material.albedo;
     let F0 = mix(vec3f(0.04), albedo, material.metallic);
@@ -117,7 +118,7 @@ const PBR_LIGHTING_UTILS_SHADER_CHUNK_SRC = /* wgsl */ `
     let NdotL = max(dot(N, L), 0.0); 
 
     // add to outgoing radiance Lo
-    Lo += (kD * albedoOverPi + specular) * radiance * NdotL; // * light.opacity;  // note that we already multiplied the BRDF by the Fresnel
+    Lo += (kD * albedoOverPi + specular) * radiance * NdotL * shadow; // * light.opacity;  // note that we already multiplied the BRDF by the Fresnel
   
 
     // half3 ambient = (ambientFactor + ambientIBL) * materialAlbedo * ambientOcclusion;

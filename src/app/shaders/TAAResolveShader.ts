@@ -27,8 +27,12 @@ export const TAA_RESOLVE_FRAGMENT_SHADER_SRC = /*wgsl*/ `
 
 
     let modulationFactor: f32 = 0.9;
-    let color = mix(currColor, history, modulationFactor);
+    var color = vec4f(mix(currColor, history, modulationFactor), 1.0);
 
-    return vec4f(color, 1.0);
+    // color = color / (color + vec4f(vec3f(1.0), 0.0));
+    // // gamma correct
+    // color = pow(color, vec4f(vec3f(1.0/2.2), 1.0)); 
+
+    return color;
   }
 `;
