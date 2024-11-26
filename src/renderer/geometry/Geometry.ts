@@ -8,7 +8,7 @@ export interface CreateBuffersProps {
 
 export default class Geometry {
 	public vertexBuffer: GPUBuffer;
-	public indexBuffer: GPUBuffer;
+	public indexBuffer?: GPUBuffer;
 	public vertexCount = 0;
 
 	protected createBuffers({

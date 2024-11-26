@@ -107,6 +107,8 @@ export default class Drawable extends Transform {
 				normalMatrix: this.normalMatrix,
 				isReflective: this.materialProps.isReflective ? 1 : 0,
 				baseColor: this.materialProps.color,
+				metallic: this.materialProps.metallic,
+				roughness: this.materialProps.roughness,
 			});
 			Renderer.device.queue.writeBuffer(
 				this.modelBuffer,
@@ -116,11 +118,13 @@ export default class Drawable extends Transform {
 			this.uploadModelBufferToGPU = false;
 		}
 
+		if (this.geometry.indexBuffer) {
+			renderEncoder.setIndexBuffer(
+				this.geometry.indexBuffer,
+				Drawable.INDEX_FORMAT,
+			);
+		}
 		renderEncoder.setVertexBuffer(0, this.geometry.vertexBuffer);
-		renderEncoder.setIndexBuffer(
-			this.geometry.indexBuffer,
-			Drawable.INDEX_FORMAT,
-		);
 		renderEncoder.setBindGroup(BIND_GROUP_LOCATIONS.Model, this.modelBindGroup);
 	}
 

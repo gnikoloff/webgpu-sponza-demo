@@ -14,7 +14,12 @@ const GUI_PARAMS = {
 	"Debug Shadow Cascade Index": false,
 };
 
-const gui = new dat.GUI({ width: 350 });
+const gui = new dat.GUI({ width: 243 });
+
+gui.add(GUI_PARAMS, "Play Animation").onChange((v: boolean) => {
+	renderer.enableAnimation = v;
+});
+
 const shadowFolder = gui.addFolder("Shadow");
 shadowFolder.open();
 shadowFolder.add(GUI_PARAMS, "Debug Shadow Map").onChange((v: boolean) => {
@@ -40,10 +45,9 @@ deferredRendererFolder
 		renderer.debugPointLights = v;
 	});
 
-gui.add(GUI_PARAMS, "Play Animation").onChange((v: boolean) => {
-	renderer.enableAnimation = v;
-});
-gui.add(GUI_PARAMS, "Enable TAA").onChange((v: boolean) => {
+const antialiasFolder = gui.addFolder("Anti-Aliasing");
+antialiasFolder.open();
+antialiasFolder.add(GUI_PARAMS, "Enable TAA").onChange((v: boolean) => {
 	renderer.enableTAA = v;
 });
 

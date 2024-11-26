@@ -61,9 +61,9 @@ const CSM_SHADOW_SHADER_CHUNK_SRC = /* wgsl */ `
 
     // calculate bias (based on depth map resolution and slope)
     //  float bias = max(0.05 * (dot(normal, lightDir)), 0.05);
-    let biasModifier = 0.5;
+    let biasModifier = 2.0;
     //
-    var bias = max(0.05 * (1.0 - dot(N, lightDir)), 0.005);
+    var bias = max(0.05 * (1.0 - dot(N, lightDir)), 0.05);
     bias *= 1 / (shadowCascades[layer].distance * biasModifier);
 
     // PCF

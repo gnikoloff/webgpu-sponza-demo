@@ -3,6 +3,7 @@ import { SHADER_CHUNKS } from "../../renderer/shader/chunks";
 
 import PBR_LIGHTING_UTILS_SHADER_CHUNK_SRC from "../../renderer/shader/PBRLighting";
 import CSM_SHADOW_SHADER_CHUNK_SRC from "../../renderer/shader/CSMShadow";
+import NORMAL_ENCODER_SHADER_CHUNK from "../../renderer/shader/NormalEncoder";
 
 export const LIGHT_FRAGMENT_SHADER_ENTRY_NAME = "pointLightFragShader";
 export const POINT_LIGHT_VERTEX_SHADER_ENTRY_NAME = "pointLightVertex";
@@ -64,6 +65,7 @@ export const getGBufferFragShader = (
 
   ${PBR_LIGHTING_UTILS_SHADER_CHUNK_SRC}
   ${CSM_SHADOW_SHADER_CHUNK_SRC}
+  ${NORMAL_ENCODER_SHADER_CHUNK}
 
   struct LightSettings {
     debugLights: f32,
@@ -106,9 +108,18 @@ export const getGBufferFragShader = (
   ) -> @location(0) vec4f {
     let coord = in.position;
     let pixelCoords = vec2i(floor(coord.xy));
-    let N = normalize(textureLoad(normalTexture, pixelCoords, 0).xyz);
+    let encodedN = textureLoad(normalTexture, pixelCoords, 0).rg;
+    let metallic = textureLoad(normalTexture, pixelCoords, 0).b;
+    let roughness = textureLoad(normalTexture, pixelCoords, 0).a;
+    let N = decodeNormal(encodedN);
     let albedo = textureLoad(colorTexture, pixelCoords, 0).xyz;
     let depth = textureLoad(depthTexture, pixelCoords, 0);
+
+    var material = Material();
+    material.albedo = albedo;
+    material.roughness = roughness;
+    material.metallic = metallic;
+    material.ambientOcclusion = 1.0;
 
     let worldPos = calcWorldPos(coord, depth);
 
@@ -120,15 +131,11 @@ export const getGBufferFragShader = (
     let g = select(0.0, 1.0, shadowLayerIdx == 1);
     let b = select(0.0, 1.0, shadowLayerIdx == 2);
     if (debugLightsInfo.debugShadowCascadeLayer == 1) {
-      return vec4f(r, g, b, 1);
+      material.albedo = vec3f(r, g, b);
     }
     #endif
 
-    var material = Material();
-    material.albedo = albedo;
-    material.roughness = 0.6;
-    material.metallic = 0.01;
-    material.ambientOcclusion = 1.0;
+    // return vec4f(N, 1.0);
 
     #if ${isDirLight}
     // TODO: Directional light is expected to be at index 0
@@ -161,6 +168,10 @@ export const getGBufferFragShader = (
     let bayerDitherOffset = textureSample(bayerDitherTexture, bayerDitherSampler, vec2f(coord.xy) / 8).r / 32.0 - (1.0 / 128.0);
 
     color += vec4f(bayerDitherOffset);
+
+    // color = color / (color + vec4f(vec3f(1.0), 0.0));
+    // // gamma correct
+    // color = pow(color, vec4f(vec3f(1.0/2.2), 1.0)); 
 
     #if ${ligthSampleOffset !== 0}
     let debugColor = vec4f(1.0, 0.0, 0.0, 1.0);

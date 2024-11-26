@@ -2,6 +2,8 @@ import { Vec3, vec3 } from "wgpu-matrix";
 
 export default class MaterialProps {
 	public isReflective = true;
+	public metallic = 0.1;
+	public roughness = 0.8;
 
 	private _baseColor = vec3.create();
 

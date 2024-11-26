@@ -31,6 +31,7 @@
 		"vite-plugin-top-level-await": "^1.4.4"
 	},
 	"dependencies": {
+		"@loaders.gl/gltf": "^4.3.3",
 		"dat.gui": "^0.7.9",
 		"webgpu-utils": "^1.9.3",
 		"wgpu-matrix": "^3.3.0",

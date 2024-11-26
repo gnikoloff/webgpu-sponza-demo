@@ -2,6 +2,7 @@ import { wgsl } from "wgsl-preprocessor/wgsl-preprocessor.js";
 import { BIND_GROUP_LOCATIONS } from "../constants";
 import { TextureDebugMeshType } from "../debug/TextureDebugMesh";
 import { SHADER_CHUNKS } from "../../renderer/shader/chunks";
+import NORMAL_ENCODER_SHADER_CHUNK from "../../renderer/shader/NormalEncoder";
 
 export const FRAGMENT_SHADER_DEBUG_TEX_COORDS_ENTRY_FN =
 	"fragmentMainTexCoords";
@@ -15,13 +16,18 @@ ${SHADER_CHUNKS.CameraUniform}
   @group(${BIND_GROUP_LOCATIONS.Camera}) @binding(0) var<uniform> camera: CameraUniform;
   @group(${BIND_GROUP_LOCATIONS.Model}) @binding(0) var<uniform> model: ModelUniform;
 
+  ${NORMAL_ENCODER_SHADER_CHUNK}
+
   @fragment
   fn ${FRAGMENT_SHADER_DEBUG_TEX_COORDS_ENTRY_FN}(in: VertexOutput) -> GBufferOutput  {
     // return vec4<f32>(in.uv, 0.0, 1.0);
     var uv = in.uv;
     var out: GBufferOutput;
-    out.normalReflectance = vec4f(normalize(in.normal), f32(model.isReflective));
-    out.color = vec4f(model.baseColor, 1.0);
+    let encodedNormal = encodeNormal(normalize(in.normal));
+    let metallic = model.metallic;
+    let roughness = model.roughness;
+    out.normalMetallicRoughness = vec4f(encodedNormal, metallic, roughness);
+    out.color = vec4f(model.baseColor, f32(model.isReflective));
 
     var oldPos = in.prevFrameClipPos;
     var newPos = in.currFrameClipPos;
@@ -51,6 +57,8 @@ export const getDebugFragmentShader = (
 ): string => wgsl/* wgsl */ `
   ${SHADER_CHUNKS.VertexOutput}
 
+  ${NORMAL_ENCODER_SHADER_CHUNK}
+
   @group(2) @binding(0) var mySampler: sampler;
 
   #if ${
@@ -69,7 +77,9 @@ export const getDebugFragmentShader = (
     uv.y = 1.0 - uv.y;
     var color: vec4f;
     #if ${debugTexType === TextureDebugMeshType.Normal}
-    color = vec4f(textureSample(myTexture, mySampler, uv).rgb, 1.0);
+    color = vec4f(decodeNormal(textureSample(myTexture, mySampler, uv).rg), 1.0);
+    #elif ${debugTexType === TextureDebugMeshType.MetallicRoughness}
+    color = vec4f(textureSample(myTexture, mySampler, uv).rg, 0.0, 1.0);
     #elif ${debugTexType === TextureDebugMeshType.Reflectance}
     color = vec4f(textureSample(myTexture, mySampler, uv).a, 0.0, 0.0, 1.0);
     #elif ${debugTexType === TextureDebugMeshType.Depth}

@@ -26,8 +26,9 @@ import PointLight from "../renderer/lighting/PointLight";
 import Light from "../renderer/lighting/Light";
 import DirectionalLight from "../renderer/lighting/DirectionalLight";
 import { RenderPassType } from "../renderer/core/RenderPass";
-import ShadowPass from "./render-passes/ShadowPass";
+import DirectionalShadowPass from "./render-passes/DirectionalShadowPass";
 import TextureDebugContainer from "./debug/TextureDebugContainer";
+import GLTFGeometry from "../renderer/geometry/GLTFGeometry";
 
 export default class Renderer {
 	public static $canvas: HTMLCanvasElement;
@@ -62,7 +63,7 @@ export default class Renderer {
 	private gbufferIntegratePass?: GBufferIntegratePass;
 	private reflectionComputePass: ReflectionComputePass;
 	private taaResolvePass: TAAResolvePass;
-	private shadowPass: ShadowPass;
+	private shadowPass: DirectionalShadowPass;
 
 	private lights: Light[];
 
@@ -164,6 +165,8 @@ export default class Renderer {
 	};
 
 	constructor() {
+		const buda = new GLTFGeometry("/public/buda_2.gltf");
+
 		this.mainCamera = new PerspectiveCamera(
 			45,
 			1,
@@ -234,7 +237,7 @@ export default class Renderer {
 		);
 		this.cube1.materialProps.isReflective = false;
 		this.cube1.materialProps.setColor(0.1, 0.8, 0.2);
-		this.cube1.setPosition(-5, 1, -6);
+		this.cube1.setPosition(-5, 1, -6).setScale(5, 0.1, 0.1);
 		this.cube1.updateWorldMatrix();
 
 		this.sphere = new Drawable(new SphereGeometry());
@@ -247,7 +250,8 @@ export default class Renderer {
 			RenderPassType.Shadow,
 		);
 		this.sphere.materialProps.setColor(0.8, 0.3, 0.3);
-		// this.sphere.materialProps.isReflective = false;
+		this.sphere.materialProps.metallic = 1;
+		this.sphere.materialProps.roughness = 0.96;
 		this.sphere
 			.setScale(0.5, 0.5, 0.5)
 			.setPositionX(2)
@@ -280,11 +284,11 @@ export default class Renderer {
 			const r = i * radiusStep;
 			p.setPosition(
 				Math.cos(i * pointLightsCircleStep) * 4,
-				0.2,
+				0.3,
 				Math.sin(i * pointLightsCircleStep) * 4,
 			);
-			p.intensity = 3;
-			p.radius = 1;
+			p.intensity = 2;
+			p.radius = 0.8;
 			p.setColor(10, 10, 10);
 			pointLights.push(p);
 		}
@@ -292,11 +296,12 @@ export default class Renderer {
 		// this.pointLights = [pa, pb, pc, pd];
 		// const dirLight = new DirectionalLight();
 		// dirLight.intensity = ;
-		this.sceneDirectionalLight.setPosition(2, 2, 2);
-		this.sceneDirectionalLight.setColor(4, 4, 4);
+		this.sceneDirectionalLight.setPosition(2, 1, 2);
+		this.sceneDirectionalLight.setColor(2, 2, 2);
+		this.sceneDirectionalLight.intensity = 1;
 		this.lights = [...pointLights, this.sceneDirectionalLight];
 
-		this.shadowPass = new ShadowPass(this.sceneDirectionalLight);
+		this.shadowPass = new DirectionalShadowPass(this.sceneDirectionalLight);
 		this.shadowPass.setCamera(this.mainCamera);
 	}
 
@@ -311,8 +316,8 @@ export default class Renderer {
 		this.gbufferRenderPass.onResize(w, h);
 		if (!this.gbufferIntegratePass) {
 			this.gbufferIntegratePass = new GBufferIntegratePass(
-				this.gbufferRenderPass.normalReflectanceTextureView,
-				this.gbufferRenderPass.colorTextureView,
+				this.gbufferRenderPass.normalMetallicRoughnessTextureView,
+				this.gbufferRenderPass.colorReflectanceTextureView,
 				this.gbufferRenderPass.depthTextureView,
 				this.gbufferRenderPass.depthStencilTextureView,
 				this.shadowPass.shadowTextureViewCascadesAll,
@@ -338,17 +343,22 @@ export default class Renderer {
 
 		const debugReflectanceTextureMesh = new TextureDebugMesh(
 			TextureDebugMeshType.Reflectance,
-			this.gbufferRenderPass.normalReflectanceTextureView,
+			this.gbufferRenderPass.colorReflectanceTextureView,
 		);
 
 		const debugNormalTextureMesh = new TextureDebugMesh(
 			TextureDebugMeshType.Normal,
-			this.gbufferRenderPass.normalReflectanceTextureView,
+			this.gbufferRenderPass.normalMetallicRoughnessTextureView,
+		);
+
+		const debugMetallicRoughnessTextureMesh = new TextureDebugMesh(
+			TextureDebugMeshType.MetallicRoughness,
+			this.gbufferRenderPass.normalMetallicRoughnessTextureView,
 		);
 
 		const debugColorTextureMesh = new TextureDebugMesh(
 			TextureDebugMeshType.Albedo,
-			this.gbufferRenderPass.colorTextureView,
+			this.gbufferRenderPass.colorReflectanceTextureView,
 		);
 
 		const debugDepthTextureMesh = new TextureDebugMesh(
@@ -363,6 +373,7 @@ export default class Renderer {
 
 		this.gBufferDebugTexturesContainer = new TextureDebugContainer([
 			debugNormalTextureMesh,
+			debugMetallicRoughnessTextureMesh,
 			debugReflectanceTextureMesh,
 			debugColorTextureMesh,
 			debugDepthTextureMesh,
@@ -384,7 +395,12 @@ export default class Renderer {
 			debugShadowCascade1MapTextureMesh,
 		]);
 
-		this.gBufferDebugTexturesContainer?.relayout(w, h);
+		this.gBufferDebugTexturesContainer?.relayout(
+			w,
+			h,
+			Math.min((w - 20) * 0.166, 230),
+			Math.min((h - 20) * 0.166, 230),
+		);
 		this.shadowMapDebugTexturesContainer.relayout(
 			w,
 			h,
@@ -407,9 +423,9 @@ export default class Renderer {
 		this.gbufferIntegratePass.setLights(this.lights);
 
 		this.sceneDirectionalLight.setPosition(
-			Math.cos(Renderer.elapsedTimeMs) * 3,
-			2,
-			Math.sin(Renderer.elapsedTimeMs) * 3,
+			Math.cos(Renderer.elapsedTimeMs * 0.1) * 3,
+			3,
+			Math.sin(Renderer.elapsedTimeMs * 0.1) * 3,
 		);
 
 		this.mainCamera.onFrameStart();

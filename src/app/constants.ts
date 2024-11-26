@@ -30,10 +30,10 @@ export const BIND_GROUP_LOCATIONS = {
 };
 
 export const RENDER_TARGET_LOCATIONS = {
-	get NormalReflectance(): number {
+	get NormalMetallicRoughness(): number {
 		return 0;
 	},
-	get Color(): number {
+	get ColorReflectance(): number {
 		return 1;
 	},
 	get Velocity(): number {

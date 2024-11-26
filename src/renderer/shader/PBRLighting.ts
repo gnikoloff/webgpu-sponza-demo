@@ -48,7 +48,7 @@ const PBR_LIGHTING_UTILS_SHADER_CHUNK_SRC = /* wgsl */ `
   ) -> vec4f {
     let albedo = material.albedo;
     let F0 = mix(vec3f(0.04), albedo, material.metallic);
-    var ambientFactor = vec3f(0.03);
+    var ambientFactor = vec3f(0.005);
     let ambient = (ambientFactor) * albedo * material.ambientOcclusion;
     var Lo = vec3f(0.0);
     let albedoOverPi = albedo / PI;
@@ -90,7 +90,7 @@ const PBR_LIGHTING_UTILS_SHADER_CHUNK_SRC = /* wgsl */ `
     // pointLightAttenuation *= fade;
     var attenuation = select(1.0, pointLightAttenuation, isPointLight);
     attenuation *= attenuation;
-    let radiance = light.color * attenuation;
+    let radiance = light.color * attenuation * light.intensity;
 
     let NDF = DistributionGGX(N, H, roughnessQuad);
     let G = GeometrySmith(N, V, L, roughness);

@@ -12,6 +12,8 @@ export default class GroundPlane extends Drawable {
 
 		this.materialProps.isReflective = true;
 		this.materialProps.setColor(0.4, 0.4, 0.4);
+		this.materialProps.metallic = 0.2;
+		this.materialProps.roughness = 0.9;
 
 		this.setRotationX(Math.PI * -0.5)
 			.setPositionY(0)

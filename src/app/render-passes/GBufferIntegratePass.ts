@@ -22,7 +22,7 @@ import {
 import PointLight from "../../renderer/lighting/PointLight";
 import DirectionalLight from "../../renderer/lighting/DirectionalLight";
 import TextureController from "../../renderer/texture/TextureController";
-import ShadowPass from "./ShadowPass";
+import DirectionalShadowPass from "./DirectionalShadowPass";
 
 export default class GBufferIntegratePass extends RenderPass {
 	public outTexture: GPUTexture;
@@ -80,8 +80,8 @@ export default class GBufferIntegratePass extends RenderPass {
 	}
 
 	constructor(
-		private normalReflectanceTextureView: GPUTextureView,
-		private colorTextureView: GPUTextureView,
+		private normalMetallicRoughnessTextureView: GPUTextureView,
+		private colorReflectanceTextureView: GPUTextureView,
 		private depthTextureView: GPUTextureView,
 		private depthStencilTextureView: GPUTextureView,
 		private shadowDepthTextureView: GPUTextureView,
@@ -100,10 +100,10 @@ export default class GBufferIntegratePass extends RenderPass {
 			FULLSCREEN_TRIANGLE_VERTEX_SHADER_SRC,
 		);
 		const gbufferDirLightingShaderModule = PipelineStates.createShaderModule(
-			getGBufferFragShader(true, ShadowPass.TEXTURE_SIZE, 0),
+			getGBufferFragShader(true, DirectionalShadowPass.TEXTURE_SIZE, 0),
 		);
 		const gbufferPointLightingShaderModule = PipelineStates.createShaderModule(
-			getGBufferFragShader(false, ShadowPass.TEXTURE_SIZE, 1),
+			getGBufferFragShader(false, DirectionalShadowPass.TEXTURE_SIZE, 1),
 		);
 
 		const gbufferCommonBindGroupLayoutEntries: GPUBindGroupLayoutEntry[] = [
@@ -402,11 +402,11 @@ export default class GBufferIntegratePass extends RenderPass {
 		const gbufferTexturesBindGroupEntries: GPUBindGroupEntry[] = [
 			{
 				binding: 0,
-				resource: this.normalReflectanceTextureView,
+				resource: this.normalMetallicRoughnessTextureView,
 			},
 			{
 				binding: 1,
-				resource: this.colorTextureView,
+				resource: this.colorReflectanceTextureView,
 			},
 			{
 				binding: 2,
@@ -625,12 +625,6 @@ export default class GBufferIntegratePass extends RenderPass {
 		const renderPassEncoder =
 			commandEncoder.beginRenderPass(renderPassDescriptor);
 
-		// Directional Lights
-		renderPassEncoder.setPipeline(this.dirLightPSO);
-		renderPassEncoder.setBindGroup(0, this.gbufferTexturesBindGroup);
-		renderPassEncoder.setBindGroup(1, this.dirLightShadowBindGroup);
-		renderPassEncoder.draw(3);
-
 		// Render Point Lights
 		renderPassEncoder.setPipeline(this.pointLightRenderPSO);
 		// renderPassEncoder.setStencilReference(128);
@@ -648,6 +642,12 @@ export default class GBufferIntegratePass extends RenderPass {
 			GeometryCache.pointLightSphereGeometry.vertexCount,
 			this.pointLights.length,
 		);
+
+		// Directional Lights
+		renderPassEncoder.setPipeline(this.dirLightPSO);
+		renderPassEncoder.setBindGroup(0, this.gbufferTexturesBindGroup);
+		renderPassEncoder.setBindGroup(1, this.dirLightShadowBindGroup);
+		renderPassEncoder.draw(3);
 
 		renderPassEncoder.end();
 	}

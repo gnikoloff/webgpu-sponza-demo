@@ -4,14 +4,14 @@ import Transform from "../../renderer/scene/Transform";
 import { BIND_GROUP_LOCATIONS } from "../constants";
 
 export default class GBufferRenderPass extends RenderPass {
-	public normalReflectanceTexture: GPUTexture;
-	public normalReflectanceTextureView: GPUTextureView;
+	public normalMetallicRoughnessTexture: GPUTexture;
+	public normalMetallicRoughnessTextureView: GPUTextureView;
 
 	public velocityTexture: GPUTexture;
 	public velocityTextureView: GPUTextureView;
 
-	public colorTexture: GPUTexture;
-	public colorTextureView: GPUTextureView;
+	public colorReflectanceTexture: GPUTexture;
+	public colorReflectanceTextureView: GPUTextureView;
 
 	public depthStencilTexture: GPUTexture;
 	public depthStencilTextureView: GPUTextureView;
@@ -24,11 +24,11 @@ export default class GBufferRenderPass extends RenderPass {
 	}
 
 	public override onResize(width: number, height: number): void {
-		if (this.colorTexture) {
-			this.colorTexture.destroy();
+		if (this.colorReflectanceTexture) {
+			this.colorReflectanceTexture.destroy();
 		}
 
-		this.colorTexture = Renderer.device.createTexture({
+		this.colorReflectanceTexture = Renderer.device.createTexture({
 			dimension: "2d",
 			format: "bgra8unorm",
 			mipLevelCount: 1,
@@ -36,9 +36,10 @@ export default class GBufferRenderPass extends RenderPass {
 			size: { width, height, depthOrArrayLayers: 1 },
 			usage:
 				GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
-			label: "Color GBuffer Texture",
+			label: "Color + Reflectance GBuffer Texture",
 		});
-		this.colorTextureView = this.colorTexture.createView();
+		this.colorReflectanceTextureView =
+			this.colorReflectanceTexture.createView();
 
 		if (this.velocityTexture) {
 			this.velocityTexture.destroy();
@@ -55,10 +56,10 @@ export default class GBufferRenderPass extends RenderPass {
 		});
 		this.velocityTextureView = this.velocityTexture.createView();
 
-		if (this.normalReflectanceTexture) {
-			this.normalReflectanceTexture.destroy();
+		if (this.normalMetallicRoughnessTexture) {
+			this.normalMetallicRoughnessTexture.destroy();
 		}
-		this.normalReflectanceTexture = Renderer.device.createTexture({
+		this.normalMetallicRoughnessTexture = Renderer.device.createTexture({
 			dimension: "2d",
 			format: "rgba16float",
 			mipLevelCount: 1,
@@ -66,10 +67,10 @@ export default class GBufferRenderPass extends RenderPass {
 			size: { width, height, depthOrArrayLayers: 1 },
 			usage:
 				GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
-			label: "Normal + Reflectance GBuffer Texture",
+			label: "Normal + Metallic + Roughness + GBuffer Texture",
 		});
-		this.normalReflectanceTextureView =
-			this.normalReflectanceTexture.createView();
+		this.normalMetallicRoughnessTextureView =
+			this.normalMetallicRoughnessTexture.createView();
 
 		if (this.depthStencilTexture) {
 			this.depthStencilTexture.destroy();
@@ -96,13 +97,13 @@ export default class GBufferRenderPass extends RenderPass {
 	protected override createRenderPassDescriptor(): GPURenderPassDescriptor {
 		const mainRenderPassColorAttachments: GPURenderPassColorAttachment[] = [
 			{
-				view: this.normalReflectanceTextureView,
+				view: this.normalMetallicRoughnessTextureView,
 				loadOp: "clear",
 				clearValue: [0, 0, 0, 0],
 				storeOp: "store",
 			},
 			{
-				view: this.colorTextureView,
+				view: this.colorReflectanceTextureView,
 				loadOp: "clear",
 				clearValue: [0, 0, 0, 0],
 				storeOp: "store",

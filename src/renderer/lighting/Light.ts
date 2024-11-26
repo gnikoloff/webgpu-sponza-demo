@@ -97,6 +97,7 @@ export default class Light extends Transform {
 			color: this._color,
 			position: this.position,
 			lightType: LightTypeToShaderType.get(lightType),
+			intensity: 1,
 		});
 	}
 }

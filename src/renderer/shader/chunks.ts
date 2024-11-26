@@ -40,6 +40,8 @@ export const SHADER_CHUNKS = {
         normalMatrix: mat3x3f,
         baseColor: vec3f,
         isReflective: u32,
+        metallic: f32,
+        roughness: f32,
       };
 
     `;
@@ -67,8 +69,8 @@ export const SHADER_CHUNKS = {
 		return /* wgsl */ `
 
       struct GBufferOutput {
-        @location(${RENDER_TARGET_LOCATIONS.NormalReflectance}) normalReflectance: vec4f,
-        @location(${RENDER_TARGET_LOCATIONS.Color}) color: vec4f,
+        @location(${RENDER_TARGET_LOCATIONS.NormalMetallicRoughness}) normalMetallicRoughness: vec4f,
+        @location(${RENDER_TARGET_LOCATIONS.ColorReflectance}) color: vec4f,
         @location(${RENDER_TARGET_LOCATIONS.Velocity}) velocity: vec4f,
       };
       

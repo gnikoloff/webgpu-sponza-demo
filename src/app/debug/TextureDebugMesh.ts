@@ -16,6 +16,7 @@ import {
 
 export enum TextureDebugMeshType {
 	Normal,
+	MetallicRoughness,
 	Reflectance,
 	Albedo,
 	Depth,
@@ -26,6 +27,7 @@ export enum TextureDebugMeshType {
 
 const textureTypeToDomId: Map<TextureDebugMeshType, string> = new Map([
 	[TextureDebugMeshType.Normal, "normal-texture"],
+	[TextureDebugMeshType.MetallicRoughness, "metallic-roughness-texture"],
 	[TextureDebugMeshType.Reflectance, "reflectance-texture"],
 	[TextureDebugMeshType.Albedo, "albedo-texture"],
 	[TextureDebugMeshType.Depth, "depth-texture"],
@@ -36,6 +38,7 @@ const textureTypeToDomId: Map<TextureDebugMeshType, string> = new Map([
 
 const textureTypeToDomHeading: Map<TextureDebugMeshType, string> = new Map([
 	[TextureDebugMeshType.Normal, "Normal"],
+	[TextureDebugMeshType.MetallicRoughness, "Metallic + Roughness"],
 	[TextureDebugMeshType.Reflectance, "Reflectance"],
 	[TextureDebugMeshType.Albedo, "Albedo"],
 	[TextureDebugMeshType.Depth, "Depth"],
