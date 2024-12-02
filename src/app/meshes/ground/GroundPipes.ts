@@ -17,7 +17,7 @@ export default class GroundPipes extends InstancedDrawable {
 			GroundPipes.PIPE_RADIUS,
 			GROUND_SIZE,
 		);
-		let instanceCount = GroundPipes.PIPES_PER_AXIS * 2 + 2;
+		const instanceCount = GroundPipes.PIPES_PER_AXIS * 2 + 2;
 
 		super(geometry, instanceCount);
 

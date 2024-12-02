@@ -4,8 +4,7 @@ import { PBR_TEXTURES_LOCATIONS, SAMPLER_LOCATIONS } from "./RendererBindings";
 let _cameraBindGroupLayout: GPUBindGroupLayout;
 let _modelBindGroupLayout: GPUBindGroupLayout;
 let _modelTexturesBindGroupLayout: GPUBindGroupLayout;
-let _modelSamplersBindGroupLayout: GPUBindGroupLayout;
-let _instanceMatricesBindGroupLayout: GPUBindGroupLayout;
+let _instanceBindGroupLayout: GPUBindGroupLayout;
 
 const cachedShaderModules: Map<string, GPUShaderModule> = new Map([]);
 const cachedRenderPSOs: Map<string, GPURenderPipeline> = new Map([]);
@@ -51,9 +50,9 @@ const PipelineStates = {
 		return _modelBindGroupLayout;
 	},
 
-	get defaultSamplersBindGroupLayout(): GPUBindGroupLayout {
-		if (_modelSamplersBindGroupLayout) {
-			return _modelSamplersBindGroupLayout;
+	get defaultModelMaterialBindGroupLayout(): GPUBindGroupLayout {
+		if (_modelTexturesBindGroupLayout) {
+			return _modelTexturesBindGroupLayout;
 		}
 		const bindGroupLayoutEntries: GPUBindGroupLayoutEntry[] = [
 			{
@@ -61,19 +60,6 @@ const PipelineStates = {
 				visibility: GPUShaderStage.FRAGMENT,
 				sampler: {},
 			},
-		];
-		_modelSamplersBindGroupLayout = Renderer.device.createBindGroupLayout({
-			label: "Model Samplers GPUBindGroupLayout",
-			entries: bindGroupLayoutEntries,
-		});
-		return _modelSamplersBindGroupLayout;
-	},
-
-	get defaultModelMaterialBindGroupLayout(): GPUBindGroupLayout {
-		if (_modelTexturesBindGroupLayout) {
-			return _modelTexturesBindGroupLayout;
-		}
-		const bindGroupLayoutEntries: GPUBindGroupLayoutEntry[] = [
 			{
 				binding: PBR_TEXTURES_LOCATIONS.Albedo,
 				visibility: GPUShaderStage.FRAGMENT,
@@ -103,24 +89,24 @@ const PipelineStates = {
 		return _modelTexturesBindGroupLayout;
 	},
 
-	get instanceMatricesBindGroupLayout(): GPUBindGroupLayout {
-		if (_instanceMatricesBindGroupLayout) {
-			return _instanceMatricesBindGroupLayout;
+	get instancesBindGroupLayout(): GPUBindGroupLayout {
+		if (_instanceBindGroupLayout) {
+			return _instanceBindGroupLayout;
 		}
 		const bindGroupLayoutEntries: GPUBindGroupLayoutEntry[] = [
 			{
 				binding: 0,
-				visibility: GPUShaderStage.VERTEX,
+				visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
 				buffer: {
 					type: "read-only-storage",
 				},
 			},
 		];
-		_instanceMatricesBindGroupLayout = Renderer.device.createBindGroupLayout({
+		_instanceBindGroupLayout = Renderer.device.createBindGroupLayout({
 			label: "Instance Models GPUBindGroupLayout",
 			entries: bindGroupLayoutEntries,
 		});
-		return _instanceMatricesBindGroupLayout;
+		return _instanceBindGroupLayout;
 	},
 
 	createShaderModule: (

@@ -34,6 +34,16 @@ export const SHADER_CHUNKS = Object.freeze({
     `;
 	},
 
+	get InstanceInput(): string {
+		return /* wgsl */ `
+      struct InstanceInput {
+        worldMatrix: mat4x4f,
+        metallic: f32,
+        roughness: f32,
+      };
+    `;
+	},
+
 	get ModelUniform(): string {
 		return /* wgsl */ `
 

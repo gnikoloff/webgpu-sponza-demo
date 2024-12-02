@@ -141,7 +141,7 @@ const GetPBRLightingShaderUtils = (
       
 
       let R = reflect(-V, N);
-      let MAX_REFLECTION_LOD = 2.0;
+      let MAX_REFLECTION_LOD = 8.0;
       let prefilteredColor = vec3f(
         textureSampleLevel(
           specularIBLTexture,

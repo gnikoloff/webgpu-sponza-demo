@@ -28,7 +28,6 @@ export default class Material {
 		bindGroupLayouts = [
 			PipelineStates.defaultCameraBindGroupLayout,
 			PipelineStates.defaultModelBindGroupLayout,
-			PipelineStates.defaultSamplersBindGroupLayout,
 			PipelineStates.defaultModelMaterialBindGroupLayout,
 		],
 		constants = {},
@@ -44,24 +43,26 @@ export default class Material {
 		},
 		debugLabel,
 	}: IMaterial) {
-		const vertexShaderModule =
-			PipelineStates.createShaderModule(vertexShaderSrc);
-
 		const descriptor: GPURenderPipelineDescriptor = {
 			label: debugLabel,
 			layout: Renderer.device.createPipelineLayout({
 				bindGroupLayouts: bindGroupLayouts,
 			}),
 			vertex: {
-				module: vertexShaderModule,
+				module: PipelineStates.createShaderModule(
+					vertexShaderSrc,
+					`${debugLabel} material vertex shader module`,
+				),
 				entryPoint: vertexShaderEntryFn,
 				buffers: vertexBuffers,
 			},
 		};
 
 		if (fragmentShaderEntryFn && fragmentShaderSrc && targets.length) {
-			const fragmentShaderModule =
-				PipelineStates.createShaderModule(fragmentShaderSrc);
+			const fragmentShaderModule = PipelineStates.createShaderModule(
+				fragmentShaderSrc,
+				`${debugLabel} material fragment shader module`,
+			);
 
 			descriptor.fragment = {
 				module: fragmentShaderModule,

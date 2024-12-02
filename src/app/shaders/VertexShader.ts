@@ -42,16 +42,17 @@ export const getVertexShader = (
   ${SHADER_CHUNKS.VertexOutput}
   ${SHADER_CHUNKS.ModelUniform}
   ${SHADER_CHUNKS.CameraUniform}
+  ${SHADER_CHUNKS.InstanceInput}
 
   @group(${BIND_GROUP_LOCATIONS.Camera}) @binding(0) var<uniform> camera: CameraUniform;
   @group(${BIND_GROUP_LOCATIONS.Model}) @binding(0) var<uniform> model: ModelUniform;
+  
+  @group(${BIND_GROUP_LOCATIONS.PBRTextures}) @binding(${PBR_TEXTURES_LOCATIONS.Albedo}) var albedoTexture: texture_2d<f32>;
+  @group(${BIND_GROUP_LOCATIONS.PBRTextures}) @binding(${PBR_TEXTURES_LOCATIONS.Normal}) var normalTexture: texture_2d<f32>;
 
   #if ${isInstanced}
-  // @group(${BIND_GROUP_LOCATIONS.InstanceMatrices}) @binding(0) var<storage> instanceMatrices: array<mat4x4f>;
+    @group(${BIND_GROUP_LOCATIONS.InstanceMatrices}) @binding(0) var<storage> instanceInputs: array<InstanceInput>;
   #endif
-  
-  @group(2) @binding(${PBR_TEXTURES_LOCATIONS.Albedo}) var albedoTexture: texture_2d<f32>;
-  @group(2) @binding(${PBR_TEXTURES_LOCATIONS.Normal}) var normalTexture: texture_2d<f32>;
 
   @vertex
   fn ${VERTEX_SHADER_DEFAULT_ENTRY_FN}(
@@ -64,8 +65,8 @@ export const getVertexShader = (
     var prevWorldMatrix: mat4x4f;
 
     #if ${isInstanced}
-      worldMatrix = instanceMatrices[instanceId] * model.worldMatrix;
-      prevWorldMatrix = instanceMatrices[instanceId] * model.prevFrameWorldMatrix;
+      worldMatrix = instanceInputs[instanceId].worldMatrix * model.worldMatrix;
+      prevWorldMatrix = instanceInputs[instanceId].worldMatrix * model.prevFrameWorldMatrix;
     #else
       worldMatrix = model.worldMatrix;
       prevWorldMatrix = model.prevFrameWorldMatrix;
@@ -90,7 +91,7 @@ export const getVertexShader = (
     out.tangent = T;
     out.bitangent = B;
     out.normal = N;
-
+    out.instanceId = instanceId;
     out.uv = in.uv;
 
     return out;

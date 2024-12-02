@@ -7866,7 +7866,7 @@ var mn = (re, Kt, $) => $s(re, typeof Kt != "symbol" ? Kt + "" : Kt, $);
 				Pe
 			);
 		},
-		get instanceMatricesBindGroupLayout() {
+		get instancesBindGroupLayout() {
 			if (Ue) return Ue;
 			const i = [
 				{
@@ -8875,7 +8875,7 @@ ${Ht.CameraUniform}
 				});
 				const t = [{ binding: 0, resource: { buffer: this.instanceBuffer } }];
 				this.instanceMatricesBindGroup = X.device.createBindGroup({
-					layout: _t.instanceMatricesBindGroupLayout,
+					layout: _t.instancesBindGroupLayout,
 					entries: t,
 				});
 			}
@@ -8924,7 +8924,7 @@ ${Ht.CameraUniform}
 						bindGroupLayouts: [
 							_t.defaultCameraBindGroupLayout,
 							_t.defaultModelBindGroupLayout,
-							_t.instanceMatricesBindGroupLayout,
+							_t.instancesBindGroupLayout,
 						],
 						targets: [
 							{ format: "rgba16float" },

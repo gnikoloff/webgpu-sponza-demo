@@ -37,6 +37,7 @@ import DiffuseIBLGenerator from "../renderer/texture/DiffuseIBLGenerator";
 import TextureController from "../renderer/texture/TextureController";
 import SpecularIBLGenerator from "../renderer/texture/SpecularIBLGenerator";
 import BDRFLutGenerator from "../renderer/texture/BDRFLutGenerator";
+import PBRSpheres from "./meshes/PBRSpheres";
 // import EnvironmentProbePass from "./render-passes/EnvironmentProbePass";
 
 export default class Renderer {
@@ -63,6 +64,7 @@ export default class Renderer {
 	private cube: Drawable;
 	private cube1: Drawable;
 	private sphere: Drawable;
+	private pbrSpheres: PBRSpheres;
 
 	private sceneDirectionalLight = new DirectionalLight();
 
@@ -252,7 +254,7 @@ export default class Renderer {
 		this.rootTransform.updateWorldMatrix();
 
 		this.ground = new GroundContainer();
-		this.rootTransform.addChild(this.ground);
+		// this.rootTransform.addChild(this.ground);
 
 		this.cube = new Drawable(new CubeGeometry(1, 1, 1));
 		this.cube.label = "Cube 1";
@@ -269,7 +271,9 @@ export default class Renderer {
 			RenderPassType.Shadow,
 		);
 		this.cube.materialProps.isReflective = false;
-		this.cube.materialProps.setColor(0.2, 0.2, 0.2);
+		this.cube.materialProps.metallic = 0.9;
+		this.cube.materialProps.roughness = 0.2;
+		this.cube.materialProps.setColor(0.6, 0.6, 0.6);
 
 		this.cube1 = new Drawable(new CubeGeometry(1, 1, 1));
 		this.cube1.label = "Cube 2";
@@ -305,8 +309,11 @@ export default class Renderer {
 			.setPositionZ(1.2)
 			.updateWorldMatrix();
 
-		this.rootTransform.addChild(this.cube);
-		this.rootTransform.addChild(this.cube1);
+		this.pbrSpheres = new PBRSpheres();
+		this.rootTransform.addChild(this.pbrSpheres);
+
+		// this.rootTransform.addChild(this.cube);
+		// this.rootTransform.addChild(this.cube1);
 		// this.rootTransform.addChild(this.sphere);
 
 		const pointLights: PointLight[] = [];
@@ -357,11 +364,11 @@ export default class Renderer {
 			"Skybox Faces",
 		).then((texture) => {
 			const diffuseTexture = DiffuseIBLGenerator.encode(texture);
-			const specularTexture = SpecularIBLGenerator.encode(texture);
+			const specularTexture = SpecularIBLGenerator.encode(texture, 256);
 			const bdrfLutTexture = BDRFLutGenerator.encode();
 
 			TextureController.generateMipsForCubeTexture(diffuseTexture);
-			this.skybox.setTexture(texture);
+			this.skybox.setTexture(diffuseTexture);
 
 			this.gbufferIntegratePass
 				.setDiffuseIBLTexture(diffuseTexture)
@@ -379,7 +386,7 @@ export default class Renderer {
 		});
 
 		const a = new GLTFModel("/helmet.gltf");
-		this.rootTransform.addChild(a);
+		// this.rootTransform.addChild(a);
 		a.setPositionY(2).updateWorldMatrix();
 		a.load().then(() => {
 			a.setIsReflective(false);
@@ -580,8 +587,8 @@ export default class Renderer {
 			this.orthoCameraBindGroup,
 		);
 
-		// this.gBufferDebugTexturesContainer?.render(hudRenderEncoder);
-		// this.shadowMapDebugTexturesContainer.render(hudRenderEncoder);
+		this.gBufferDebugTexturesContainer?.render(hudRenderEncoder);
+		this.shadowMapDebugTexturesContainer.render(hudRenderEncoder);
 		// this.bdrfLUTDebugTex?.render(hudRenderEncoder);
 
 		hudRenderEncoder.popDebugGroup();

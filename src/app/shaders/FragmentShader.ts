@@ -13,21 +13,27 @@ export const FRAGMENT_SHADER_DEBUG_TEX_COORDS_ENTRY_FN =
 	"fragmentMainTexCoords";
 
 /* prettier-ignore */
-export const getDefaultPBRFragmentShader = (
+export const getDefaultPBRFragmentShader = ({
 	hasPBRTexture = false,
-): string => wgsl/* wgsl */ `
+  isInstanced = false
+} = {}): string => wgsl/* wgsl */ `
   ${SHADER_CHUNKS.CameraUniform}
   ${SHADER_CHUNKS.VertexOutput}
   ${SHADER_CHUNKS.GBufferOutput}
   ${SHADER_CHUNKS.ModelUniform}
+  ${SHADER_CHUNKS.InstanceInput}
 
   @group(${BIND_GROUP_LOCATIONS.Camera}) @binding(0) var<uniform> camera: CameraUniform;
   @group(${BIND_GROUP_LOCATIONS.Model}) @binding(0) var<uniform> model: ModelUniform;
-  @group(${BIND_GROUP_LOCATIONS.Samplers}) @binding(${SAMPLER_LOCATIONS.Default}) var texSampler: sampler;
   
+  @group(${BIND_GROUP_LOCATIONS.PBRTextures}) @binding(${SAMPLER_LOCATIONS.Default}) var texSampler: sampler;
   @group(${BIND_GROUP_LOCATIONS.PBRTextures}) @binding(${PBR_TEXTURES_LOCATIONS.Albedo}) var albedoTexture: texture_2d<f32>;
   @group(${BIND_GROUP_LOCATIONS.PBRTextures}) @binding(${PBR_TEXTURES_LOCATIONS.Normal}) var normalTexture: texture_2d<f32>;
   @group(${BIND_GROUP_LOCATIONS.PBRTextures}) @binding(${PBR_TEXTURES_LOCATIONS.MetallicRoughness}) var metallicRoughnessTexture: texture_2d<f32>;
+
+  #if ${isInstanced}
+  @group(${BIND_GROUP_LOCATIONS.InstanceMatrices}) @binding(0) var<storage> instanceInputs: array<InstanceInput>;
+  #endif
 
   ${NormalEncoderShaderUtils}
 
@@ -58,8 +64,14 @@ export const getDefaultPBRFragmentShader = (
     }
 
     var out: GBufferOutput;
-    var metallic = model.metallic;
-    var roughness = model.roughness;
+
+    #if ${isInstanced}
+      var metallic = instanceInputs[in.instanceId].metallic;
+      var roughness = instanceInputs[in.instanceId].roughness;
+    #else
+      var metallic = model.metallic;
+      var roughness = model.roughness;
+    #endif
 
 
     if (${hasPBRTexture}) {

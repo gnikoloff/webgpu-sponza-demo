@@ -37,7 +37,7 @@ export default class Drawable extends Transform {
 	private modelBuffer: GPUBuffer;
 	private modelBindGroup: GPUBindGroup;
 	private texturesBindGroup: GPUBindGroup;
-	private samplersBindGroup: GPUBindGroup;
+
 	private modelMaterialBindGroupEntries: GPUBindGroupEntry[] = [];
 	private uploadModelBufferToGPU = true;
 
@@ -64,21 +64,9 @@ export default class Drawable extends Transform {
 
 	public setSampler(v: GPUSampler) {
 		this._sampler = v;
-		const samplersBindGroupEntries: GPUBindGroupEntry[] = [
-			{
-				binding: SAMPLER_LOCATIONS.Default,
-				resource: this.sampler,
-			},
-		];
-
-		this.samplersBindGroup = Renderer.device.createBindGroup({
-			label: "Model Samplers Bind Group",
-			layout: PipelineStates.defaultSamplersBindGroupLayout,
-			entries: samplersBindGroupEntries,
-		});
 	}
 
-	public setTexture(texture: GPUTexture, location: TextureLocation = 0) {
+	public setTexture(texture: GPUTexture, location: TextureLocation = 1) {
 		this.textures.set(location, texture);
 
 		this.modelMaterialBindGroupEntries[location].resource =
@@ -131,6 +119,10 @@ export default class Drawable extends Transform {
 
 		this.modelMaterialBindGroupEntries = [
 			{
+				binding: SAMPLER_LOCATIONS.Default,
+				resource: this.sampler,
+			},
+			{
 				binding: PBR_TEXTURES_LOCATIONS.Albedo,
 				resource: TextureLoader.dummyTexture.createView(),
 			},
@@ -148,19 +140,6 @@ export default class Drawable extends Transform {
 			label: "Model Textures Bind Group",
 			layout: PipelineStates.defaultModelMaterialBindGroupLayout,
 			entries: this.modelMaterialBindGroupEntries,
-		});
-
-		const samplersBindGroupEntries: GPUBindGroupEntry[] = [
-			{
-				binding: SAMPLER_LOCATIONS.Default,
-				resource: this.sampler,
-			},
-		];
-
-		this.samplersBindGroup = Renderer.device.createBindGroup({
-			label: "Model Samplers Bind Group",
-			layout: PipelineStates.defaultSamplersBindGroupLayout,
-			entries: samplersBindGroupEntries,
 		});
 
 		this.setTexture(TextureLoader.dummyTexture, PBR_TEXTURES_LOCATIONS.Albedo);
@@ -217,10 +196,10 @@ export default class Drawable extends Transform {
 		}
 		renderEncoder.setVertexBuffer(0, this.geometry.vertexBuffer);
 		renderEncoder.setBindGroup(BIND_GROUP_LOCATIONS.Model, this.modelBindGroup);
-		renderEncoder.setBindGroup(
-			BIND_GROUP_LOCATIONS.Samplers,
-			this.samplersBindGroup,
-		);
+		// renderEncoder.setBindGroup(
+		// 	BIND_GROUP_LOCATIONS.Samplers,
+		// 	this.samplersBindGroup,
+		// );
 		renderEncoder.setBindGroup(
 			BIND_GROUP_LOCATIONS.PBRTextures,
 			this.texturesBindGroup,

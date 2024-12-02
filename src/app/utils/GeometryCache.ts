@@ -4,6 +4,7 @@ import SphereGeometry from "../../renderer/geometry/SphereGeometry";
 
 let _defaultPlaneGeometry: PlaneGeometry;
 let _unitCubeGeometry: CubeGeometry;
+let _unitSphereGeometry: SphereGeometry;
 let _pointLightSphereGeometry: SphereGeometry;
 
 const GeometryCache = Object.freeze({
@@ -21,6 +22,14 @@ const GeometryCache = Object.freeze({
 		}
 		_unitCubeGeometry = new CubeGeometry();
 		return _unitCubeGeometry;
+	},
+
+	get unitSphereGeometry(): SphereGeometry {
+		if (_unitSphereGeometry) {
+			return _unitSphereGeometry;
+		}
+		_unitSphereGeometry = new SphereGeometry();
+		return _unitSphereGeometry;
 	},
 
 	get pointLightSphereGeometry(): SphereGeometry {

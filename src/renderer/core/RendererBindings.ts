@@ -24,13 +24,10 @@ export const BIND_GROUP_LOCATIONS = Object.freeze({
 	get Model(): BindGroupLocation {
 		return 1;
 	},
-	get Samplers(): BindGroupLocation {
+	get PBRTextures(): BindGroupLocation {
 		return 2;
 	},
-	get EnvironmentTextures(): BindGroupLocation {
-		return 3;
-	},
-	get PBRTextures(): BindGroupLocation {
+	get InstanceMatrices(): BindGroupLocation {
 		return 3;
 	},
 });
@@ -57,19 +54,19 @@ export const SAMPLER_LOCATIONS = Object.freeze({
 	},
 });
 
-export type TextureLocation = 0 | 1 | 2 | 3;
+export type TextureLocation = 1 | 2 | 3 | 4;
 
 export const PBR_TEXTURES_LOCATIONS = Object.freeze({
 	get Albedo(): TextureLocation {
-		return 0;
-	},
-	get Normal(): TextureLocation {
 		return 1;
 	},
-	get MetallicRoughness(): TextureLocation {
+	get Normal(): TextureLocation {
 		return 2;
 	},
-	get AO(): TextureLocation {
+	get MetallicRoughness(): TextureLocation {
 		return 3;
+	},
+	get AO(): TextureLocation {
+		return 4;
 	},
 });

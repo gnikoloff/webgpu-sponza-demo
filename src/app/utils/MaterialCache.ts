@@ -23,7 +23,7 @@ let _defaultDeferredInstancedMaterial: Material;
 let _defaultShadowMaterial: Material;
 let _defaultEnvironmentProbeMaterial: Material;
 
-const GBUFFER_OUTPUT_TARGETS: GPUColorTargetState[] = [
+export const GBUFFER_OUTPUT_TARGETS: GPUColorTargetState[] = [
 	{
 		format: "rgba16float",
 	},
@@ -101,7 +101,7 @@ const MaterialCache = Object.freeze({
 			debugLabel: "Material",
 			vertexShaderSrc: getVertexShader(),
 			vertexShaderEntryFn: VERTEX_SHADER_DEFAULT_ENTRY_FN,
-			fragmentShaderSrc: getDefaultPBRFragmentShader(true),
+			fragmentShaderSrc: getDefaultPBRFragmentShader({ hasPBRTexture: true }),
 			fragmentShaderEntryFn: FRAGMENT_SHADER_DEBUG_TEX_COORDS_ENTRY_FN,
 			constants: {
 				// HAS_ALBEDO_TEXTURE: 1,
@@ -134,7 +134,7 @@ const MaterialCache = Object.freeze({
 			bindGroupLayouts: [
 				PipelineStates.defaultCameraBindGroupLayout,
 				PipelineStates.defaultModelBindGroupLayout,
-				PipelineStates.instanceMatricesBindGroupLayout,
+				PipelineStates.instancesBindGroupLayout,
 			],
 			targets: GBUFFER_OUTPUT_TARGETS,
 		});
