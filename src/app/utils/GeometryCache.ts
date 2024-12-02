@@ -1,16 +1,26 @@
+import CubeGeometry from "../../renderer/geometry/CubeGeometry";
 import PlaneGeometry from "../../renderer/geometry/PlaneGeometry";
 import SphereGeometry from "../../renderer/geometry/SphereGeometry";
 
 let _defaultPlaneGeometry: PlaneGeometry;
+let _unitCubeGeometry: CubeGeometry;
 let _pointLightSphereGeometry: SphereGeometry;
 
-const GeometryCache = {
+const GeometryCache = Object.freeze({
 	get defaultPlaneGeometry(): PlaneGeometry {
 		if (_defaultPlaneGeometry) {
 			return _defaultPlaneGeometry;
 		}
 		_defaultPlaneGeometry = new PlaneGeometry();
 		return _defaultPlaneGeometry;
+	},
+
+	get unitCubeGeometry(): CubeGeometry {
+		if (_unitCubeGeometry) {
+			return _unitCubeGeometry;
+		}
+		_unitCubeGeometry = new CubeGeometry();
+		return _unitCubeGeometry;
 	},
 
 	get pointLightSphereGeometry(): SphereGeometry {
@@ -20,6 +30,6 @@ const GeometryCache = {
 		_pointLightSphereGeometry = new SphereGeometry(1, 9, 9);
 		return _pointLightSphereGeometry;
 	},
-};
+});
 
 export default GeometryCache;

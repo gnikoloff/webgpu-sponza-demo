@@ -8,6 +8,6 @@ export default defineConfig({
 	},
 	plugins: [topLevelAwait()],
 	server: {
-		// hmr: false,
+		host: true,
 	},
 });

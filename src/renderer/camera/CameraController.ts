@@ -7,8 +7,8 @@ import { clamp } from "../utils/math";
 class DampedAction {
 	private value = 0.0;
 	private damping: number;
-	constructor() {
-		this.damping = 0.5;
+	constructor(isZoomAction = false) {
+		this.damping = isZoomAction ? 0.05 : 0.5;
 	}
 
 	addForce(force: number) {
@@ -62,7 +62,7 @@ export default class CameraController {
 	private targetZDampedAction: DampedAction = new DampedAction();
 	private targetThetaDampedAction: DampedAction = new DampedAction();
 	private targetPhiDampedAction: DampedAction = new DampedAction();
-	private targetRadiusDampedAction: DampedAction = new DampedAction();
+	private targetRadiusDampedAction: DampedAction = new DampedAction(true);
 	private _isShiftDown = false;
 	private _rotateStart = {
 		x: 9999,

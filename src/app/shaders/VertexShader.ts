@@ -1,6 +1,9 @@
 import { wgsl } from "wgsl-preprocessor/wgsl-preprocessor.js";
-import { BIND_GROUP_LOCATIONS } from "../constants";
 import { SHADER_CHUNKS } from "../../renderer/shader/chunks";
+import {
+	BIND_GROUP_LOCATIONS,
+	PBR_TEXTURES_LOCATIONS,
+} from "../../renderer/core/RendererBindings";
 
 export const VERTEX_SHADER_DEFAULT_ENTRY_FN = "vertexMain";
 
@@ -44,8 +47,11 @@ export const getVertexShader = (
   @group(${BIND_GROUP_LOCATIONS.Model}) @binding(0) var<uniform> model: ModelUniform;
 
   #if ${isInstanced}
-  @group(${BIND_GROUP_LOCATIONS.InstanceMatrices}) @binding(0) var<storage> instanceMatrices: array<mat4x4f>;
+  // @group(${BIND_GROUP_LOCATIONS.InstanceMatrices}) @binding(0) var<storage> instanceMatrices: array<mat4x4f>;
   #endif
+  
+  @group(2) @binding(${PBR_TEXTURES_LOCATIONS.Albedo}) var albedoTexture: texture_2d<f32>;
+  @group(2) @binding(${PBR_TEXTURES_LOCATIONS.Normal}) var normalTexture: texture_2d<f32>;
 
   @vertex
   fn ${VERTEX_SHADER_DEFAULT_ENTRY_FN}(
@@ -76,8 +82,17 @@ export const getVertexShader = (
 
     out.currFrameClipPos = out.position;
     out.prevFrameClipPos = camera.prevFrameProjectionViewMatrix * prevWorldMatrix * in.position;
+    
+    let T = normalize(model.normalMatrix * in.tangent.xyz);
+    let N = normalize(model.normalMatrix * in.normal);
+    let B = normalize(cross(N, T));
+
+    out.tangent = T;
+    out.bitangent = B;
+    out.normal = N;
+
     out.uv = in.uv;
-    out.normal = model.normalMatrix * in.normal;
+
     return out;
   }
 `;

@@ -5,21 +5,28 @@ import {
 	makeStructuredView,
 } from "webgpu-utils";
 
-import { BIND_GROUP_LOCATIONS } from "../../app/constants";
 import { SHADER_CHUNKS } from "../shader/chunks";
+
 import Renderer from "../../app/Renderer";
 import Geometry from "../geometry/Geometry";
 import Material from "../material/Material";
 import MaterialProps from "../material/MaterialProps";
 import PipelineStates from "../core/PipelineStates";
+import TextureLoader from "../texture/TextureLoader";
+import SamplerController from "../texture/SamplerController";
 import Transform from "./Transform";
 import { RenderPassType } from "../core/RenderPass";
+import {
+	BIND_GROUP_LOCATIONS,
+	PBR_TEXTURES_LOCATIONS,
+	SAMPLER_LOCATIONS,
+	TextureLocation,
+} from "../core/RendererBindings";
 
 export default class Drawable extends Transform {
 	public static readonly INDEX_FORMAT: GPUIndexFormat = "uint16";
 
 	public geometry: Geometry;
-	// public material: Material;
 	public materialProps = new MaterialProps();
 
 	public firstIndex = 0;
@@ -29,17 +36,67 @@ export default class Drawable extends Transform {
 
 	private modelBuffer: GPUBuffer;
 	private modelBindGroup: GPUBindGroup;
+	private texturesBindGroup: GPUBindGroup;
+	private samplersBindGroup: GPUBindGroup;
+	private modelMaterialBindGroupEntries: GPUBindGroupEntry[] = [];
 	private uploadModelBufferToGPU = true;
 
 	private materials: Map<RenderPassType, Material> = new Map();
-
-	public get material(): Material {
-		return this.materials.get(Renderer.activeRenderPass);
-	}
+	private textures: Map<TextureLocation, GPUTexture> = new Map();
 
 	private prevFrameModelMatrix = mat4.create();
 
 	protected bufferUniformValues: StructuredView;
+
+	private _sampler: GPUSampler = SamplerController.defaultSampler;
+
+	public get sampler(): GPUSampler {
+		return this.getSampler();
+	}
+
+	public set sampler(v: GPUSampler) {
+		this.setSampler(v);
+	}
+
+	public getSampler(): GPUSampler {
+		return this._sampler;
+	}
+
+	public setSampler(v: GPUSampler) {
+		this._sampler = v;
+		const samplersBindGroupEntries: GPUBindGroupEntry[] = [
+			{
+				binding: SAMPLER_LOCATIONS.Default,
+				resource: this.sampler,
+			},
+		];
+
+		this.samplersBindGroup = Renderer.device.createBindGroup({
+			label: "Model Samplers Bind Group",
+			layout: PipelineStates.defaultSamplersBindGroupLayout,
+			entries: samplersBindGroupEntries,
+		});
+	}
+
+	public setTexture(texture: GPUTexture, location: TextureLocation = 0) {
+		this.textures.set(location, texture);
+
+		this.modelMaterialBindGroupEntries[location].resource =
+			texture.createView();
+		this.texturesBindGroup = Renderer.device.createBindGroup({
+			label: "Model Textures Bind Group",
+			layout: PipelineStates.defaultModelMaterialBindGroupLayout,
+			entries: this.modelMaterialBindGroupEntries,
+		});
+	}
+
+	public getTexture(location: TextureLocation): GPUTexture {
+		return this.textures.get(location);
+	}
+
+	public get material(): Material {
+		return this.materials.get(Renderer.activeRenderPass);
+	}
 
 	constructor(geometry: Geometry) {
 		super();
@@ -56,14 +113,7 @@ export default class Drawable extends Transform {
 			label: `${this.label} Model GPUBuffer`,
 			size: this.bufferUniformValues.arrayBuffer.byteLength,
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-			// mappedAtCreation: true,
 		});
-		// this.matricesUploadArr.set(MAT4x4_IDENTITY_MATRIX, 0);
-		// this.matricesUploadArr.set(MAT4x4_IDENTITY_MATRIX, 16);
-		// new Float32Array(this.modelBuffer.getMappedRange()).set(
-		// 	this.matricesUploadArr,
-		// );
-		// this.modelBuffer.unmap();
 
 		const modelBindGroupEntries: GPUBindGroupEntry[] = [
 			{
@@ -78,6 +128,47 @@ export default class Drawable extends Transform {
 			layout: PipelineStates.defaultModelBindGroupLayout,
 			entries: modelBindGroupEntries,
 		});
+
+		this.modelMaterialBindGroupEntries = [
+			{
+				binding: PBR_TEXTURES_LOCATIONS.Albedo,
+				resource: TextureLoader.dummyTexture.createView(),
+			},
+			{
+				binding: PBR_TEXTURES_LOCATIONS.Normal,
+				resource: TextureLoader.dummyTexture.createView(),
+			},
+			{
+				binding: PBR_TEXTURES_LOCATIONS.MetallicRoughness,
+				resource: TextureLoader.dummyTexture.createView(),
+			},
+		];
+
+		this.texturesBindGroup = Renderer.device.createBindGroup({
+			label: "Model Textures Bind Group",
+			layout: PipelineStates.defaultModelMaterialBindGroupLayout,
+			entries: this.modelMaterialBindGroupEntries,
+		});
+
+		const samplersBindGroupEntries: GPUBindGroupEntry[] = [
+			{
+				binding: SAMPLER_LOCATIONS.Default,
+				resource: this.sampler,
+			},
+		];
+
+		this.samplersBindGroup = Renderer.device.createBindGroup({
+			label: "Model Samplers Bind Group",
+			layout: PipelineStates.defaultSamplersBindGroupLayout,
+			entries: samplersBindGroupEntries,
+		});
+
+		this.setTexture(TextureLoader.dummyTexture, PBR_TEXTURES_LOCATIONS.Albedo);
+		this.setTexture(TextureLoader.dummyTexture, PBR_TEXTURES_LOCATIONS.Normal);
+		this.setTexture(
+			TextureLoader.dummyTexture,
+			PBR_TEXTURES_LOCATIONS.MetallicRoughness,
+		);
 	}
 
 	public setMaterial(material: Material, forRenderPassType?: RenderPassType) {
@@ -126,6 +217,14 @@ export default class Drawable extends Transform {
 		}
 		renderEncoder.setVertexBuffer(0, this.geometry.vertexBuffer);
 		renderEncoder.setBindGroup(BIND_GROUP_LOCATIONS.Model, this.modelBindGroup);
+		renderEncoder.setBindGroup(
+			BIND_GROUP_LOCATIONS.Samplers,
+			this.samplersBindGroup,
+		);
+		renderEncoder.setBindGroup(
+			BIND_GROUP_LOCATIONS.PBRTextures,
+			this.texturesBindGroup,
+		);
 	}
 
 	override onRender(renderEncoder: GPURenderPassEncoder) {

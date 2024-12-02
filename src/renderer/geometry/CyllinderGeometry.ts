@@ -29,7 +29,7 @@ export default class CyllinderGeometry extends Geometry {
 			if (radiusBottom > 0) generateCap(false);
 		}
 
-		this.createBuffers({
+		this.createBuffersWithTangentsManually({
 			vertexCount: indices.length,
 			interleavedVertexArr: new Float32Array(interleavedArray),
 			indicesArr: new Uint16Array(indices),

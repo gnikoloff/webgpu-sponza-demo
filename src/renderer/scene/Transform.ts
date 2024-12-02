@@ -1,25 +1,27 @@
-import { Vec3, mat3, mat4, quat, vec3 } from "wgpu-matrix";
+import { Mat4, Quat, Vec3, mat3, mat4, quat, vec3 } from "wgpu-matrix";
 import { MAT4x4_IDENTITY_MATRIX, QUATERNION_COMP_ORDER } from "../utils/math";
-import { RenderPassType } from "../core/RenderPass";
+
+type UUIDString = `${string}-${string}-${string}-${string}-${string}`;
 
 export default class Transform {
 	private _position = vec3.fromValues(0, 0, 0);
 	private _rotation = vec3.fromValues(0, 0, 0);
 	private _scale = vec3.fromValues(1, 1, 1);
 	private _worldPosition = vec3.create();
+	private _quaterion = quat.create();
 
 	private translateMatrix = mat4.identity();
 	private scaleMatrix = mat4.identity();
 	private rotationMatrix = mat4.identity();
-	private quaterion = quat.create();
 	private cachedMatrix = mat4.create();
 	private worldMatrix = mat4.identity();
+	private _customMatrix?: Mat4;
 
 	protected normalMatrix = mat3.create();
 
 	protected matrixNeedsUpdate = true;
 
-	public id = self.crypto.randomUUID();
+	public id: UUIDString = self.crypto.randomUUID();
 	public label = "Object";
 
 	public parent?: Transform;
@@ -38,6 +40,25 @@ export default class Transform {
 		return this.worldMatrix;
 	}
 
+	public setCustomMatrix(v: Mat4) {
+		this._customMatrix = v;
+		this.matrixNeedsUpdate = true;
+	}
+
+	public setCustomMatrixFromTRS(
+		translation: Vec3,
+		rotation: Quat,
+		scale: Vec3,
+	) {
+		const modelMatrix = mat4.scaling(scale);
+		const rotateMat = mat4.fromQuat(rotation);
+		const translateMat = mat4.translation(translation);
+		mat4.mul(modelMatrix, rotateMat, modelMatrix);
+		mat4.mul(modelMatrix, translateMat);
+
+		this.setCustomMatrix(modelMatrix);
+	}
+
 	private updateNormalMatrix() {
 		mat3.fromMat4(this.worldMatrix, this.normalMatrix);
 		mat3.inverse(this.normalMatrix, this.normalMatrix);
@@ -52,20 +73,24 @@ export default class Transform {
 			return false;
 		}
 
-		mat4.identity(this.scaleMatrix);
-		mat4.scale(this.scaleMatrix, this.scale, this.scaleMatrix);
-		this.quaterion = quat.fromEuler(
-			this.rotation[0],
-			this.rotation[1],
-			this.rotation[2],
-			QUATERNION_COMP_ORDER,
-		);
-		mat4.fromQuat(this.quaterion, this.rotationMatrix);
-		mat4.identity(this.translateMatrix);
-		mat4.translate(this.translateMatrix, this.position, this.translateMatrix);
+		if (this._customMatrix) {
+			mat4.copy(this._customMatrix, this.cachedMatrix);
+		} else {
+			mat4.identity(this.scaleMatrix);
+			mat4.scale(this.scaleMatrix, this.scale, this.scaleMatrix);
+			this._quaterion = quat.fromEuler(
+				this.rotation[0],
+				this.rotation[1],
+				this.rotation[2],
+				QUATERNION_COMP_ORDER,
+			);
+			mat4.fromQuat(this._quaterion, this.rotationMatrix);
+			mat4.identity(this.translateMatrix);
+			mat4.translate(this.translateMatrix, this.position, this.translateMatrix);
 
-		mat4.mul(this.scaleMatrix, this.rotationMatrix, this.cachedMatrix);
-		mat4.mul(this.translateMatrix, this.cachedMatrix, this.cachedMatrix);
+			mat4.mul(this.scaleMatrix, this.rotationMatrix, this.cachedMatrix);
+			mat4.mul(this.translateMatrix, this.cachedMatrix, this.cachedMatrix);
+		}
 
 		mat4.mul(parentMatrix, this.cachedMatrix, this.worldMatrix);
 		this.updateNormalMatrix();
@@ -82,6 +107,7 @@ export default class Transform {
 	public addChild(child: Transform) {
 		child.parent = this;
 		this.children.push(child);
+		child.updateWorldMatrix();
 	}
 
 	public removeChild(child: Transform) {
@@ -96,6 +122,27 @@ export default class Transform {
 				child.traverse(traverseFn, recursive);
 			}
 		}
+	}
+
+	public findChild(traverseFn: (node: Transform) => boolean): Transform {
+		const found = traverseFn(this);
+		if (found) {
+			return this;
+		}
+		for (let child of this.children) {
+			const found = child.findChild(traverseFn);
+			if (found) {
+				return child;
+			}
+		}
+	}
+
+	public findChildByLabel(label: string): Transform {
+		return this.findChild(({ label: nodeLabel }) => label === nodeLabel);
+	}
+
+	public findChildById(id: UUIDString): Transform {
+		return this.findChild(({ id: nodeId }) => id === nodeId);
 	}
 
 	public preRender(renderEncoder: GPURenderPassEncoder) {

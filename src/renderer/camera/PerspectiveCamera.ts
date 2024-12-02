@@ -3,10 +3,12 @@ import Camera from "./Camera";
 import { deg2Rad } from "../utils/math";
 
 export default class PerspectiveCamera extends Camera {
-	public fieldOfView: number;
-	public aspect: number;
-
-	constructor(fieldOfView: number, aspect: number, near: number, far: number) {
+	constructor(
+		public fieldOfView: number,
+		public aspect: number,
+		near: number,
+		far: number,
+	) {
 		super();
 		this.fieldOfView = deg2Rad(fieldOfView);
 		this.aspect = aspect;

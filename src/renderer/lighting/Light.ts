@@ -10,11 +10,13 @@ import { Vec3, vec3 } from "wgpu-matrix";
 export enum LightType {
 	Directional,
 	Point,
+	Ambient,
 }
 
 export const LightTypeToShaderType: Map<LightType, number> = new Map([
 	[LightType.Directional, 0],
 	[LightType.Point, 1],
+	[LightType.Ambient, 2],
 ]);
 
 export default class Light extends Transform {

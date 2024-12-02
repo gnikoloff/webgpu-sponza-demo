@@ -1,33 +1,87 @@
 import { wgsl } from "wgsl-preprocessor/wgsl-preprocessor.js";
-import { BIND_GROUP_LOCATIONS } from "../constants";
+
 import { TextureDebugMeshType } from "../debug/TextureDebugMesh";
 import { SHADER_CHUNKS } from "../../renderer/shader/chunks";
-import NORMAL_ENCODER_SHADER_CHUNK from "../../renderer/shader/NormalEncoder";
+import NormalEncoderShaderUtils from "../../renderer/shader/NormalEncoderShaderUtils";
+import {
+	BIND_GROUP_LOCATIONS,
+	PBR_TEXTURES_LOCATIONS,
+	SAMPLER_LOCATIONS,
+} from "../../renderer/core/RendererBindings";
 
 export const FRAGMENT_SHADER_DEBUG_TEX_COORDS_ENTRY_FN =
 	"fragmentMainTexCoords";
 
-export const DEBUG_FRAGMENT_SHADER_SRC = wgsl/* wgsl */ `
-${SHADER_CHUNKS.CameraUniform}
+/* prettier-ignore */
+export const getDefaultPBRFragmentShader = (
+	hasPBRTexture = false,
+): string => wgsl/* wgsl */ `
+  ${SHADER_CHUNKS.CameraUniform}
   ${SHADER_CHUNKS.VertexOutput}
   ${SHADER_CHUNKS.GBufferOutput}
   ${SHADER_CHUNKS.ModelUniform}
 
   @group(${BIND_GROUP_LOCATIONS.Camera}) @binding(0) var<uniform> camera: CameraUniform;
   @group(${BIND_GROUP_LOCATIONS.Model}) @binding(0) var<uniform> model: ModelUniform;
+  @group(${BIND_GROUP_LOCATIONS.Samplers}) @binding(${SAMPLER_LOCATIONS.Default}) var texSampler: sampler;
+  
+  @group(${BIND_GROUP_LOCATIONS.PBRTextures}) @binding(${PBR_TEXTURES_LOCATIONS.Albedo}) var albedoTexture: texture_2d<f32>;
+  @group(${BIND_GROUP_LOCATIONS.PBRTextures}) @binding(${PBR_TEXTURES_LOCATIONS.Normal}) var normalTexture: texture_2d<f32>;
+  @group(${BIND_GROUP_LOCATIONS.PBRTextures}) @binding(${PBR_TEXTURES_LOCATIONS.MetallicRoughness}) var metallicRoughnessTexture: texture_2d<f32>;
 
-  ${NORMAL_ENCODER_SHADER_CHUNK}
+  ${NormalEncoderShaderUtils}
+
+  // TODO: Push constants do not work correctly currently.
+  // Prefer Push constants for shader permutation
+
+  // override HAS_ALBEDO_TEXTURE: u32;
+  // override HAS_NORMAL_TEXTURE: u32;
+  
 
   @fragment
   fn ${FRAGMENT_SHADER_DEBUG_TEX_COORDS_ENTRY_FN}(in: VertexOutput) -> GBufferOutput  {
     // return vec4<f32>(in.uv, 0.0, 1.0);
     var uv = in.uv;
+    // uv.y = 1.0 - uv.y;
+    
+
+    var N = normalize(in.normal);
+    let T = normalize(in.tangent);
+    let B = normalize(in.bitangent);
+    let TBN = mat3x3f(T, B, N);
+
+    // var textureNormal = textureSampleLevel(normalTexture, texSampler, uv, 5.0).rgb * 2 - 1;
+    let textureNormal = textureSample(normalTexture, texSampler, uv).rgb * 2 - 1;
+    
+    if (${hasPBRTexture}) {
+      N = normalize(TBN * textureNormal);
+    }
+
     var out: GBufferOutput;
-    let encodedNormal = encodeNormal(normalize(in.normal));
-    let metallic = model.metallic;
-    let roughness = model.roughness;
-    out.normalMetallicRoughness = vec4f(encodedNormal, metallic, roughness);
-    out.color = vec4f(model.baseColor, f32(model.isReflective));
+    var metallic = model.metallic;
+    var roughness = model.roughness;
+
+
+    if (${hasPBRTexture}) {
+      metallic = textureSample(metallicRoughnessTexture, texSampler, uv).g;
+      roughness = textureSample(metallicRoughnessTexture, texSampler, uv).b;
+    }
+
+    out.normalMetallicRoughness = vec4f(
+      encodeNormal(N),
+      metallic,
+      roughness
+    );
+    
+    let modelTexColor = textureSample(albedoTexture, texSampler, uv).rgb;
+    var color = model.baseColor;
+
+    if (${hasPBRTexture}) {
+      color = modelTexColor;
+    }
+    
+    out.color = vec4f(color, f32(model.isReflective));
+    
 
     var oldPos = in.prevFrameClipPos;
     var newPos = in.currFrameClipPos;
@@ -44,7 +98,6 @@ ${SHADER_CHUNKS.CameraUniform}
 
     out.velocity = vec4f((newPos - oldPos).xy, 0, 1);
   
-
     return out;
   }
 `;
@@ -57,7 +110,7 @@ export const getDebugFragmentShader = (
 ): string => wgsl/* wgsl */ `
   ${SHADER_CHUNKS.VertexOutput}
 
-  ${NORMAL_ENCODER_SHADER_CHUNK}
+  ${NormalEncoderShaderUtils}
 
   @group(2) @binding(0) var mySampler: sampler;
 
@@ -113,6 +166,8 @@ export const getDebugFragmentShader = (
 
     #elif ${debugTexType === TextureDebugMeshType.Velocity}
     color = vec4f(textureSample(myTexture, mySampler, uv).rg * 100, 0, 1);
+    #elif ${debugTexType === TextureDebugMeshType.BDRF}
+    color = vec4f(textureSample(myTexture, mySampler, in.uv).rg, 0, 1);
     #else
     color = textureSample(myTexture, mySampler, uv);
     #endif

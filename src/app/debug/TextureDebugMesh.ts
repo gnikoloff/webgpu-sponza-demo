@@ -23,6 +23,7 @@ export enum TextureDebugMeshType {
 	Velocity,
 	ShadowDepthCascade0,
 	ShadowDepthCascade1,
+	BDRF,
 }
 
 const textureTypeToDomId: Map<TextureDebugMeshType, string> = new Map([
@@ -34,6 +35,7 @@ const textureTypeToDomId: Map<TextureDebugMeshType, string> = new Map([
 	[TextureDebugMeshType.Velocity, "velocity-texture"],
 	[TextureDebugMeshType.ShadowDepthCascade0, "shadow-depth-cascade-0"],
 	[TextureDebugMeshType.ShadowDepthCascade1, "shadow-depth-cascade-1"],
+	[TextureDebugMeshType.BDRF, "bdrf"],
 ]);
 
 const textureTypeToDomHeading: Map<TextureDebugMeshType, string> = new Map([
@@ -45,6 +47,7 @@ const textureTypeToDomHeading: Map<TextureDebugMeshType, string> = new Map([
 	[TextureDebugMeshType.Velocity, "Velocity"],
 	[TextureDebugMeshType.ShadowDepthCascade0, "Shadow Depth Cascade 1"],
 	[TextureDebugMeshType.ShadowDepthCascade1, "Shadow Depth Cascade 2"],
+	[TextureDebugMeshType.BDRF, "BDRF"],
 ]);
 
 export default class TextureDebugMesh extends Drawable {
@@ -131,6 +134,7 @@ export default class TextureDebugMesh extends Drawable {
 			layout: samplerTextureBindGroupLayout,
 			entries: samplerTextureBindGroupEntries,
 		});
+
 		this.setMaterial(
 			new Material({
 				debugLabel: "Debug Material",

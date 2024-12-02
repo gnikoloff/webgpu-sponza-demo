@@ -1,4 +1,4 @@
-const CSM_SHADOW_SHADER_CHUNK_SRC = /* wgsl */ `
+const CSMShadowShaderUtils = /* wgsl */ `
 
   @must_use
   fn ShadowLayerIdxCalculate(
@@ -11,7 +11,6 @@ const CSM_SHADOW_SHADER_CHUNK_SRC = /* wgsl */ `
 
   var layer: i32 = -1;
   let cascadesCount: i32 = 2;
-  // for (var i: i32 = 0; i < settings.cascadesCount; ++i) {
     for (var i: i32 = 0; i < cascadesCount; i++) {
       if (depthValue < shadowCascades[i].distance) {
         layer = i;
@@ -20,7 +19,6 @@ const CSM_SHADOW_SHADER_CHUNK_SRC = /* wgsl */ `
     }
 
     if (layer == -1) {
-      // layer = settings.cascadesCount;
       layer = cascadesCount;
     }
     return layer;
@@ -80,12 +78,8 @@ const CSM_SHADOW_SHADER_CHUNK_SRC = /* wgsl */ `
     }
     shadow /= 9;
 
-    if (projCoords.z > 1.0) {
-      return 0;
-    }
-
-    return shadow;
+    return select(shadow, 0, projCoords.z > 1.0);
   }
 `;
 
-export default CSM_SHADOW_SHADER_CHUNK_SRC;
+export default CSMShadowShaderUtils;

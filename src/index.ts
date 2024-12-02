@@ -8,16 +8,29 @@ const renderer = await Renderer.initialize($canvas);
 const GUI_PARAMS = {
 	"Play Animation": true,
 	"Enable TAA": true,
-	"Debug G-Buffer": false,
+	"Debug G-Buffer": true,
 	"Debug Shadow Map": false,
 	"Debug Point Lights Mask": false,
 	"Debug Shadow Cascade Index": false,
+	"Auto-Rotate Sun": false,
+	"Debug Skybox": true,
 };
 
 const gui = new dat.GUI({ width: 243 });
 
 gui.add(GUI_PARAMS, "Play Animation").onChange((v: boolean) => {
 	renderer.enableAnimation = v;
+});
+
+// const envFolder = gui.addFolder("Environment");
+// envFolder.add(GUI_PARAMS, "Debug Skybox").onChange((v: boolean) => {
+// 	renderer.debugSkybox = v;
+// });
+
+const lightingFolder = gui.addFolder("Lighting");
+lightingFolder.open();
+lightingFolder.add(GUI_PARAMS, "Auto-Rotate Sun").onChange((v: boolean) => {
+	renderer.autoRotateSun = v;
 });
 
 const shadowFolder = gui.addFolder("Shadow");
@@ -80,4 +93,6 @@ function resize() {
 	renderer.debugGBuffer = GUI_PARAMS["Debug G-Buffer"];
 	renderer.debugShadowMap = GUI_PARAMS["Debug Shadow Map"];
 	renderer.debugPointLights = GUI_PARAMS["Debug Point Lights Mask"];
+	renderer.autoRotateSun = GUI_PARAMS["Auto-Rotate Sun"];
+	// renderer.debugSkybox = GUI_PARAMS["Debug Skybox"];
 }

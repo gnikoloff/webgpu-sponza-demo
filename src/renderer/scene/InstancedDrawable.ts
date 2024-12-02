@@ -3,7 +3,7 @@ import Drawable from "./Drawable";
 import Geometry from "../geometry/Geometry";
 import Renderer from "../../app/Renderer";
 import PipelineStates from "../core/PipelineStates";
-import { BIND_GROUP_LOCATIONS } from "../../app/constants";
+import { BIND_GROUP_LOCATIONS } from "../core/RendererBindings";
 
 export default class InstancedDrawable extends Drawable {
 	private instanceMatrices: Mat4[] = [];

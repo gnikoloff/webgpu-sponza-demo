@@ -1,4 +1,6 @@
+import { Vec2, Vec3, vec2, vec3 } from "wgpu-matrix";
 import Geometry from "./Geometry";
+import Face from "./Face";
 
 export default class PlaneGeometry extends Geometry {
 	constructor(
@@ -22,7 +24,9 @@ export default class PlaneGeometry extends Geometry {
 		const segmentHeight = height / heightSegments;
 
 		const indices: number[] = [];
-		const interleavedArray: number[] = [];
+		const vertices: Vec3[] = [];
+		const normals: Vec3[] = [];
+		const uvs: Vec2[] = [];
 
 		for (let iy = 0; iy < gridY1; iy++) {
 			const y = iy * segmentHeight - halfHeight;
@@ -30,12 +34,9 @@ export default class PlaneGeometry extends Geometry {
 			for (let ix = 0; ix < gridX1; ix++) {
 				const x = ix * segmentWidth - halfWidth;
 
-				interleavedArray.push(x, -y, 0);
-
-				interleavedArray.push(0, 0, 1);
-
-				interleavedArray.push(ix / gridX);
-				interleavedArray.push(1 - iy / gridY);
+				vertices.push(vec3.create(x, -y, 0));
+				normals.push(vec3.create(0, 0, 1));
+				uvs.push(vec2.create(ix / gridX, 1 - iy / gridY));
 			}
 		}
 
@@ -47,14 +48,49 @@ export default class PlaneGeometry extends Geometry {
 				const d = ix + 1 + gridX1 * iy;
 
 				indices.push(a, b, d);
+
+				const face0 = new Face(
+					a,
+					b,
+					d,
+					vertices[a],
+					vertices[b],
+					vertices[d],
+					normals[a],
+					normals[b],
+					normals[d],
+					uvs[a],
+					uvs[b],
+					uvs[d],
+				);
+				this.faces.push(face0);
+
 				indices.push(b, c, d);
+
+				const face1 = new Face(
+					b,
+					c,
+					d,
+					vertices[b],
+					vertices[c],
+					vertices[d],
+					normals[b],
+					normals[c],
+					normals[d],
+					uvs[b],
+					uvs[c],
+					uvs[d],
+				);
+				this.faces.push(face1);
 			}
 		}
 
-		this.createBuffers({
-			vertexCount: indices.length,
-			interleavedVertexArr: new Float32Array(interleavedArray),
-			indicesArr: new Uint16Array(indices),
-		});
+		this.createBuffersWithTangentsManually(
+			indices.length,
+			vertices,
+			normals,
+			uvs,
+			new Uint16Array(indices),
+		);
 	}
 }

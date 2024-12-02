@@ -1,5 +1,6 @@
-import { vec3 } from "wgpu-matrix";
+import { Vec2, Vec3, vec2, vec3 } from "wgpu-matrix";
 import Geometry from "./Geometry";
+import Face from "./Face";
 
 export default class CubeGeometry extends Geometry {
 	constructor(
@@ -17,27 +18,31 @@ export default class CubeGeometry extends Geometry {
 		depthSegments = Math.floor(depthSegments);
 
 		const indices: number[] = [];
-		const interleavedArray: number[] = [];
+		const vertices: Vec3[] = [];
+		const normals: Vec3[] = [];
+		const uvs: Vec2[] = [];
 		let numberOfVertices = 0;
 
 		// prettier-ignore
-		buildPlane(2, 1, 0, -1, -1, depth, height, width, depthSegments, heightSegments); // px
+		buildPlane.call(this, 2, 1, 0, -1, -1, depth, height, width, depthSegments, heightSegments); // px
 		// prettier-ignore
-		buildPlane(2, 1, 0, 1, -1, depth, height, -width, depthSegments, heightSegments); // nx
+		buildPlane.call(this, 2, 1, 0, 1, -1, depth, height, -width, depthSegments, heightSegments); // nx
 		// prettier-ignore
-		buildPlane(0, 2, 1, 1, 1, width, depth, height, widthSegments, depthSegments); // py
+		buildPlane.call(this, 0, 2, 1, 1, 1, width, depth, height, widthSegments, depthSegments); // py
 		// prettier-ignore
-		buildPlane(0, 2, 1, 1, -1, width, depth, -height, widthSegments, depthSegments); // ny
+		buildPlane.call(this, 0, 2, 1, 1, -1, width, depth, -height, widthSegments, depthSegments); // ny
 		// prettier-ignore
-		buildPlane(0, 1, 2, 1, -1, width, height, depth, widthSegments, heightSegments); // pz
+		buildPlane.call(this, 0, 1, 2, 1, -1, width, height, depth, widthSegments, heightSegments); // pz
 		// prettier-ignore
-		buildPlane(0, 1, 2, -1, -1, width, height, -depth, widthSegments, heightSegments); // nz
+		buildPlane.call(this, 0, 1, 2, -1, -1, width, height, -depth, widthSegments, heightSegments); // nz
 
-		this.createBuffers({
-			vertexCount: indices.length,
-			interleavedVertexArr: new Float32Array(interleavedArray),
-			indicesArr: new Uint16Array(indices),
-		});
+		this.createBuffersWithTangentsManually(
+			indices.length,
+			vertices,
+			normals,
+			uvs,
+			new Uint16Array(indices),
+		);
 
 		function buildPlane(
 			u: number,
@@ -82,7 +87,7 @@ export default class CubeGeometry extends Geometry {
 
 					// now apply vector to vertex buffer
 
-					interleavedArray.push(vector[0], vector[1], vector[2]);
+					vertices.push(vec3.clone(vector));
 
 					// set values to correct vector component
 
@@ -92,12 +97,11 @@ export default class CubeGeometry extends Geometry {
 
 					// now apply vector to normal buffer
 
-					interleavedArray.push(vector[0], vector[1], vector[2]);
+					normals.push(vec3.clone(vector));
 
 					// uvs
 
-					interleavedArray.push(ix / gridX);
-					interleavedArray.push(1 - iy / gridY);
+					uvs.push(vec2.create(ix / gridX, 1 - iy / gridY));
 
 					// counters
 
@@ -121,7 +125,40 @@ export default class CubeGeometry extends Geometry {
 					// faces
 
 					indices.push(a, b, d);
+
+					const face0 = new Face(
+						a,
+						b,
+						d,
+						vertices[a],
+						vertices[b],
+						vertices[d],
+						normals[a],
+						normals[b],
+						normals[d],
+						uvs[a],
+						uvs[b],
+						uvs[d],
+					);
+					this.faces.push(face0);
+
 					indices.push(b, c, d);
+
+					const face1 = new Face(
+						b,
+						c,
+						d,
+						vertices[b],
+						vertices[c],
+						vertices[d],
+						normals[b],
+						normals[c],
+						normals[d],
+						uvs[b],
+						uvs[c],
+						uvs[d],
+					);
+					this.faces.push(face1);
 
 					// increase counter
 

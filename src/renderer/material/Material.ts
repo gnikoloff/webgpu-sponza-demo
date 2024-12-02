@@ -1,6 +1,6 @@
 import Renderer from "../../app/Renderer";
 import PipelineStates from "../core/PipelineStates";
-import { VertexDescriptor } from "../core/VertexDescriptor";
+import VertexDescriptor from "../core/VertexDescriptor";
 
 export interface IMaterial {
 	vertexShaderSrc: string;
@@ -9,6 +9,7 @@ export interface IMaterial {
 	fragmentShaderSrc?: string;
 	fragmentShaderEntryFn?: string;
 	bindGroupLayouts?: GPUBindGroupLayout[];
+	constants?: Record<string, number>;
 	targets?: GPUColorTargetState[];
 	depthStencilState?: GPUDepthStencilState;
 	primitive?: GPUPrimitiveState;
@@ -27,7 +28,10 @@ export default class Material {
 		bindGroupLayouts = [
 			PipelineStates.defaultCameraBindGroupLayout,
 			PipelineStates.defaultModelBindGroupLayout,
+			PipelineStates.defaultSamplersBindGroupLayout,
+			PipelineStates.defaultModelMaterialBindGroupLayout,
 		],
+		constants = {},
 		targets = [],
 		depthStencilState = {
 			format: "depth32float",
@@ -63,6 +67,7 @@ export default class Material {
 				module: fragmentShaderModule,
 				entryPoint: fragmentShaderEntryFn,
 				targets,
+				constants,
 			};
 		}
 

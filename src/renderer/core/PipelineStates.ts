@@ -1,8 +1,14 @@
 import Renderer from "../../app/Renderer";
+import { PBR_TEXTURES_LOCATIONS, SAMPLER_LOCATIONS } from "./RendererBindings";
 
 let _cameraBindGroupLayout: GPUBindGroupLayout;
 let _modelBindGroupLayout: GPUBindGroupLayout;
+let _modelTexturesBindGroupLayout: GPUBindGroupLayout;
+let _modelSamplersBindGroupLayout: GPUBindGroupLayout;
 let _instanceMatricesBindGroupLayout: GPUBindGroupLayout;
+
+const cachedShaderModules: Map<string, GPUShaderModule> = new Map([]);
+const cachedRenderPSOs: Map<string, GPURenderPipeline> = new Map([]);
 
 const PipelineStates = {
 	get defaultCameraBindGroupLayout(): GPUBindGroupLayout {
@@ -45,6 +51,58 @@ const PipelineStates = {
 		return _modelBindGroupLayout;
 	},
 
+	get defaultSamplersBindGroupLayout(): GPUBindGroupLayout {
+		if (_modelSamplersBindGroupLayout) {
+			return _modelSamplersBindGroupLayout;
+		}
+		const bindGroupLayoutEntries: GPUBindGroupLayoutEntry[] = [
+			{
+				binding: SAMPLER_LOCATIONS.Default,
+				visibility: GPUShaderStage.FRAGMENT,
+				sampler: {},
+			},
+		];
+		_modelSamplersBindGroupLayout = Renderer.device.createBindGroupLayout({
+			label: "Model Samplers GPUBindGroupLayout",
+			entries: bindGroupLayoutEntries,
+		});
+		return _modelSamplersBindGroupLayout;
+	},
+
+	get defaultModelMaterialBindGroupLayout(): GPUBindGroupLayout {
+		if (_modelTexturesBindGroupLayout) {
+			return _modelTexturesBindGroupLayout;
+		}
+		const bindGroupLayoutEntries: GPUBindGroupLayoutEntry[] = [
+			{
+				binding: PBR_TEXTURES_LOCATIONS.Albedo,
+				visibility: GPUShaderStage.FRAGMENT,
+				texture: {
+					sampleType: "float",
+				},
+			},
+			{
+				binding: PBR_TEXTURES_LOCATIONS.Normal,
+				visibility: GPUShaderStage.FRAGMENT,
+				texture: {
+					sampleType: "float",
+				},
+			},
+			{
+				binding: PBR_TEXTURES_LOCATIONS.MetallicRoughness,
+				visibility: GPUShaderStage.FRAGMENT,
+				texture: {
+					sampleType: "float",
+				},
+			},
+		];
+		_modelTexturesBindGroupLayout = Renderer.device.createBindGroupLayout({
+			label: "Model Textures GPUBindGroupLayout",
+			entries: bindGroupLayoutEntries,
+		});
+		return _modelTexturesBindGroupLayout;
+	},
+
 	get instanceMatricesBindGroupLayout(): GPUBindGroupLayout {
 		if (_instanceMatricesBindGroupLayout) {
 			return _instanceMatricesBindGroupLayout;
@@ -65,18 +123,35 @@ const PipelineStates = {
 		return _instanceMatricesBindGroupLayout;
 	},
 
-	createShaderModule: (shaderModuleSrc: string): GPUShaderModule => {
-		const shaderModule = Renderer.device.createShaderModule({
+	createShaderModule: (
+		shaderModuleSrc: string,
+		debugLabel = `Shader Module #${cachedShaderModules.size}`,
+	): GPUShaderModule => {
+		let shaderModule: GPUShaderModule;
+		if ((shaderModule = cachedShaderModules.get(shaderModuleSrc))) {
+			return shaderModule;
+		}
+		shaderModule = Renderer.device.createShaderModule({
+			label: debugLabel,
 			code: shaderModuleSrc,
 		});
+		cachedShaderModules.set(shaderModuleSrc, shaderModule);
 		return shaderModule;
 	},
 
 	createRenderPipeline: (
 		descriptor: GPURenderPipelineDescriptor,
 	): GPURenderPipeline => {
-		const pipeline = Renderer.device.createRenderPipeline(descriptor);
-		return pipeline;
+		// const key = JSON.stringify(descriptor);
+		let renderPSO: GPURenderPipeline;
+		// if ((renderPSO = cachedRenderPSOs.get(key))) {
+		// 	return renderPSO;
+		// }
+		renderPSO = Renderer.device.createRenderPipeline(descriptor);
+
+		// cachedRenderPSOs.set(key, renderPSO);
+
+		return renderPSO;
 	},
 
 	createComputePipeline: (

@@ -1,5 +1,6 @@
-import { vec3 } from "wgpu-matrix";
+import { Vec2, Vec3, vec2, vec3 } from "wgpu-matrix";
 import Geometry from "./Geometry";
+import Face from "./Face";
 
 export default class SphereGeometry extends Geometry {
 	constructor(
@@ -23,8 +24,11 @@ export default class SphereGeometry extends Geometry {
 
 		const vertex = vec3.create();
 		const normal = vec3.create();
+		const uv = vec2.create();
 
-		const interleavedArray = [];
+		const vertices: Vec3[] = [];
+		const normals: Vec3[] = [];
+		const uvs: Vec2[] = [];
 		const indices = [];
 
 		for (let iy = 0; iy <= heightSegments; iy++) {
@@ -57,17 +61,21 @@ export default class SphereGeometry extends Geometry {
 					Math.sin(phiStart + u * phiLength) *
 					Math.sin(thetaStart + v * thetaLength);
 
-				interleavedArray.push(vertex[0], vertex[1], vertex[2]);
+				vertices.push(vec3.clone(vertex));
+				// interleavedArray.push(vertex[0], vertex[1], vertex[2]);
 
 				// normal
 
 				vec3.copy(vertex, normal);
 				vec3.normalize(normal, normal);
-				interleavedArray.push(normal[0], normal[1], normal[2]);
+				normals.push(vec3.clone(normal));
+				// interleavedArray.push(normal[0], normal[1], normal[2]);
 
 				// uv
-
-				interleavedArray.push(u + uOffset, 1 - v);
+				uv[0] = u + uOffset;
+				uv[1] = 1 - v;
+				uvs.push(vec2.clone(uv));
+				// interleavedArray.push(uvs[0], uvs[1]);
 
 				verticesRow.push(index++);
 			}
@@ -84,16 +92,77 @@ export default class SphereGeometry extends Geometry {
 				const c = grid[iy + 1][ix];
 				const d = grid[iy + 1][ix + 1];
 
-				if (iy !== 0 || thetaStart > 0) indices.push(a, b, d);
+				if (iy !== 0 || thetaStart > 0) {
+					indices.push(a, b, d);
+
+					const p0 = vertices[a];
+					const p1 = vertices[b];
+					const p2 = vertices[d];
+
+					const n0 = normals[a];
+					const n1 = normals[b];
+					const n2 = normals[d];
+
+					const texCoord0 = uvs[a];
+					const texCoord1 = uvs[b];
+					const texCoord2 = uvs[d];
+
+					const face = new Face(
+						a,
+						b,
+						d,
+						p0,
+						p1,
+						p2,
+						n0,
+						n1,
+						n2,
+						texCoord0,
+						texCoord1,
+						texCoord2,
+					);
+					this.faces.push(face);
+				}
 				if (iy !== heightSegments - 1 || thetaEnd < Math.PI)
 					indices.push(b, c, d);
+
+				const p0 = vertices[b];
+				const p1 = vertices[c];
+				const p2 = vertices[d];
+
+				const n0 = normals[b];
+				const n1 = normals[c];
+				const n2 = normals[d];
+
+				const texCoord0 = uvs[b];
+				const texCoord1 = uvs[c];
+				const texCoord2 = uvs[d];
+
+				const face = new Face(
+					b,
+					c,
+					d,
+					p0,
+					p1,
+					p2,
+					n0,
+					n1,
+					n2,
+					texCoord0,
+					texCoord1,
+					texCoord2,
+				);
+				this.faces.push(face);
 			}
 		}
 
-		this.createBuffers({
-			vertexCount: indices.length,
-			interleavedVertexArr: new Float32Array(interleavedArray),
-			indicesArr: new Uint16Array(indices),
-		});
+		this.createBuffersWithTangentsManually(
+			indices.length,
+			// interleavedVertexArr: new Float32Array(interleavedArray),
+			vertices,
+			normals,
+			uvs,
+			new Uint16Array(indices),
+		);
 	}
 }

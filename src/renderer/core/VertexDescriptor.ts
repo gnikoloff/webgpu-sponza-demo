@@ -1,9 +1,12 @@
-import { SHADER_ATTRIB_LOCATIONS } from "../../app/constants";
+import BaseUtilObject from "./BaseUtilObject";
+import { SHADER_ATTRIB_LOCATIONS } from "./RendererBindings";
 
 let _defaultVertexLayout: GPUVertexBufferLayout;
 
-export const VertexDescriptor = {
-	get defaultLayout(): GPUVertexBufferLayout {
+export default class VertexDescriptor extends BaseUtilObject {
+	public static readonly itemsPerVertexDefaultLayout = 3 + 3 + 2 + 3;
+
+	public static get defaultLayout(): GPUVertexBufferLayout {
 		if (_defaultVertexLayout) {
 			return _defaultVertexLayout;
 		}
@@ -27,12 +30,20 @@ export const VertexDescriptor = {
 				offset: 6 * Float32Array.BYTES_PER_ELEMENT,
 				format: "float32x2",
 			},
+			// tangent
+			{
+				shaderLocation: SHADER_ATTRIB_LOCATIONS.Tangent,
+				offset: 8 * Float32Array.BYTES_PER_ELEMENT,
+				format: "float32x3",
+			},
 		];
 		_defaultVertexLayout = {
-			arrayStride: (3 + 3 + 2) * Float32Array.BYTES_PER_ELEMENT,
+			arrayStride:
+				VertexDescriptor.itemsPerVertexDefaultLayout *
+				Float32Array.BYTES_PER_ELEMENT,
 			attributes,
 		};
 
 		return _defaultVertexLayout;
-	},
-};
+	}
+}

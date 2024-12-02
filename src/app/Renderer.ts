@@ -1,7 +1,6 @@
 import CameraController from "../renderer/camera/CameraController";
 import PerspectiveCamera from "../renderer/camera/PerspectiveCamera";
 import {
-	BIND_GROUP_LOCATIONS,
 	MAIN_CAMERA_FAR,
 	MAIN_CAMERA_NEAR,
 	ORTHO_CAMERA_FAR,
@@ -14,7 +13,7 @@ import TextureDebugMesh, {
 	TextureDebugMeshType,
 } from "./debug/TextureDebugMesh";
 import GBufferRenderPass from "./render-passes/GBufferRenderPass";
-import GBufferIntegratePass from "./render-passes/GBufferIntegratePass";
+import GBufferIntegratePass from "./render-passes/GBufferIntegratePass/GBufferIntegratePass";
 import GroundContainer from "./meshes/ground/GroundContainer";
 import CubeGeometry from "../renderer/geometry/CubeGeometry";
 import MaterialCache from "./utils/MaterialCache";
@@ -28,7 +27,17 @@ import DirectionalLight from "../renderer/lighting/DirectionalLight";
 import { RenderPassType } from "../renderer/core/RenderPass";
 import DirectionalShadowPass from "./render-passes/DirectionalShadowPass";
 import TextureDebugContainer from "./debug/TextureDebugContainer";
-import GLTFGeometry from "../renderer/geometry/GLTFGeometry";
+import OBJDrawable from "../renderer/geometry/OBJGeometry";
+import OBJLoader from "../renderer/scene/OBJLoader";
+import GLTFModel from "../renderer/scene/GLTFModel";
+import { BIND_GROUP_LOCATIONS } from "../renderer/core/RendererBindings";
+import TextureLoader from "../renderer/texture/TextureLoader";
+import Skybox from "./meshes/Skybox";
+import DiffuseIBLGenerator from "../renderer/texture/DiffuseIBLGenerator";
+import TextureController from "../renderer/texture/TextureController";
+import SpecularIBLGenerator from "../renderer/texture/SpecularIBLGenerator";
+import BDRFLutGenerator from "../renderer/texture/BDRFLutGenerator";
+// import EnvironmentProbePass from "./render-passes/EnvironmentProbePass";
 
 export default class Renderer {
 	public static $canvas: HTMLCanvasElement;
@@ -49,6 +58,7 @@ export default class Renderer {
 	public mainCameraCtrl: CameraController;
 
 	private rootTransform = new Transform();
+	private skybox: Skybox;
 	private ground: GroundContainer;
 	private cube: Drawable;
 	private cube1: Drawable;
@@ -56,6 +66,7 @@ export default class Renderer {
 
 	private sceneDirectionalLight = new DirectionalLight();
 
+	private bdrfLUTDebugTex?: TextureDebugMesh;
 	private gBufferDebugTexturesContainer?: TextureDebugContainer;
 	private shadowMapDebugTexturesContainer?: TextureDebugContainer;
 
@@ -64,10 +75,14 @@ export default class Renderer {
 	private reflectionComputePass: ReflectionComputePass;
 	private taaResolvePass: TAAResolvePass;
 	private shadowPass: DirectionalShadowPass;
+	// private environmentProbePass: EnvironmentProbePass;
 
 	private lights: Light[];
 
 	private orthoCameraBindGroup: GPUBindGroup;
+
+	public autoRotateSun = false;
+	public rotateAngle = Math.PI * 0.2;
 
 	private _enableTAA = true;
 	public get enableTAA(): boolean {
@@ -140,9 +155,7 @@ export default class Renderer {
 		Renderer.$canvas = canvas;
 		Renderer.canvasContext = canvas.getContext("webgpu") as GPUCanvasContext;
 
-		Renderer.pixelFormat = adapter.features.has("bgra8unorm-storage")
-			? navigator.gpu.getPreferredCanvasFormat()
-			: "rgba8unorm";
+		Renderer.pixelFormat = navigator.gpu.getPreferredCanvasFormat();
 
 		const depth32Stencil8RenderFeature: GPUFeatureName =
 			"depth32float-stencil8";
@@ -159,13 +172,40 @@ export default class Renderer {
 			format: Renderer.pixelFormat,
 			usage:
 				GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.STORAGE_BINDING,
+			alphaMode: "premultiplied",
 		});
 
 		return new Renderer();
 	};
 
 	constructor() {
-		const buda = new GLTFGeometry("/public/buda_2.gltf");
+		// OBJLoader.loadObjFileContents("/Buda_b.obj").then((buda) => {
+		// 	const model1 = new OBJDrawable(buda.models[0]);
+		// 	const drawable1 = new Drawable(model1);
+		// 	drawable1.setMaterial(MaterialCache.defaultDeferredMaterial);
+		// 	drawable1.setPositionX(3).updateWorldMatrix();
+		// 	drawable1.materialProps.isReflective = false;
+		// 	drawable1.setMaterial(
+		// 		MaterialCache.defaultShadowMaterial,
+		// 		RenderPassType.Shadow,
+		// 	);
+		// 	drawable1.materialProps.setColor(1, 1, 1);
+		// 	this.rootTransform.addChild(drawable1);
+		// });
+
+		// OBJLoader.loadObjFileContents("/Buda_2.obj").then((buda) => {
+		// 	// debugger;
+		// 	const model0 = new OBJDrawable(buda.models[0]);
+		// 	const drawable = new Drawable(model0);
+		// 	drawable.setMaterial(MaterialCache.defaultDeferredMaterial);
+		// 	drawable.setMaterial(
+		// 		MaterialCache.defaultShadowMaterial,
+		// 		RenderPassType.Shadow,
+		// 	);
+		// 	drawable.setPositionX(3).updateWorldMatrix();
+		// 	drawable.materialProps.setColor(1, 1, 1);
+		// 	this.rootTransform.addChild(drawable);
+		// });
 
 		this.mainCamera = new PerspectiveCamera(
 			45,
@@ -174,8 +214,8 @@ export default class Renderer {
 			MAIN_CAMERA_FAR,
 		);
 		this.mainCamera.shouldJitter = true;
-		this.mainCamera.setPosition(0, 5, 10);
-		this.mainCamera.setLookAt(0, 0, 0);
+		this.mainCamera.setPosition(0, 4, 10);
+		this.mainCamera.setLookAt(0, 4, 0);
 		this.mainCamera.updateViewMatrix();
 		this.mainCameraCtrl = new CameraController(
 			this.mainCamera,
@@ -215,6 +255,11 @@ export default class Renderer {
 		this.rootTransform.addChild(this.ground);
 
 		this.cube = new Drawable(new CubeGeometry(1, 1, 1));
+		this.cube.label = "Cube 1";
+
+		this.cube.setPosition(3, 3, 3);
+		this.cube.setScale(0.3, 0.3, 0.3);
+		this.cube.updateWorldMatrix();
 		this.cube.setMaterial(
 			MaterialCache.defaultDeferredMaterial,
 			RenderPassType.Deferred,
@@ -227,6 +272,7 @@ export default class Renderer {
 		this.cube.materialProps.setColor(0.2, 0.2, 0.2);
 
 		this.cube1 = new Drawable(new CubeGeometry(1, 1, 1));
+		this.cube1.label = "Cube 2";
 		this.cube1.setMaterial(
 			MaterialCache.defaultDeferredMaterial,
 			RenderPassType.Deferred,
@@ -237,10 +283,11 @@ export default class Renderer {
 		);
 		this.cube1.materialProps.isReflective = false;
 		this.cube1.materialProps.setColor(0.1, 0.8, 0.2);
-		this.cube1.setPosition(-5, 1, -6).setScale(5, 0.1, 0.1);
+		this.cube1.setPosition(2, 8, 9).setScale(5, 0.1, 0.1);
 		this.cube1.updateWorldMatrix();
 
 		this.sphere = new Drawable(new SphereGeometry());
+		this.sphere.label = "Sphere";
 		this.sphere.setMaterial(
 			MaterialCache.defaultDeferredMaterial,
 			RenderPassType.Deferred,
@@ -260,20 +307,7 @@ export default class Renderer {
 
 		this.rootTransform.addChild(this.cube);
 		this.rootTransform.addChild(this.cube1);
-		this.rootTransform.addChild(this.sphere);
-
-		// const pa = new PointLight();
-		// pa.setPosition(3, 0.1, 0);
-		// const pb = new PointLight();
-		// pb.setPosition(-3, 0.1, 0);
-		// const pc = new PointLight();
-		// pc.setPosition(0, 0.1, 3);
-		// const pd = new PointLight();
-		// pd.setPosition(0, 0.1, -3);
-		// const pe = new PointLight();
-		// pe.setPosition(3, 0.1, -3);
-		// const pf = new PointLight();
-		// pf.setPosition(-3, 0.1, -3);
+		// this.rootTransform.addChild(this.sphere);
 
 		const pointLights: PointLight[] = [];
 		const pointLightsCount = 20;
@@ -293,16 +327,71 @@ export default class Renderer {
 			pointLights.push(p);
 		}
 
-		// this.pointLights = [pa, pb, pc, pd];
-		// const dirLight = new DirectionalLight();
-		// dirLight.intensity = ;
-		this.sceneDirectionalLight.setPosition(2, 1, 2);
-		this.sceneDirectionalLight.setColor(2, 2, 2);
-		this.sceneDirectionalLight.intensity = 1;
+		this.sceneDirectionalLight.setPosition(
+			Math.cos(this.rotateAngle) * 1,
+			3,
+			Math.sin(this.rotateAngle) * 1,
+		);
+		this.sceneDirectionalLight.setColor(1, 1, 1);
+		this.sceneDirectionalLight.intensity = 2;
 		this.lights = [...pointLights, this.sceneDirectionalLight];
 
 		this.shadowPass = new DirectionalShadowPass(this.sceneDirectionalLight);
 		this.shadowPass.setCamera(this.mainCamera);
+
+		// this.environmentProbePass = new EnvironmentProbePass();
+
+		this.skybox = new Skybox();
+
+		// TextureLoader.loadHDRImage("/cobblestone_street_night_2k.hdr").then();
+		// TextureLoader.loadHDREnvironmentAsCubeMapTexture(
+		// 	"/cobblestone_street_night_2k.hdr",
+		// ).then((cubeTex) => {
+		// 	this.skybox.setTexture(cubeTex);
+		// });
+
+		TextureLoader.load6SeparateHDRFacesAsCubeMapTexture(
+			["/px.hdr", "/nx.hdr", "/py.hdr", "/ny.hdr", "/pz.hdr", "/nz.hdr"],
+			512,
+			true,
+			"Skybox Faces",
+		).then((texture) => {
+			const diffuseTexture = DiffuseIBLGenerator.encode(texture);
+			const specularTexture = SpecularIBLGenerator.encode(texture);
+			const bdrfLutTexture = BDRFLutGenerator.encode();
+
+			TextureController.generateMipsForCubeTexture(diffuseTexture);
+			this.skybox.setTexture(texture);
+
+			this.gbufferIntegratePass
+				.setDiffuseIBLTexture(diffuseTexture)
+				.setSpecularIBLTexture(specularTexture)
+				.setBDRFLutTexture(bdrfLutTexture);
+
+			this.bdrfLUTDebugTex = new TextureDebugMesh(
+				TextureDebugMeshType.BDRF,
+				bdrfLutTexture.createView(),
+			);
+			this.bdrfLUTDebugTex
+				.setPosition(512, 512, 0)
+				.setScale(128, 128, 1)
+				.updateWorldMatrix();
+		});
+
+		const a = new GLTFModel("/helmet.gltf");
+		this.rootTransform.addChild(a);
+		a.setPositionY(2).updateWorldMatrix();
+		a.load().then(() => {
+			a.setIsReflective(false);
+			a.setMaterial(MaterialCache.defaultTexturedDeferredMaterial);
+			a.setMaterial(MaterialCache.defaultShadowMaterial, RenderPassType.Shadow);
+		});
+
+		// const mipTex = TextureLoader.generateMipsFor2DTexture(
+		// 	TextureLoader.dummyTexture,
+		// 	"dummy tex mipmapped",
+		// );
+		// console.log({ mipTex });
 	}
 
 	public resize(w: number, h: number) {
@@ -323,6 +412,8 @@ export default class Renderer {
 				this.shadowPass.shadowTextureViewCascadesAll,
 				this.shadowPass.shadowCascadesBuffer,
 			);
+			this.gbufferIntegratePass.setCamera(this.mainCamera);
+			this.gbufferIntegratePass.skybox = this.skybox;
 		}
 		this.gbufferIntegratePass.setLights(this.lights);
 		this.gbufferIntegratePass.setCamera(this.mainCamera);
@@ -422,19 +513,21 @@ export default class Renderer {
 		this.gbufferIntegratePass.debugPointLights = this.debugPointLights;
 		this.gbufferIntegratePass.setLights(this.lights);
 
-		this.sceneDirectionalLight.setPosition(
-			Math.cos(Renderer.elapsedTimeMs * 0.1) * 3,
-			3,
-			Math.sin(Renderer.elapsedTimeMs * 0.1) * 3,
-		);
+		if (this.autoRotateSun) {
+			this.rotateAngle += deltaDiff * 0.1;
+			this.sceneDirectionalLight.setPosition(
+				Math.cos(this.rotateAngle) * 3,
+				this.sceneDirectionalLight.rotation[1],
+				Math.sin(this.rotateAngle) * 3,
+			);
+		}
 
 		this.mainCamera.onFrameStart();
 		this.orthoCamera.onFrameStart();
 
 		if (this.enableAnimation) {
 			this.cube
-				.setPositionY(2)
-				.setScale(2, 2, 2)
+				.setScale(1, 1, 1)
 				.setRotationY(Renderer.elapsedTimeMs)
 				.updateWorldMatrix();
 
@@ -449,6 +542,7 @@ export default class Renderer {
 			label: "Render Loop Command Encoder",
 		});
 
+		// this.environmentProbePass.render(commandEncoder, this.skybox);
 		this.shadowPass.render(commandEncoder, this.rootTransform);
 		this.gbufferRenderPass.render(commandEncoder, this.rootTransform);
 		this.gbufferIntegratePass.render(commandEncoder);
@@ -479,15 +573,18 @@ export default class Renderer {
 		const hudRenderEncoder = commandEncoder.beginRenderPass(
 			hudRenderPassDescriptor,
 		);
+		hudRenderEncoder.pushDebugGroup("Render HUD");
 
 		hudRenderEncoder.setBindGroup(
 			BIND_GROUP_LOCATIONS.Camera,
 			this.orthoCameraBindGroup,
 		);
 
-		this.gBufferDebugTexturesContainer?.render(hudRenderEncoder);
-		this.shadowMapDebugTexturesContainer.render(hudRenderEncoder);
+		// this.gBufferDebugTexturesContainer?.render(hudRenderEncoder);
+		// this.shadowMapDebugTexturesContainer.render(hudRenderEncoder);
+		// this.bdrfLUTDebugTex?.render(hudRenderEncoder);
 
+		hudRenderEncoder.popDebugGroup();
 		hudRenderEncoder.end();
 
 		device.queue.submit([commandEncoder.finish()]);

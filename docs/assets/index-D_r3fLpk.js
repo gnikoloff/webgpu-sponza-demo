@@ -8372,7 +8372,11 @@ ${Ht.CameraUniform}
 		constructor() {
 			this.vertexCount = 0;
 		}
-		createBuffers({ vertexCount: t, interleavedVertexArr: e, indicesArr: r }) {
+		createBuffersWithTangentsManually({
+			vertexCount: t,
+			interleavedVertexArr: e,
+			indicesArr: r,
+		}) {
 			(this.vertexCount = t),
 				(this.vertexBuffer = X.device.createBuffer({
 					mappedAtCreation: !0,
@@ -8427,7 +8431,7 @@ ${Ht.CameraUniform}
 						W = F + 1 + T * L;
 					tt.push(Q, et, W), tt.push(et, O, W);
 				}
-			this.createBuffers({
+			this.createBuffersWithTangentsManually({
 				vertexCount: tt.length,
 				interleavedVertexArr: new Float32Array(st),
 				indicesArr: new Uint16Array(tt),
@@ -8774,7 +8778,7 @@ ${Ht.CameraUniform}
 				tt = r / 2;
 			st(),
 				k === !1 && (t > 0 && L(!0), e > 0 && L(!1)),
-				this.createBuffers({
+				this.createBuffersWithTangentsManually({
 					vertexCount: B.length,
 					interleavedVertexArr: new Float32Array(z),
 					indicesArr: new Uint16Array(B),
@@ -9013,7 +9017,7 @@ ${Ht.CameraUniform}
 				z(0, 2, 1, 1, -1, t, r, -e, h, k),
 				z(0, 1, 2, 1, -1, t, e, r, h, g),
 				z(0, 1, 2, -1, -1, t, e, -r, h, g),
-				this.createBuffers({
+				this.createBuffersWithTangentsManually({
 					vertexCount: T.length,
 					interleavedVertexArr: new Float32Array(I),
 					indicesArr: new Uint16Array(T),
@@ -9265,7 +9269,7 @@ ${Ht.CameraUniform}
 					(L !== 0 || k > 0) && st.push(Q, et, W),
 						(L !== r - 1 || I < Math.PI) && st.push(et, O, W);
 				}
-			this.createBuffers({
+			this.createBuffersWithTangentsManually({
 				vertexCount: st.length,
 				interleavedVertexArr: new Float32Array(tt),
 				indicesArr: new Uint16Array(st),

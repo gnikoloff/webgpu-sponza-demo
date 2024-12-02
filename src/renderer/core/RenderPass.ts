@@ -1,12 +1,13 @@
-import { BIND_GROUP_LOCATIONS } from "../../app/constants";
 import Renderer from "../../app/Renderer";
 import Camera from "../camera/Camera";
 import PipelineStates from "./PipelineStates";
 import Transform from "../scene/Transform";
+import { BIND_GROUP_LOCATIONS } from "./RendererBindings";
 
 export enum RenderPassType {
 	Deferred,
 	Shadow,
+	EnvironmentCube,
 }
 
 export default class RenderPass {
@@ -25,7 +26,7 @@ export default class RenderPass {
 		this.camera = camera;
 
 		this.cameraBindGroup = Renderer.device.createBindGroup({
-			label: "Main Camera Bind Group",
+			label: `Camera Bind Group for pass: ${this.type ?? "Deferred"}`,
 			layout: PipelineStates.defaultCameraBindGroupLayout,
 			entries: [
 				{

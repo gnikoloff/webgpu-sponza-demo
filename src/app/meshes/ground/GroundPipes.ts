@@ -21,6 +21,8 @@ export default class GroundPipes extends InstancedDrawable {
 
 		super(geometry, instanceCount);
 
+		this.label = "Pipes";
+
 		this.setMaterial(MaterialCache.defaultDeferredInstancedMaterial);
 		this.materialProps.isReflective = false;
 		this.materialProps.setColor(1, 1, 1);

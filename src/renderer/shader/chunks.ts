@@ -1,9 +1,9 @@
 import {
 	RENDER_TARGET_LOCATIONS,
 	SHADER_ATTRIB_LOCATIONS,
-} from "../../app/constants";
+} from "../core/RendererBindings";
 
-export const SHADER_CHUNKS = {
+export const SHADER_CHUNKS = Object.freeze({
 	get VertexInput(): string {
 		return /* wgsl */ `
 
@@ -11,6 +11,7 @@ export const SHADER_CHUNKS = {
         @location(${SHADER_ATTRIB_LOCATIONS.Position}) position: vec4f,
         @location(${SHADER_ATTRIB_LOCATIONS.Normal}) normal: vec3f,
         @location(${SHADER_ATTRIB_LOCATIONS.TexCoord}) uv: vec2f,
+        @location(${SHADER_ATTRIB_LOCATIONS.Tangent}) tangent: vec3f,
       };
 
     `;
@@ -23,9 +24,11 @@ export const SHADER_CHUNKS = {
         @builtin(position) position: vec4f,
         @location(0) normal: vec3f,
         @location(1) uv: vec2f,
-        @location(2) currFrameClipPos: vec4f,
-        @location(3) prevFrameClipPos: vec4f,
-        @location(4) @interpolate(flat) instanceId: u32,
+        @location(2) tangent: vec3f,
+        @location(3) bitangent: vec3f,
+        @location(4) currFrameClipPos: vec4f,
+        @location(5) prevFrameClipPos: vec4f,
+        @location(6) @interpolate(flat) instanceId: u32,
       };
 
     `;
@@ -81,7 +84,7 @@ export const SHADER_CHUNKS = {
 		return /* wgsl */ `
 
       struct Light {
-        lightType: u32, // 0 - Directional Light, 1 - Point Light
+        lightType: u32, // 0 - Directional Light, 1 - Point Light, 2 - Ambient Light
         intensity: f32,
         radius: f32,
         position: vec3f,
@@ -112,4 +115,65 @@ export const SHADER_CHUNKS = {
       };
     `;
 	},
-};
+
+	get CommonHelpers(): string {
+		const out = /* wgsl */ `
+
+      const WORLD_UP = vec3f(0.0, 1.0, 0.0);
+      const WORLD_FORWARD = vec3f(0.0, 0.0, 1.0);
+      const PI: f32 = 3.1415;
+      const TWO_PI: f32 = 6.2831;
+      const HALF_PI: f32 = 1.5707;
+      const DELTA_PHI: f32 = 0.01745;
+      const DELTA_THETA: f32 = 0.01745;
+    
+      const CUBE_NORMALS: array<vec3<f32>, 6> = array<vec3<f32>, 6>(
+        vec3<f32>(1.0, 0.0, 0.0),
+        vec3<f32>(-1.0, 0.0, 0.0),
+        vec3<f32>(0.0, 1.0, 0.0),
+        vec3<f32>(0.0, -1.0, 0.0),
+        vec3<f32>(0.0, 0.0, 1.0),
+        vec3<f32>(0.0, 0.0, -1.0)
+      );
+      
+      const CUBE_UPS: array<vec3<f32>, 6> = array<vec3<f32>, 6>(
+        vec3<f32>(0.0, 1.0, 0.0),
+        vec3<f32>(0.0, 1.0, 0.0),
+        vec3<f32>(0.0, 0.0, -1.0),
+        vec3<f32>(0.0, 0.0, 1.0),
+        vec3<f32>(0.0, 1.0, 0.0),
+        vec3<f32>(0.0, 1.0, 0.0)
+      );
+      
+      const CUBE_ROTATIONS: array<vec4<f32>, 6> = array<vec4<f32>, 6>(
+        vec4<f32>(0.0, 1.0, 0.0, HALF_PI),
+        vec4<f32>(0.0, 1.0, 0.0, -HALF_PI),
+        vec4<f32>(1.0, 0.0, 0.0, -HALF_PI),
+        vec4<f32>(1.0, 0.0, 0.0, HALF_PI),
+        vec4<f32>(0.0, 0.0, 1.0, 0.0),
+        vec4<f32>(0.0, 1.0, 0.0, PI)
+      );
+    `;
+
+		return out;
+	},
+	get MathHelpers(): string {
+		return /* wgsl */ `
+
+      @must_use
+      fn rotateAxisAngle(inAxis: vec3f, angle: f32) -> mat3x3f {
+        let axis = normalize(inAxis);
+        let s = sin(angle);
+        let c = cos(angle);
+        let oc = 1.0 - c;
+    
+        return mat3x3f(
+          oc * axis.x * axis.x + c, oc * axis.x * axis.y - axis.z * s, oc * axis.z * axis.x + axis.y * s,
+          oc * axis.x * axis.y + axis.z * s, oc * axis.y * axis.y + c, oc * axis.y * axis.z - axis.x * s,
+          oc * axis.z * axis.x - axis.y * s, oc * axis.y * axis.z + axis.x * s, oc * axis.z * axis.z + c
+        );
+      }
+      
+    `;
+	},
+});

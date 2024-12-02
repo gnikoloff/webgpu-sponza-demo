@@ -1,4 +1,9 @@
-const PBR_LIGHTING_UTILS_SHADER_CHUNK_SRC = /* wgsl */ `
+import { wgsl } from "wgsl-preprocessor/wgsl-preprocessor.js";
+import { LightType } from "../lighting/Light";
+
+const GetPBRLightingShaderUtils = (
+	lightType: LightType,
+): string => wgsl/* wgsl */ `
   @must_use
   fn DistributionGGX(N: vec3f, H: vec3f, roughness: f32) -> f32 {
     let a = roughness*roughness;
@@ -38,18 +43,29 @@ const PBR_LIGHTING_UTILS_SHADER_CHUNK_SRC = /* wgsl */ `
   }
 
   @must_use
+  fn FresnelSchlickRoughness(cosTheta: f32, F0: vec3f, roughness: f32) -> vec3f {
+    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+  }
+
+  @must_use
   fn PBRLighting(
     material: ptr<function, Material>,
     instanceId: u32,
     worldPos: vec3f,
     N: vec3f,
     V: vec3f,
-    shadow: f32
+    shadow: f32,
+    #if ${lightType === LightType.Directional}
+      diffuseIBLTexture: texture_cube<f32>,
+      specularIBLTexture: texture_cube<f32>,
+      bdrfLutTexture: texture_2d<f32>,
+      envTexSampler: sampler
+    #endif
   ) -> vec4f {
     let albedo = material.albedo;
     let F0 = mix(vec3f(0.04), albedo, material.metallic);
-    var ambientFactor = vec3f(0.005);
-    let ambient = (ambientFactor) * albedo * material.ambientOcclusion;
+    
+    
     var Lo = vec3f(0.0);
     let albedoOverPi = albedo / PI;
 
@@ -62,13 +78,9 @@ const PBR_LIGHTING_UTILS_SHADER_CHUNK_SRC = /* wgsl */ `
 
     let light = &lightsBuffer[instanceId];
     let lightPos = light.position;
-    let isPointLight = light.lightType == 1;
+    let isPointLight = light.lightType == ${LightType.Point};
     let dist = lightPos - worldPos;
     let d = length(dist);
-
-    if (isPointLight && d > light.radius) {
-      return vec4f(0);
-    }
 
     // if (d > light.radius) {
     //   return vec4f(ambient, 1.0);
@@ -94,16 +106,16 @@ const PBR_LIGHTING_UTILS_SHADER_CHUNK_SRC = /* wgsl */ `
 
     let NDF = DistributionGGX(N, H, roughnessQuad);
     let G = GeometrySmith(N, V, L, roughness);
-    let F = FresnelSchlick(max(dot(H, V), 0.0), F0);
+    var F = FresnelSchlick(max(dot(H, V), 0.0), F0);
 
     let numerator = NDF * G * F;
     // let denominator = 4.0 * (NdotV * NdotL, 0.0001); // + 0.0001 to prevent divide by zero
     let denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001; // + 0.0001 to prevent divide by zero
 
-    let specular = numerator / denominator;
+    var specular = numerator / denominator;
 
       // kS is equal to Fresnel
-    let kS = F;
+    var kS = F;
     // for energy conservation, the diffuse and specular light can't
     // be above 1.0 (unless the surface emits light); to preserve this
     // relationship the diffuse component (kD) should equal 1.0 - kS.
@@ -113,27 +125,51 @@ const PBR_LIGHTING_UTILS_SHADER_CHUNK_SRC = /* wgsl */ `
     // have no diffuse light).
     kD *= 1.0 - metallic;
 
-//    kD *= shadow;
-
     let NdotL = max(dot(N, L), 0.0); 
 
     // add to outgoing radiance Lo
     Lo += (kD * albedoOverPi + specular) * radiance * NdotL * shadow; // * light.opacity;  // note that we already multiplied the BRDF by the Fresnel
   
+    #if ${lightType == LightType.Directional}
+      let irradiance = textureSampleLevel(diffuseIBLTexture, envTexSampler, N, 0).rgb;
+      kS = FresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness); 
+      kD = 1.0 - kS;
+      kD *= 1.0 - metallic;
+      // let ambientIBL = kD * irradiance;
+      // let ambientFactor = 0.2;
+      
+      
 
-    // half3 ambient = (ambientFactor + ambientIBL) * materialAlbedo * ambientOcclusion;
-    
+      let R = reflect(-V, N);
+      let MAX_REFLECTION_LOD = 2.0;
+      let prefilteredColor = vec3f(
+        textureSampleLevel(
+          specularIBLTexture,
+          envTexSampler,
+          R,
+          material.roughness * MAX_REFLECTION_LOD
+        ).rgb
+      );
 
-    // let color = ambient + specularIBL + Lo;
-    var color = ambient + Lo;
+      let uv = vec2f(max(dot(N, V), 0.0), roughness);
+      let envBDRF = textureSample(bdrfLutTexture, envTexSampler, uv).rg;
+      specular = prefilteredColor * (F * envBDRF.x + envBDRF.y);
 
-    // HDR tonemapping
-    // color = color / (color + vec3(1.0));
-    // gamma correct
-    // color = pow(color, vec3(1.0/2.2)); 
+      let diffuse = irradiance * (albedo * 0.2);
+      let ambient = (kD * diffuse + specular) * ambientOcclusion;
+      
+      
+      var color = ambient + Lo;
+    #else
+      var color = Lo;
+    #endif
+
+    if (isPointLight && d > light.radius) {
+      return vec4f(0);
+    }
 
     return vec4f(color, 1.0);
   }
 `;
 
-export default PBR_LIGHTING_UTILS_SHADER_CHUNK_SRC;
+export default GetPBRLightingShaderUtils;

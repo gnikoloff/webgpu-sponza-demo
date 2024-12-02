@@ -1,53 +1,38 @@
-import PipelineStates from "../../renderer/core/PipelineStates";
-import { VertexDescriptor } from "../../renderer/core/VertexDescriptor";
-import RenderPass from "../../renderer/core/RenderPass";
-import Light, { LightType } from "../../renderer/lighting/Light";
-import Camera from "../../renderer/camera/Camera";
-import Drawable from "../../renderer/scene/Drawable";
+import PipelineStates from "../../../renderer/core/PipelineStates";
+import RenderPass from "../../../renderer/core/RenderPass";
+import Light, { LightType } from "../../../renderer/lighting/Light";
 
-import Renderer from "../Renderer";
-import GeometryCache from "../utils/GeometryCache";
+import Renderer from "../../Renderer";
 
-import {
-	getGBufferFragShader,
-	getGBufferPointVertexShader,
-	LIGHT_FRAGMENT_SHADER_ENTRY_NAME,
-	POINT_LIGHT_VERTEX_SHADER_ENTRY_NAME,
-} from "../shaders/GBufferShader";
-
-import {
-	FULLSCREEN_TRIANGLE_VERTEX_SHADER_ENTRY_NAME,
-	FULLSCREEN_TRIANGLE_VERTEX_SHADER_SRC,
-} from "../shaders/VertexShader";
-import PointLight from "../../renderer/lighting/PointLight";
-import DirectionalLight from "../../renderer/lighting/DirectionalLight";
-import TextureController from "../../renderer/texture/TextureController";
-import DirectionalShadowPass from "./DirectionalShadowPass";
+import PointLight from "../../../renderer/lighting/PointLight";
+import DirectionalLight from "../../../renderer/lighting/DirectionalLight";
+import TextureLoader from "../../../renderer/texture/TextureLoader";
+import Skybox from "../../meshes/Skybox";
+import { BIND_GROUP_LOCATIONS } from "../../../renderer/core/RendererBindings";
+import FullScreenVertexShaderUtils from "../../../renderer/shader/FullScreenVertexShaderUtils";
+import { DirectionalLightPass } from "./DirectionalLightPass";
+import PointLightsRenderPass from "./PointLightsRenderPass";
+import PointLightsMaskPass from "./PointLightsMaskPass";
 
 export default class GBufferIntegratePass extends RenderPass {
 	public outTexture: GPUTexture;
 	public outTextureView: GPUTextureView;
 
-	private dirLightPSO: GPURenderPipeline;
-	private pointLightRenderPSO: GPURenderPipeline;
-	private pointLightMaskPSO: GPURenderPipeline;
+	public skybox?: Skybox;
 
 	private gbufferTexturesBindGroup: GPUBindGroup;
 	private gbufferCommonBindGroupLayout: GPUBindGroupLayout;
-
-	private lightMaskBindGroup: GPUBindGroup;
 	private lightsMaskBindGroupLayout: GPUBindGroupLayout;
 
-	private dirLightShadowBindGroup: GPUBindGroup;
-	private dirLightShadowBindGroupLayout: GPUBindGroupLayout;
+	private dirLightPass?: DirectionalLightPass;
+	private pointsLightRenderPass?: PointLightsRenderPass;
+	private pointsLightMasPass?: PointLightsMaskPass;
 
 	private dirLights: DirectionalLight[] = [];
 	private pointLights: PointLight[] = [];
 
 	private lightsBuffer!: GPUBuffer;
 	private debugLightsBuffer: GPUBuffer;
-
-	private shadowMapSampler: GPUSampler;
 
 	private _debugPointLights = false;
 	public get debugPointLights(): boolean {
@@ -79,6 +64,21 @@ export default class GBufferIntegratePass extends RenderPass {
 		this._debugShadowCascadeIndex = v;
 	}
 
+	public setDiffuseIBLTexture(texture: GPUTexture): this {
+		this.dirLightPass?.setDiffuseIBLTexture(texture);
+		return this;
+	}
+
+	public setSpecularIBLTexture(texture: GPUTexture): this {
+		this.dirLightPass?.setSpecularIBLTexture(texture);
+		return this;
+	}
+
+	public setBDRFLutTexture(texture: GPUTexture): this {
+		this.dirLightPass?.setBDRFLutTexture(texture);
+		return this;
+	}
+
 	constructor(
 		private normalMetallicRoughnessTextureView: GPUTextureView,
 		private colorReflectanceTextureView: GPUTextureView,
@@ -89,21 +89,8 @@ export default class GBufferIntegratePass extends RenderPass {
 	) {
 		super();
 
-		this.shadowMapSampler = Renderer.device.createSampler({
-			addressModeU: "clamp-to-edge",
-			addressModeV: "clamp-to-edge",
-			minFilter: "nearest",
-			magFilter: "nearest",
-		});
-
-		const dirLightVertexShaderModule = PipelineStates.createShaderModule(
-			FULLSCREEN_TRIANGLE_VERTEX_SHADER_SRC,
-		);
-		const gbufferDirLightingShaderModule = PipelineStates.createShaderModule(
-			getGBufferFragShader(true, DirectionalShadowPass.TEXTURE_SIZE, 0),
-		);
-		const gbufferPointLightingShaderModule = PipelineStates.createShaderModule(
-			getGBufferFragShader(false, DirectionalShadowPass.TEXTURE_SIZE, 1),
+		const fullscreenVertexShaderModule = PipelineStates.createShaderModule(
+			FullScreenVertexShaderUtils,
 		);
 
 		const gbufferCommonBindGroupLayoutEntries: GPUBindGroupLayoutEntry[] = [
@@ -162,36 +149,6 @@ export default class GBufferIntegratePass extends RenderPass {
 			entries: gbufferCommonBindGroupLayoutEntries,
 		});
 
-		const dirLightShadowBindGroupLayoutEntries: GPUBindGroupLayoutEntry[] = [
-			{
-				binding: 0,
-				visibility: GPUShaderStage.FRAGMENT,
-				buffer: {
-					type: "read-only-storage",
-				},
-			},
-			{
-				binding: 1,
-				visibility: GPUShaderStage.FRAGMENT,
-				sampler: {
-					type: "filtering",
-				},
-			},
-			{
-				binding: 2,
-				visibility: GPUShaderStage.FRAGMENT,
-				texture: {
-					sampleType: "depth",
-					viewDimension: "2d-array",
-				},
-			},
-		];
-
-		this.dirLightShadowBindGroupLayout = Renderer.device.createBindGroupLayout({
-			label: "Direcional Light Shadow Bind Group Layout",
-			entries: dirLightShadowBindGroupLayoutEntries,
-		});
-
 		const lightsMaskBindGroupLayoutEntries: GPUBindGroupLayoutEntry[] = [
 			{
 				binding: 0,
@@ -214,148 +171,12 @@ export default class GBufferIntegratePass extends RenderPass {
 			entries: lightsMaskBindGroupLayoutEntries,
 		});
 
-		const pointLightRenderPSOLayout = Renderer.device.createPipelineLayout({
-			label: "Render Lights PSO Layout",
-			bindGroupLayouts: [this.gbufferCommonBindGroupLayout],
-		});
-
-		const dirLightRenderPSOLayout = Renderer.device.createPipelineLayout({
-			label: "Dir Light PSO Layout",
-			bindGroupLayouts: [
-				this.gbufferCommonBindGroupLayout,
-				this.dirLightShadowBindGroupLayout,
-			],
-		});
-
-		const lightMaskPSOLayout = Renderer.device.createPipelineLayout({
-			label: "Mask Lights PSO Layout",
-			bindGroupLayouts: [this.lightsMaskBindGroupLayout],
-		});
-
-		const targets: GPUColorTargetState[] = [
-			{
-				format: "rgba16float",
-				blend: {
-					color: {
-						srcFactor: "one",
-						dstFactor: "one",
-						operation: "add",
-					},
-					alpha: {
-						srcFactor: "one",
-						dstFactor: "one",
-						operation: "add",
-					},
-				},
-			},
-		];
-
-		const dirLightRenderPSODescriptor: GPURenderPipelineDescriptor = {
-			label: "Directional Light Render PSO",
-			layout: dirLightRenderPSOLayout,
-			vertex: {
-				module: dirLightVertexShaderModule,
-				entryPoint: FULLSCREEN_TRIANGLE_VERTEX_SHADER_ENTRY_NAME,
-			},
-			fragment: {
-				module: gbufferDirLightingShaderModule,
-				entryPoint: LIGHT_FRAGMENT_SHADER_ENTRY_NAME,
-				targets,
-			},
-			depthStencil: {
-				format: Renderer.depthStencilFormat,
-				depthWriteEnabled: false,
-			},
-		};
-
-		this.dirLightPSO = PipelineStates.createRenderPipeline(
-			dirLightRenderPSODescriptor,
-		);
-
-		const pointLightRenderVertexShaderModule =
-			PipelineStates.createShaderModule(getGBufferPointVertexShader(1, false));
-
-		const lightRenderStencilState: GPUStencilFaceState = {
-			compare: "less",
-			failOp: "keep",
-			depthFailOp: "keep",
-			passOp: "keep",
-		};
-		const pointLightRenderPSODescriptor: GPURenderPipelineDescriptor = {
-			label: "Point Light Render PSO",
-			layout: pointLightRenderPSOLayout,
-			vertex: {
-				module: pointLightRenderVertexShaderModule,
-				entryPoint: POINT_LIGHT_VERTEX_SHADER_ENTRY_NAME,
-				buffers: [VertexDescriptor.defaultLayout],
-			},
-			fragment: {
-				module: gbufferPointLightingShaderModule,
-				entryPoint: LIGHT_FRAGMENT_SHADER_ENTRY_NAME,
-				targets,
-			},
-			depthStencil: {
-				format: Renderer.depthStencilFormat,
-				depthWriteEnabled: false,
-				depthCompare: "less-equal",
-				stencilReadMask: 0xff,
-				stencilWriteMask: 0x0,
-				stencilBack: lightRenderStencilState,
-				stencilFront: lightRenderStencilState,
-			},
-			primitive: {
-				cullMode: "back",
-			},
-		};
-
-		this.pointLightRenderPSO = PipelineStates.createRenderPipeline(
-			pointLightRenderPSODescriptor,
-		);
-
-		const pointLightMaskVertexShaderModule = PipelineStates.createShaderModule(
-			getGBufferPointVertexShader(1, true),
-		);
 		// const lightMaskStencilState: GPUStencilFaceState = {
 		// 	compare: "always",
 		// 	depthFailOp: "increment-clamp",
 		// 	failOp: "keep",
 		// 	passOp: "keep",
 		// };
-		const pointLightMaskPSODescriptor: GPURenderPipelineDescriptor = {
-			label: "Point Light Mask PSO",
-			layout: lightMaskPSOLayout,
-			vertex: {
-				module: pointLightMaskVertexShaderModule,
-				entryPoint: POINT_LIGHT_VERTEX_SHADER_ENTRY_NAME,
-				buffers: [VertexDescriptor.defaultLayout],
-			},
-			depthStencil: {
-				format: Renderer.depthStencilFormat,
-				depthWriteEnabled: false,
-				depthCompare: "less-equal",
-				stencilReadMask: 0x0,
-				stencilWriteMask: 0xff,
-				stencilBack: {
-					compare: "always",
-					depthFailOp: "increment-wrap",
-					failOp: "keep",
-					passOp: "keep",
-				},
-				stencilFront: {
-					compare: "always",
-					depthFailOp: "decrement-wrap",
-					failOp: "keep",
-					passOp: "keep",
-				},
-			},
-			primitive: {
-				cullMode: "none",
-			},
-		};
-
-		this.pointLightMaskPSO = PipelineStates.createRenderPipeline(
-			pointLightMaskPSODescriptor,
-		);
 
 		this.debugLightsBuffer = Renderer.device.createBuffer({
 			label: "Debug Lights GPUBuffer",
@@ -368,10 +189,6 @@ export default class GBufferIntegratePass extends RenderPass {
 			new Float32Array([0, 0]),
 		);
 		this.debugLightsBuffer.unmap();
-	}
-
-	public override setCamera(camera: Camera): void {
-		this.camera = camera;
 	}
 
 	public override onResize(width: number, height: number): void {
@@ -414,7 +231,7 @@ export default class GBufferIntegratePass extends RenderPass {
 			},
 			{
 				binding: 3,
-				resource: TextureController.bayerDitherPatternTexture.createView(),
+				resource: TextureLoader.bayerDitherPatternTexture.createView(),
 			},
 			{
 				binding: 4,
@@ -445,6 +262,19 @@ export default class GBufferIntegratePass extends RenderPass {
 			entries: gbufferTexturesBindGroupEntries,
 		});
 
+		this.dirLightPass = new DirectionalLightPass(
+			this.gbufferCommonBindGroupLayout,
+			this.gbufferTexturesBindGroup,
+			this.shadowCascadesBuffer,
+			this.shadowDepthTextureView,
+		);
+
+		this.pointsLightRenderPass = new PointLightsRenderPass(
+			this.gbufferCommonBindGroupLayout,
+			this.gbufferTexturesBindGroup,
+		);
+		this.pointsLightRenderPass?.setPointLights(this.pointLights);
+
 		const lightsMaskBindGroupEntries: GPUBindGroupEntry[] = [
 			{
 				binding: 0,
@@ -460,32 +290,16 @@ export default class GBufferIntegratePass extends RenderPass {
 			},
 		];
 
-		this.lightMaskBindGroup = Renderer.device.createBindGroup({
+		const lightMaskBindGroup = Renderer.device.createBindGroup({
 			layout: this.lightsMaskBindGroupLayout,
 			entries: lightsMaskBindGroupEntries,
 		});
 
-		const dirLightShadowBindGroupEntries: GPUBindGroupEntry[] = [
-			{
-				binding: 0,
-				resource: {
-					buffer: this.shadowCascadesBuffer,
-				},
-			},
-			{
-				binding: 1,
-				resource: this.shadowMapSampler,
-			},
-			{
-				binding: 2,
-				resource: this.shadowDepthTextureView,
-			},
-		];
-
-		this.dirLightShadowBindGroup = Renderer.device.createBindGroup({
-			layout: this.dirLightShadowBindGroupLayout,
-			entries: dirLightShadowBindGroupEntries,
-		});
+		this.pointsLightMasPass = new PointLightsMaskPass(
+			this.lightsMaskBindGroupLayout,
+			lightMaskBindGroup,
+		);
+		this.pointsLightMasPass.setPointLights(this.pointLights);
 	}
 
 	public setLights(lights: Light[], lightsHaveChanged = false) {
@@ -559,6 +373,26 @@ export default class GBufferIntegratePass extends RenderPass {
 		};
 	}
 
+	protected createSkyboxRenderPassDescriptor(): GPURenderPassDescriptor {
+		const renderPassColorAttachments: GPURenderPassColorAttachment[] = [
+			{
+				view: this.outTextureView,
+				loadOp: "load",
+				storeOp: "store",
+			},
+		];
+		return {
+			label: "Skybox render Pass",
+			colorAttachments: renderPassColorAttachments,
+			depthStencilAttachment: {
+				depthReadOnly: true,
+				view: this.depthStencilTextureView,
+				stencilLoadOp: "load",
+				stencilStoreOp: "store",
+			},
+		};
+	}
+
 	private createLightMaskPassDescriptor(): GPURenderPassDescriptor {
 		return {
 			label: "Mask Lights Render Pass",
@@ -603,52 +437,33 @@ export default class GBufferIntegratePass extends RenderPass {
 			lightMaskPassDescriptor,
 		);
 
-		lightMaskEncoder.setStencilReference(128);
+		this.pointsLightMasPass?.render(lightMaskEncoder);
 
-		lightMaskEncoder.setPipeline(this.pointLightMaskPSO);
-		lightMaskEncoder.setBindGroup(0, this.lightMaskBindGroup);
-		lightMaskEncoder.setVertexBuffer(
-			0,
-			GeometryCache.pointLightSphereGeometry.vertexBuffer,
-		);
-		lightMaskEncoder.setIndexBuffer(
-			GeometryCache.pointLightSphereGeometry.indexBuffer,
-			Drawable.INDEX_FORMAT,
-		);
-		lightMaskEncoder.drawIndexed(
-			GeometryCache.pointLightSphereGeometry.vertexCount,
-			this.pointLights.length,
-		);
 		lightMaskEncoder.end();
 
 		const renderPassDescriptor = this.createRenderPassDescriptor();
 		const renderPassEncoder =
 			commandEncoder.beginRenderPass(renderPassDescriptor);
 
-		// Render Point Lights
-		renderPassEncoder.setPipeline(this.pointLightRenderPSO);
-		// renderPassEncoder.setStencilReference(128);
-
-		renderPassEncoder.setBindGroup(0, this.gbufferTexturesBindGroup);
-		renderPassEncoder.setVertexBuffer(
-			0,
-			GeometryCache.pointLightSphereGeometry.vertexBuffer,
-		);
-		renderPassEncoder.setIndexBuffer(
-			GeometryCache.pointLightSphereGeometry.indexBuffer,
-			Drawable.INDEX_FORMAT,
-		);
-		renderPassEncoder.drawIndexed(
-			GeometryCache.pointLightSphereGeometry.vertexCount,
-			this.pointLights.length,
-		);
-
-		// Directional Lights
-		renderPassEncoder.setPipeline(this.dirLightPSO);
-		renderPassEncoder.setBindGroup(0, this.gbufferTexturesBindGroup);
-		renderPassEncoder.setBindGroup(1, this.dirLightShadowBindGroup);
-		renderPassEncoder.draw(3);
+		this.pointsLightRenderPass?.render(renderPassEncoder);
+		this.dirLightPass?.render(renderPassEncoder);
 
 		renderPassEncoder.end();
+
+		// Skybox
+		if (this.skybox) {
+			const skyboxRenderPassEncoder = commandEncoder.beginRenderPass(
+				this.createSkyboxRenderPassDescriptor(),
+			);
+
+			skyboxRenderPassEncoder.setBindGroup(
+				BIND_GROUP_LOCATIONS.Camera,
+				this.cameraBindGroup,
+			);
+
+			this.skybox.render(skyboxRenderPassEncoder);
+
+			skyboxRenderPassEncoder.end();
+		}
 	}
 }

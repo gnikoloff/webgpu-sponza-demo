@@ -1,7 +1,7 @@
 import Renderer from "../Renderer";
 import RenderPass, { RenderPassType } from "../../renderer/core/RenderPass";
 import Transform from "../../renderer/scene/Transform";
-import { BIND_GROUP_LOCATIONS } from "../constants";
+import { BIND_GROUP_LOCATIONS } from "../../renderer/core/RendererBindings";
 
 export default class GBufferRenderPass extends RenderPass {
 	public normalMetallicRoughnessTexture: GPUTexture;
@@ -141,6 +141,8 @@ export default class GBufferRenderPass extends RenderPass {
 		const renderPassEncoder =
 			commandEncoder.beginRenderPass(renderPassDescriptor);
 
+		renderPassEncoder.pushDebugGroup("Render G-Buffer");
+
 		if (this.cameraBindGroup) {
 			renderPassEncoder.setBindGroup(
 				BIND_GROUP_LOCATIONS.Camera,
@@ -154,6 +156,7 @@ export default class GBufferRenderPass extends RenderPass {
 			node.render(renderPassEncoder);
 		});
 
+		renderPassEncoder.popDebugGroup();
 		renderPassEncoder.end();
 	}
 }

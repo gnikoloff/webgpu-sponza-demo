@@ -1,4 +1,4 @@
-import { Vec4, mat4, vec3, vec4 } from "wgpu-matrix";
+import { Vec3, Vec4, mat4, vec3, vec4 } from "wgpu-matrix";
 import {
 	StructuredView,
 	makeShaderDataDefinitions,
@@ -30,6 +30,7 @@ export default class Camera {
 	public static readonly UP_VECTOR = vec3.fromValues(0, 1, 0);
 
 	public position = vec3.fromValues(0, 0, 0);
+	public rotation = vec3.fromValues(0, 0, 0);
 	public lookAt = vec3.fromValues(0, 0, 0);
 
 	public near: number;
@@ -70,7 +71,6 @@ export default class Camera {
 		this.bufferUniformValues = makeStructuredView(
 			cameraShaderDefs.structs.CameraUniform,
 		);
-		// debugger;
 		this.bufferUniformValues.set({
 			viewMatrix: this.viewMatrix,
 			projectionMatrix: this.projectionMatrix,
@@ -153,6 +153,10 @@ export default class Camera {
 		this.lookAt[0] = x;
 		this.lookAt[1] = y;
 		this.lookAt[2] = z;
+	}
+
+	public setLookAtVec3(v: Vec3) {
+		this.lookAt = v;
 	}
 
 	public updateViewMatrix(): this {
