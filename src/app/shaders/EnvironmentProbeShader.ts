@@ -7,8 +7,8 @@ export default /* wgsl */ `
   ${SHADER_CHUNKS.VertexInput}
   ${SHADER_CHUNKS.VertexOutput}
 
-  @group(${BIND_GROUP_LOCATIONS.Camera}) @binding(0) var<storage, read> projViewMatrices: array<mat4x4f>;
-  @group(${BIND_GROUP_LOCATIONS.Camera}) @binding(1) var<uniform> currentFace: u32;
+  @group(${BIND_GROUP_LOCATIONS.CameraPlusOptionalLights}) @binding(0) var<storage, read> projViewMatrices: array<mat4x4f>;
+  @group(${BIND_GROUP_LOCATIONS.CameraPlusOptionalLights}) @binding(1) var<uniform> currentFace: u32;
 
   @group(1) @binding(0) var inTexture: texture_2d<f32>;
 

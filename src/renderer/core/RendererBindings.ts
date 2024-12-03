@@ -18,7 +18,7 @@ export const SHADER_ATTRIB_LOCATIONS = Object.freeze({
 export type BindGroupLocation = 0 | 1 | 2 | 3 | 4;
 
 export const BIND_GROUP_LOCATIONS = Object.freeze({
-	get Camera(): BindGroupLocation {
+	get CameraPlusOptionalLights(): BindGroupLocation {
 		return 0;
 	},
 	get Model(): BindGroupLocation {
@@ -27,7 +27,7 @@ export const BIND_GROUP_LOCATIONS = Object.freeze({
 	get PBRTextures(): BindGroupLocation {
 		return 2;
 	},
-	get InstanceMatrices(): BindGroupLocation {
+	get InstanceInputs(): BindGroupLocation {
 		return 3;
 	},
 });

@@ -33,6 +33,8 @@ export default class Camera {
 	public rotation = vec3.fromValues(0, 0, 0);
 	public lookAt = vec3.fromValues(0, 0, 0);
 
+	public hasChangedSinceLastFrame = true;
+
 	public near: number;
 	public far: number;
 
@@ -236,5 +238,6 @@ export default class Camera {
 	public onFrameEnd() {
 		mat4.copy(this.projectionViewMatrix, this.prevFrameProjectionViewMatrix);
 		this.frameCounter++;
+		this.hasChangedSinceLastFrame = false;
 	}
 }

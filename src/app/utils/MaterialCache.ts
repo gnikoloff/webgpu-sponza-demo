@@ -1,21 +1,26 @@
+import { GLTFMaterialPostprocessed } from "@loaders.gl/gltf";
 import PipelineStates from "../../renderer/core/PipelineStates";
 import Material from "../../renderer/material/Material";
 import Renderer from "../Renderer";
 import {
-	FRAGMENT_SHADER_DEBUG_TEX_COORDS_ENTRY_FN,
-	getDefaultPBRFragmentShader,
-} from "../shaders/FragmentShader";
+	DeferredRenderPBRShaderEntryFn,
+	getDefaultDeferredPBRFragmentShader,
+} from "../shaders/DeferredFragmentShaderSrc";
 import {
-	VERTEX_SHADER_DEFAULT_ENTRY_FN,
+	ForwardRenderPBRShaderEntryFn,
+	getDefaultForwardPBRFragmentShader,
+} from "../shaders/ForwardFragmentShaderSrc";
+import {
+	DefaultVertexShaderEntryFn,
 	getVertexShader,
 } from "../shaders/VertexShader";
 
-let _defaultDeferredMaterial: Material;
+let _defaultDeferredPBRMaterial: Material;
 let _defaultTexturedDeferredMaterial: Material;
 let _defaultDeferredInstancedMaterial: Material;
 let _defaultShadowMaterial: Material;
 let _defaultInstancedShadowMaterial: Material;
-let _defaultEnvironmentProbeMaterial: Material;
+let defaultTransparentPBRMaterial: Material;
 
 export const GBUFFER_OUTPUT_TARGETS: GPUColorTargetState[] = [
 	{
@@ -30,23 +35,55 @@ export const GBUFFER_OUTPUT_TARGETS: GPUColorTargetState[] = [
 ];
 
 const MaterialCache = Object.freeze({
-	get environmentProbeMaterial(): Material {
-		if (_defaultEnvironmentProbeMaterial) {
-			return _defaultEnvironmentProbeMaterial;
+	get defaultTransparentPBRMaterial(): Material {
+		if (defaultTransparentPBRMaterial) {
+			return defaultTransparentPBRMaterial;
 		}
-		// _defaultEnvironmentProbeMaterial = new Material({
-		//   debugLabel: "Environment Probe Pass Default Material",
-		//   vertexShaderSrc: EnvironmentProbeShader,
-		//   vertexShaderEntryFn: EnvironmentProbeShaderEntryFn,
-		//   fragmentShaderEntryFn
-		// });
-
-		return _defaultEnvironmentProbeMaterial;
+		defaultTransparentPBRMaterial = new Material({
+			debugLabel: `Forward Pass Default PBR Material`,
+			vertexShaderSrc: getVertexShader(),
+			vertexShaderEntryFn: DefaultVertexShaderEntryFn,
+			fragmentShaderSrc: getDefaultForwardPBRFragmentShader({
+				hasPBRTextures: true,
+			}),
+			fragmentShaderEntryFn: ForwardRenderPBRShaderEntryFn,
+			targets: [
+				{
+					format: "rgba16float",
+					blend: {
+						color: {
+							srcFactor: "src-alpha",
+							dstFactor: "one-minus-src-alpha",
+							operation: "add",
+						},
+						alpha: {
+							srcFactor: "one",
+							dstFactor: "one-minus-src-alpha",
+							operation: "add",
+						},
+					},
+				},
+			],
+			bindGroupLayouts: [
+				PipelineStates.defaultCameraPlusLightsBindGroupLayout,
+				PipelineStates.defaultModelBindGroupLayout,
+				PipelineStates.defaultModelMaterialBindGroupLayout,
+			],
+			depthStencilState: {
+				format: Renderer.depthStencilFormat,
+				depthWriteEnabled: true,
+				depthCompare: "less",
+			},
+			primitive: {
+				cullMode: "none",
+			},
+		});
+		return defaultTransparentPBRMaterial;
 	},
 
-	get defaultDeferredMaterial(): Material {
-		if (_defaultDeferredMaterial) {
-			return _defaultDeferredMaterial;
+	get defaultDeferredPBRMaterial(): Material {
+		if (_defaultDeferredPBRMaterial) {
+			return _defaultDeferredPBRMaterial;
 		}
 		const stencilDescriptor: GPUStencilFaceState = {
 			compare: "always",
@@ -54,20 +91,17 @@ const MaterialCache = Object.freeze({
 			depthFailOp: "keep",
 			passOp: "replace",
 		};
-		_defaultDeferredMaterial = new Material({
-			debugLabel: "Deferred Pass Default Material",
+		_defaultDeferredPBRMaterial = new Material({
+			debugLabel: "Deferred Pass Default PBR Material",
 			vertexShaderSrc: getVertexShader(),
-			vertexShaderEntryFn: VERTEX_SHADER_DEFAULT_ENTRY_FN,
-			fragmentShaderSrc: getDefaultPBRFragmentShader(),
-			fragmentShaderEntryFn: FRAGMENT_SHADER_DEBUG_TEX_COORDS_ENTRY_FN,
+			vertexShaderEntryFn: DefaultVertexShaderEntryFn,
+			fragmentShaderSrc: getDefaultDeferredPBRFragmentShader(),
+			fragmentShaderEntryFn: DeferredRenderPBRShaderEntryFn,
 			constants: {
 				// HAS_ALBEDO_TEXTURE: 0,
 				// HAS_NORMAL_TEXTURE: 0,
 			},
 			targets: GBUFFER_OUTPUT_TARGETS,
-			primitive: {
-				cullMode: "none",
-			},
 			depthStencilState: {
 				format: Renderer.depthStencilFormat,
 				depthWriteEnabled: true,
@@ -78,7 +112,7 @@ const MaterialCache = Object.freeze({
 				stencilFront: stencilDescriptor,
 			},
 		});
-		return _defaultDeferredMaterial;
+		return _defaultDeferredPBRMaterial;
 	},
 
 	get defaultTexturedDeferredMaterial(): Material {
@@ -92,11 +126,13 @@ const MaterialCache = Object.freeze({
 			passOp: "replace",
 		};
 		_defaultTexturedDeferredMaterial = new Material({
-			debugLabel: "Material",
+			debugLabel: "Default Textured Deferred PBR",
 			vertexShaderSrc: getVertexShader(),
-			vertexShaderEntryFn: VERTEX_SHADER_DEFAULT_ENTRY_FN,
-			fragmentShaderSrc: getDefaultPBRFragmentShader({ hasPBRTexture: true }),
-			fragmentShaderEntryFn: FRAGMENT_SHADER_DEBUG_TEX_COORDS_ENTRY_FN,
+			vertexShaderEntryFn: DefaultVertexShaderEntryFn,
+			fragmentShaderSrc: getDefaultDeferredPBRFragmentShader({
+				hasPBRTextures: true,
+			}),
+			fragmentShaderEntryFn: DeferredRenderPBRShaderEntryFn,
 			constants: {
 				// HAS_ALBEDO_TEXTURE: 1,
 				// HAS_NORMAL_TEXTURE: 1,
@@ -122,9 +158,9 @@ const MaterialCache = Object.freeze({
 		_defaultDeferredInstancedMaterial = new Material({
 			debugLabel: "Material",
 			vertexShaderSrc: getVertexShader({ isInstanced: true }),
-			vertexShaderEntryFn: VERTEX_SHADER_DEFAULT_ENTRY_FN,
-			fragmentShaderSrc: getDefaultPBRFragmentShader(),
-			fragmentShaderEntryFn: FRAGMENT_SHADER_DEBUG_TEX_COORDS_ENTRY_FN,
+			vertexShaderEntryFn: DefaultVertexShaderEntryFn,
+			fragmentShaderSrc: getDefaultDeferredPBRFragmentShader(),
+			fragmentShaderEntryFn: DeferredRenderPBRShaderEntryFn,
 			bindGroupLayouts: [
 				PipelineStates.defaultCameraBindGroupLayout,
 				PipelineStates.defaultModelBindGroupLayout,
@@ -142,7 +178,7 @@ const MaterialCache = Object.freeze({
 		_defaultShadowMaterial = new Material({
 			debugLabel: "Default Shadow Material",
 			vertexShaderSrc: getVertexShader(),
-			vertexShaderEntryFn: VERTEX_SHADER_DEFAULT_ENTRY_FN,
+			vertexShaderEntryFn: DefaultVertexShaderEntryFn,
 			// primitive: {
 			// 	cullMode: "back",
 			// },
@@ -158,7 +194,7 @@ const MaterialCache = Object.freeze({
 		_defaultInstancedShadowMaterial = new Material({
 			debugLabel: "Default Shadow Material",
 			vertexShaderSrc: getVertexShader({ isInstanced: true }),
-			vertexShaderEntryFn: VERTEX_SHADER_DEFAULT_ENTRY_FN,
+			vertexShaderEntryFn: DefaultVertexShaderEntryFn,
 			bindGroupLayouts: [
 				PipelineStates.defaultCameraBindGroupLayout,
 				PipelineStates.defaultModelBindGroupLayout,

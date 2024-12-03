@@ -1,9 +1,15 @@
 import { wgsl } from "wgsl-preprocessor/wgsl-preprocessor.js";
 import { LightType } from "../lighting/Light";
 
-const GetPBRLightingShaderUtils = (
-	lightType: LightType,
-): string => wgsl/* wgsl */ `
+interface IPBRLightingShaderUtils {
+	isDeferred: boolean;
+	hasIBL: boolean;
+}
+
+const GetPBRLightingShaderUtils = ({
+	isDeferred,
+	hasIBL,
+}): IPBRLightingShaderUtils => wgsl/* wgsl */ `
   @must_use
   fn DistributionGGX(N: vec3f, H: vec3f, roughness: f32) -> f32 {
     let a = roughness*roughness;
@@ -55,7 +61,8 @@ const GetPBRLightingShaderUtils = (
     N: vec3f,
     V: vec3f,
     shadow: f32,
-    #if ${lightType === LightType.Directional}
+    opacity: f32,
+    #if ${hasIBL}
       diffuseIBLTexture: texture_cube<f32>,
       specularIBLTexture: texture_cube<f32>,
       bdrfLutTexture: texture_2d<f32>,
@@ -81,10 +88,6 @@ const GetPBRLightingShaderUtils = (
     let isPointLight = light.lightType == ${LightType.Point};
     let dist = lightPos - worldPos;
     let d = length(dist);
-
-    // if (d > light.radius) {
-    //   return vec4f(ambient, 1.0);
-    // }
 
     let L = select(normalize(lightPos), normalize(dist), isPointLight);
     let H = normalize(V + L);
@@ -130,7 +133,7 @@ const GetPBRLightingShaderUtils = (
     // add to outgoing radiance Lo
     Lo += (kD * albedoOverPi + specular) * radiance * NdotL * shadow; // * light.opacity;  // note that we already multiplied the BRDF by the Fresnel
   
-    #if ${lightType == LightType.Directional}
+    #if ${hasIBL}
       let irradiance = textureSampleLevel(diffuseIBLTexture, envTexSampler, N, 0).rgb;
       kS = FresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness); 
       kD = 1.0 - kS;
@@ -155,10 +158,9 @@ const GetPBRLightingShaderUtils = (
       let envBDRF = textureSample(bdrfLutTexture, envTexSampler, uv).rg;
       specular = prefilteredColor * (F * envBDRF.x + envBDRF.y);
 
-      // let diffuse = irradiance * (albedo * 0.2);
+      let diffuse = irradiance * (albedo * 0.2);
       // let ambient = (kD * diffuse + specular) * ambientOcclusion;
-
-      let ambient = (kD * irradiance * albedo) * ambientOcclusion;
+      let ambient = (kD * diffuse + specular) * ambientOcclusion;
       
       
       var color = ambient + Lo;
@@ -170,7 +172,7 @@ const GetPBRLightingShaderUtils = (
       return vec4f(0);
     }
 
-    return vec4f(color, 1.0);
+    return vec4f(color, opacity);
   }
 `;
 

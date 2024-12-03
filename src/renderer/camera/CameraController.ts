@@ -356,6 +356,8 @@ export default class CameraController {
 	_mouseMoveHandler(event: MouseEvent): void {
 		if (!this.isEnabled) return;
 
+		this.camera.hasChangedSinceLastFrame = true;
+
 		if (this.state === "rotate") {
 			this._rotateEnd = {
 				x: event.clientX,

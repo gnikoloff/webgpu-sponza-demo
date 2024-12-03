@@ -19,7 +19,14 @@ export const LightTypeToShaderType: Map<LightType, number> = new Map([
 	[LightType.Ambient, 2],
 ]);
 
+const _lightShaderDefs = makeShaderDataDefinitions(SHADER_CHUNKS.Light);
+const _lightsStorageView = makeStructuredView(_lightShaderDefs.structs.Light);
+
 export default class Light extends Transform {
+	public static get STRUCT_BYTE_SIZE(): number {
+		return _lightsStorageView.arrayBuffer.byteLength;
+	}
+
 	public lightsStorageView: StructuredView;
 
 	private _color = vec3.create(1, 1, 0);

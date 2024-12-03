@@ -108,11 +108,21 @@ export default class Transform {
 		child.parent = this;
 		this.children.push(child);
 		child.updateWorldMatrix();
+		this.onChildAdd(child);
 	}
 
 	public removeChild(child: Transform) {
 		this.children = this.children.filter(({ id }) => id != child.id);
 		child.parent = null;
+		this.onChildRemove(child);
+	}
+
+	protected onChildAdd(child: Transform) {
+		this.parent?.onChildAdd(child);
+	}
+
+	protected onChildRemove(child: Transform) {
+		this.parent?.onChildRemove(child);
 	}
 
 	public traverse(traverseFn: (node: Transform) => void, recursive = true) {

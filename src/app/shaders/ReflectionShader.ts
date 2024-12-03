@@ -17,7 +17,10 @@ export const getReflectionComputeShader = (
     if (all(pos > texSize)) {
       return;
     }
-    let color = textureLoad(sceneTexture, pos, 0);
+    var color = textureLoad(sceneTexture, pos, 0);
+
+    // color = color / (color + vec4f(vec3f(1.0), 0.0));
+    color = pow(color, vec4f(vec3f(1.0/2.2), 1.0)); 
 
     textureStore(outTexture, pos, color);
     

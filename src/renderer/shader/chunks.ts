@@ -22,13 +22,14 @@ export const SHADER_CHUNKS = Object.freeze({
     
       struct VertexOutput {
         @builtin(position) position: vec4f,
-        @location(0) normal: vec3f,
-        @location(1) uv: vec2f,
-        @location(2) tangent: vec3f,
-        @location(3) bitangent: vec3f,
-        @location(4) currFrameClipPos: vec4f,
-        @location(5) prevFrameClipPos: vec4f,
-        @location(6) @interpolate(flat) instanceId: u32,
+        @location(0) worldPosition: vec3f,
+        @location(1) normal: vec3f,
+        @location(2) uv: vec2f,
+        @location(3) tangent: vec3f,
+        @location(4) bitangent: vec3f,
+        @location(5) currFrameClipPos: vec4f,
+        @location(6) prevFrameClipPos: vec4f,
+        @location(7) @interpolate(flat) instanceId: u32,
       };
 
     `;
@@ -166,6 +167,20 @@ export const SHADER_CHUNKS = Object.freeze({
     `;
 
 		return out;
+	},
+	get sRGBToLinear(): string {
+		return /* wgsl */ `
+
+      @must_use
+      fn srgbToLinear(srgb: vec3f) -> vec3f {
+        return select(
+            srgb / 12.92,
+            pow((srgb + vec3f(0.055)) / vec3f(1.055), vec3f(2.4)),
+            srgb > vec3f(0.04045)
+        );
+      }
+
+    `;
 	},
 	get MathHelpers(): string {
 		return /* wgsl */ `

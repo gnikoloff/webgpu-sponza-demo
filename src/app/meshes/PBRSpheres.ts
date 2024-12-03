@@ -4,11 +4,11 @@ import { RenderPassType } from "../../renderer/core/RenderPass";
 import Material from "../../renderer/material/Material";
 import InstancedDrawable from "../../renderer/scene/InstancedDrawable";
 import {
-	FRAGMENT_SHADER_DEBUG_TEX_COORDS_ENTRY_FN,
-	getDefaultPBRFragmentShader,
-} from "../shaders/FragmentShader";
+	DeferredRenderPBRShaderEntryFn,
+	getDefaultDeferredPBRFragmentShader,
+} from "../shaders/DeferredFragmentShaderSrc";
 import {
-	VERTEX_SHADER_DEFAULT_ENTRY_FN,
+	DefaultVertexShaderEntryFn,
 	getVertexShader,
 } from "../shaders/VertexShader";
 import GeometryCache from "../utils/GeometryCache";
@@ -35,12 +35,12 @@ export default class PBRSpheres extends InstancedDrawable {
 		const material = new Material({
 			debugLabel: "PBR Instanced Spheres Material",
 			vertexShaderSrc: getVertexShader({ isInstanced: true }),
-			vertexShaderEntryFn: VERTEX_SHADER_DEFAULT_ENTRY_FN,
-			fragmentShaderSrc: getDefaultPBRFragmentShader({
-				hasPBRTexture: false,
+			vertexShaderEntryFn: DefaultVertexShaderEntryFn,
+			fragmentShaderSrc: getDefaultDeferredPBRFragmentShader({
+				hasPBRTextures: false,
 				isInstanced: true,
 			}),
-			fragmentShaderEntryFn: FRAGMENT_SHADER_DEBUG_TEX_COORDS_ENTRY_FN,
+			fragmentShaderEntryFn: DeferredRenderPBRShaderEntryFn,
 			bindGroupLayouts: [
 				PipelineStates.defaultCameraBindGroupLayout,
 				PipelineStates.defaultModelBindGroupLayout,

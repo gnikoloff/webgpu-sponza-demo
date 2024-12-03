@@ -2,14 +2,43 @@ import Renderer from "../../app/Renderer";
 import { PBR_TEXTURES_LOCATIONS, SAMPLER_LOCATIONS } from "./RendererBindings";
 
 let _cameraBindGroupLayout: GPUBindGroupLayout;
+let _cameraPlusLightsBindGroupLayout: GPUBindGroupLayout;
 let _modelBindGroupLayout: GPUBindGroupLayout;
-let _modelTexturesBindGroupLayout: GPUBindGroupLayout;
+let _defaultModelMaterialBindGroupLayout: GPUBindGroupLayout;
 let _instanceBindGroupLayout: GPUBindGroupLayout;
 
 const cachedShaderModules: Map<string, GPUShaderModule> = new Map([]);
 const cachedRenderPSOs: Map<string, GPURenderPipeline> = new Map([]);
 
 const PipelineStates = {
+	get defaultCameraPlusLightsBindGroupLayout(): GPUBindGroupLayout {
+		if (_cameraPlusLightsBindGroupLayout) {
+			return _cameraPlusLightsBindGroupLayout;
+		}
+
+		const bindGroupLayoutEntries: GPUBindGroupLayoutEntry[] = [
+			{
+				binding: 0,
+				visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+				buffer: {},
+			},
+			{
+				binding: 1,
+				visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+				buffer: {
+					type: "read-only-storage",
+				},
+			},
+		];
+
+		_cameraPlusLightsBindGroupLayout = Renderer.device.createBindGroupLayout({
+			label: "Camera + Lights GPUBindGroupLayout",
+			entries: bindGroupLayoutEntries,
+		});
+
+		return _cameraPlusLightsBindGroupLayout;
+	},
+
 	get defaultCameraBindGroupLayout(): GPUBindGroupLayout {
 		if (_cameraBindGroupLayout) {
 			return _cameraBindGroupLayout;
@@ -51,8 +80,8 @@ const PipelineStates = {
 	},
 
 	get defaultModelMaterialBindGroupLayout(): GPUBindGroupLayout {
-		if (_modelTexturesBindGroupLayout) {
-			return _modelTexturesBindGroupLayout;
+		if (_defaultModelMaterialBindGroupLayout) {
+			return _defaultModelMaterialBindGroupLayout;
 		}
 		const bindGroupLayoutEntries: GPUBindGroupLayoutEntry[] = [
 			{
@@ -82,11 +111,12 @@ const PipelineStates = {
 				},
 			},
 		];
-		_modelTexturesBindGroupLayout = Renderer.device.createBindGroupLayout({
-			label: "Model Textures GPUBindGroupLayout",
-			entries: bindGroupLayoutEntries,
-		});
-		return _modelTexturesBindGroupLayout;
+		_defaultModelMaterialBindGroupLayout =
+			Renderer.device.createBindGroupLayout({
+				label: "Model Textures GPUBindGroupLayout",
+				entries: bindGroupLayoutEntries,
+			});
+		return _defaultModelMaterialBindGroupLayout;
 	},
 
 	get instancesBindGroupLayout(): GPUBindGroupLayout {

@@ -8,12 +8,11 @@ import {
 	SAMPLER_LOCATIONS,
 } from "../../renderer/core/RendererBindings";
 
-export const FRAGMENT_SHADER_DEBUG_TEX_COORDS_ENTRY_FN =
-	"fragmentMainTexCoords";
+export const DeferredRenderPBRShaderEntryFn = "deferredPBRFrag";
 
 /* prettier-ignore */
-export const getDefaultPBRFragmentShader = ({
-	hasPBRTexture = false,
+export const getDefaultDeferredPBRFragmentShader = ({
+	hasPBRTextures = false,
   isInstanced = false
 } = {}): string => wgsl/* wgsl */ `
   ${SHADER_CHUNKS.CameraUniform}
@@ -21,8 +20,9 @@ export const getDefaultPBRFragmentShader = ({
   ${SHADER_CHUNKS.GBufferOutput}
   ${SHADER_CHUNKS.ModelUniform}
   ${SHADER_CHUNKS.InstanceInput}
+  ${SHADER_CHUNKS.sRGBToLinear}
 
-  @group(${BIND_GROUP_LOCATIONS.Camera}) @binding(0) var<uniform> camera: CameraUniform;
+  @group(${BIND_GROUP_LOCATIONS.CameraPlusOptionalLights}) @binding(0) var<uniform> camera: CameraUniform;
   @group(${BIND_GROUP_LOCATIONS.Model}) @binding(0) var<uniform> model: ModelUniform;
   
   @group(${BIND_GROUP_LOCATIONS.PBRTextures}) @binding(${SAMPLER_LOCATIONS.Default}) var texSampler: sampler;
@@ -31,34 +31,24 @@ export const getDefaultPBRFragmentShader = ({
   @group(${BIND_GROUP_LOCATIONS.PBRTextures}) @binding(${PBR_TEXTURES_LOCATIONS.MetallicRoughness}) var metallicRoughnessTexture: texture_2d<f32>;
 
   #if ${isInstanced}
-  @group(${BIND_GROUP_LOCATIONS.InstanceMatrices}) @binding(0) var<storage> instanceInputs: array<InstanceInput>;
+  @group(${BIND_GROUP_LOCATIONS.InstanceInputs}) @binding(0) var<storage> instanceInputs: array<InstanceInput>;
   #endif
 
   ${NormalEncoderShaderUtils}
 
-  // TODO: Push constants do not work correctly currently.
-  // Prefer Push constants for shader permutation
-
-  // override HAS_ALBEDO_TEXTURE: u32;
-  // override HAS_NORMAL_TEXTURE: u32;
-  
-
   @fragment
-  fn ${FRAGMENT_SHADER_DEBUG_TEX_COORDS_ENTRY_FN}(in: VertexOutput) -> GBufferOutput  {
-    // return vec4<f32>(in.uv, 0.0, 1.0);
-    var uv = in.uv;
-    // uv.y = 1.0 - uv.y;
+  fn ${DeferredRenderPBRShaderEntryFn}(in: VertexOutput) -> GBufferOutput  {
+    let uv = in.uv;
     
-
     var N = normalize(in.normal);
     let T = normalize(in.tangent);
     let B = normalize(in.bitangent);
     let TBN = mat3x3f(T, B, N);
 
     // var textureNormal = textureSampleLevel(normalTexture, texSampler, uv, 5.0).rgb * 2 - 1;
-    let textureNormal = textureSample(normalTexture, texSampler, uv).rgb * 2 - 1;
+    let textureNormal = srgbToLinear(textureSample(normalTexture, texSampler, uv).rgb * 2 - 1);
     
-    if (${hasPBRTexture}) {
+    if (${hasPBRTextures}) {
       N = normalize(TBN * textureNormal);
     }
 
@@ -73,9 +63,10 @@ export const getDefaultPBRFragmentShader = ({
     #endif
 
 
-    if (${hasPBRTexture}) {
-      metallic = textureSample(metallicRoughnessTexture, texSampler, uv).b;
-      roughness = textureSample(metallicRoughnessTexture, texSampler, uv).g;
+    if (${hasPBRTextures}) {
+      let metallicRoughnessSRGB = srgbToLinear(textureSample(metallicRoughnessTexture, texSampler, uv).rgb);
+      metallic = metallicRoughnessSRGB.b;
+      roughness = metallicRoughnessSRGB.g;
     }
 
     out.normalMetallicRoughness = vec4f(
@@ -84,11 +75,10 @@ export const getDefaultPBRFragmentShader = ({
       roughness
     );
     
-    let modelTexColor = textureSample(albedoTexture, texSampler, uv).rgb;
+    
     var color = model.baseColor;
-
-    if (${hasPBRTexture}) {
-      color = modelTexColor;
+    if (${hasPBRTextures}) {
+      color = textureSample(albedoTexture, texSampler, uv).rgb;;
     }
     
     out.color = vec4f(color, f32(model.isReflective));

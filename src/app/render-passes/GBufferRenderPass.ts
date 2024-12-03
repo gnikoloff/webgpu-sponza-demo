@@ -1,6 +1,7 @@
 import Renderer from "../Renderer";
 import RenderPass, { RenderPassType } from "../../renderer/core/RenderPass";
 import Transform from "../../renderer/scene/Transform";
+import Scene from "../../renderer/scene/Scene";
 import { BIND_GROUP_LOCATIONS } from "../../renderer/core/RendererBindings";
 
 export default class GBufferRenderPass extends RenderPass {
@@ -18,9 +19,8 @@ export default class GBufferRenderPass extends RenderPass {
 	public depthTextureView: GPUTextureView;
 	public stencilTextureView: GPUTextureView;
 
-	constructor() {
-		super();
-		this.type = RenderPassType.Deferred;
+	constructor(scene: Scene) {
+		super(RenderPassType.Deferred, scene);
 	}
 
 	public override onResize(width: number, height: number): void {
@@ -131,10 +131,7 @@ export default class GBufferRenderPass extends RenderPass {
 		};
 	}
 
-	public override render(
-		commandEncoder: GPUCommandEncoder,
-		scene: Transform,
-	): void {
+	public override render(commandEncoder: GPUCommandEncoder): void {
 		Renderer.activeRenderPass = this.type;
 
 		const renderPassDescriptor = this.createRenderPassDescriptor();
@@ -143,18 +140,14 @@ export default class GBufferRenderPass extends RenderPass {
 
 		renderPassEncoder.pushDebugGroup("Render G-Buffer");
 
-		if (this.cameraBindGroup) {
-			renderPassEncoder.setBindGroup(
-				BIND_GROUP_LOCATIONS.Camera,
-				this.cameraBindGroup,
-			);
-		}
+		renderPassEncoder.setBindGroup(
+			BIND_GROUP_LOCATIONS.CameraPlusOptionalLights,
+			this.cameraBindGroup,
+		);
 
 		renderPassEncoder.setStencilReference(128);
 
-		scene.traverse((node) => {
-			node.render(renderPassEncoder);
-		});
+		this.scene.renderOpaqueNodes(renderPassEncoder);
 
 		renderPassEncoder.popDebugGroup();
 		renderPassEncoder.end();

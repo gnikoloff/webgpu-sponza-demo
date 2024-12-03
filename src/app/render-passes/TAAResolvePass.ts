@@ -1,5 +1,6 @@
 import PipelineStates from "../../renderer/core/PipelineStates";
-import RenderPass from "../../renderer/core/RenderPass";
+import RenderPass, { RenderPassType } from "../../renderer/core/RenderPass";
+import Scene from "../../renderer/scene/Scene";
 import Renderer from "../Renderer";
 
 import {
@@ -27,10 +28,11 @@ export default class TAAResolvePass extends RenderPass {
 	private textureBindGroup: GPUBindGroup;
 
 	constructor(
+		scene: Scene,
 		private colorTextureView: GPUTextureView,
 		private velocityTextureView: GPUTextureView,
 	) {
-		super();
+		super(RenderPassType.TAAResolve, scene);
 
 		const vertexShaderModule = PipelineStates.createShaderModule(
 			FULLSCREEN_TRIANGLE_VERTEX_SHADER_SRC,
@@ -41,7 +43,7 @@ export default class TAAResolvePass extends RenderPass {
 
 		const targets: GPUColorTargetState[] = [
 			{
-				format: "bgra8unorm",
+				format: "rgba16float",
 			},
 		];
 
@@ -97,7 +99,7 @@ export default class TAAResolvePass extends RenderPass {
 
 		this.outTexture = Renderer.device.createTexture({
 			dimension: "2d",
-			format: "bgra8unorm",
+			format: "rgba16float",
 			mipLevelCount: 1,
 			sampleCount: 1,
 			size: { width, height, depthOrArrayLayers: 1 },
@@ -122,7 +124,7 @@ export default class TAAResolvePass extends RenderPass {
 
 		this.historyTexture = Renderer.device.createTexture({
 			dimension: "2d",
-			format: "bgra8unorm",
+			format: "rgba16float",
 			mipLevelCount: 1,
 			sampleCount: 1,
 			size: { width, height, depthOrArrayLayers: 1 },

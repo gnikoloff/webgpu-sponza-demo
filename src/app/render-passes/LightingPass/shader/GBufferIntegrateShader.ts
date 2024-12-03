@@ -20,7 +20,10 @@ const GetGBufferIntegrateShader = (
   ${SHADER_CHUNKS.ShadowCascade}
   ${SHADER_CHUNKS.CommonHelpers}
 
-  ${GetPBRLightingShaderUtils(lightType)}
+  ${GetPBRLightingShaderUtils({
+		isDeferred: true,
+		hasIBL: lightType === LightType.Directional,
+	})}
   ${CSMShadowShaderUtils}
   ${NormalEncoderShaderUtils}
 
@@ -79,20 +82,23 @@ const GetGBufferIntegrateShader = (
     // TODO: Directional light is expected to be at index 0
     // Write a better mechanism for quering it
     let lightPosition = lightsBuffer[0].position;
-    let shadow = ShadowCalculate(
-      worldPos,
-      N,
-      lightPosition,
-      &camera,
-      SHADOW_MAP_SIZE,
-      SHADOW_MAP_SIZE,
-      shadowCascades,
-      shadowDepthTexture,
-      shadowMapSampler
-    );
+    let shadow = 1.0;
+    // let shadow = ShadowCalculate(
+    //   worldPos,
+    //   N,
+    //   lightPosition,
+    //   &camera,
+    //   SHADOW_MAP_SIZE,
+    //   SHADOW_MAP_SIZE,
+    //   shadowCascades,
+    //   shadowDepthTexture,
+    //   shadowMapSampler
+    // );
     #else
     let shadow = 1.0;
     #endif
+
+    let opacity = 1.0;
 
     var color = PBRLighting(
       &material,
@@ -101,6 +107,7 @@ const GetGBufferIntegrateShader = (
       N,
       V,
       shadow,
+      opacity,
       #if ${lightType == LightType.Directional}
       diffuseIBLTexture,
       specularIBLTexture,
@@ -111,7 +118,7 @@ const GetGBufferIntegrateShader = (
 
     let bayerDitherOffset = textureSample(bayerDitherTexture, bayerDitherSampler, vec2f(coord.xy) / 8).r / 32.0 - (1.0 / 128.0);
 
-    color += vec4f(bayerDitherOffset);
+    // color += vec4f(bayerDitherOffset);
 
     // color = color / (color + vec4f(vec3f(1.0), 0.0));
     // // gamma correct

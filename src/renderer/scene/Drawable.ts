@@ -34,6 +34,8 @@ export default class Drawable extends Transform {
 	public firstInstance = 0;
 	public instanceCount = 1;
 
+	public isOpaque = true;
+
 	private modelBuffer: GPUBuffer;
 	private modelBindGroup: GPUBindGroup;
 	private texturesBindGroup: GPUBindGroup;

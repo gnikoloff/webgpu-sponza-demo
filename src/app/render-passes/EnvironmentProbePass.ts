@@ -153,7 +153,7 @@ export default class EnvironmentProbePass extends RenderPass {
 			const renderPass = commandEncoder.beginRenderPass(renderPassDescriptor);
 
 			renderPass.setBindGroup(
-				BIND_GROUP_LOCATIONS.Camera,
+				BIND_GROUP_LOCATIONS.CameraPlusOptionalLights,
 				this.cameraBindGroup,
 			);
 

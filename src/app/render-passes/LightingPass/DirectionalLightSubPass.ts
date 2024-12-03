@@ -12,7 +12,7 @@ import GetGBufferIntegrateShader, {
 	GBufferIntegrateShaderEntryFn,
 } from "./shader/GBufferIntegrateShader";
 
-export class DirectionalLightSubPass extends LightSubPass {
+export default class DirectionalLightSubPass extends LightSubPass {
 	private renderPSO: GPURenderPipeline;
 	private dirLightShadowBindGroupLayout: GPUBindGroupLayout;
 	private dirLightShadowBindGroupEntries: GPUBindGroupEntry[];

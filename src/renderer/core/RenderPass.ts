@@ -2,21 +2,34 @@ import Renderer from "../../app/Renderer";
 import Camera from "../camera/Camera";
 import PipelineStates from "./PipelineStates";
 import Transform from "../scene/Transform";
+import Scene from "../scene/Scene";
 import { BIND_GROUP_LOCATIONS } from "./RendererBindings";
 
 export enum RenderPassType {
 	Deferred,
+	DeferredLighting,
+	Transparent,
 	Shadow,
 	EnvironmentCube,
+	TAAResolve,
+	Reflection,
 }
+
+const RenderPassNames: Map<RenderPassType, string> = new Map([
+	[RenderPassType.Deferred, "G-Buffer Render Pass"],
+	[RenderPassType.DeferredLighting, "Lighting Pass"],
+	[RenderPassType.Transparent, "Transparent Pass"],
+	[RenderPassType.Shadow, "Shadow Pass"],
+	[RenderPassType.EnvironmentCube, "Environment Cube Pass"],
+	[RenderPassType.TAAResolve, "TAA Resolve Pass"],
+	[RenderPassType.Reflection, "SSR Pass"],
+]);
 
 export default class RenderPass {
 	protected cameraBindGroup?: GPUBindGroup;
 	protected camera?: Camera;
 
-	public type?: RenderPassType;
-
-	constructor() {}
+	constructor(public type: RenderPassType, protected scene: Scene) {}
 
 	protected createRenderPassDescriptor(): GPURenderPassDescriptor {
 		throw new Error("Needs implementation");
@@ -26,7 +39,7 @@ export default class RenderPass {
 		this.camera = camera;
 
 		this.cameraBindGroup = Renderer.device.createBindGroup({
-			label: `Camera Bind Group for pass: ${this.type ?? "Deferred"}`,
+			label: `Camera Bind Group for: ${RenderPassNames.get(this.type)}`,
 			layout: PipelineStates.defaultCameraBindGroupLayout,
 			entries: [
 				{
@@ -50,7 +63,7 @@ export default class RenderPass {
 
 		if (this.cameraBindGroup) {
 			renderPassEncoder.setBindGroup(
-				BIND_GROUP_LOCATIONS.Camera,
+				BIND_GROUP_LOCATIONS.CameraPlusOptionalLights,
 				this.cameraBindGroup,
 			);
 		}

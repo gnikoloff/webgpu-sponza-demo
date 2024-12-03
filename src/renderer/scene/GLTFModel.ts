@@ -18,10 +18,14 @@ import {
 } from "../core/RendererBindings";
 import SamplerController from "../texture/SamplerController";
 
+type PBRTextureType = "albedo" | "normal" | "metallicRoughness";
+
+var a = 0;
 export default class GLTFModel extends Transform {
-	private texturesToLoad: Map<TextureLocation, Promise<GPUTexture>> = new Map();
 	private gltfDefinition: GLTFPostprocessed;
+	private texturesToLoad: Map<TextureLocation, Promise<GPUTexture>> = new Map();
 	private nodeMaterialIds: Map<string, Drawable[]> = new Map([]);
+	private savedTextures: Map<string, GPUTexture> = new Map([]);
 
 	public getAlbedoTexture(): Promise<GPUTexture> {
 		return this.getTexture(PBR_TEXTURES_LOCATIONS.Albedo);
@@ -42,11 +46,11 @@ export default class GLTFModel extends Transform {
 
 	public setMaterial(
 		material: Material,
-		forRenderPassType: RenderPassType = RenderPassType.Deferred,
+		renderPassType = RenderPassType.Deferred,
 	) {
 		this.traverse((node) => {
 			if (node instanceof Drawable) {
-				node.setMaterial(material, forRenderPassType);
+				node.setMaterial(material, renderPassType);
 			}
 		});
 	}
@@ -110,15 +114,28 @@ export default class GLTFModel extends Transform {
 
 		const createTexture = async (
 			textureSource: Uint8Array,
+			texType: PBRTextureType,
+			id: string,
 			showDebug = false,
 		): Promise<GPUTexture> => {
+			let outTexture: GPUTexture;
+			if ((outTexture = this.savedTextures.get(id))) {
+				console.log(`cache hit ${a++}`);
+				return outTexture;
+			}
 			const blob = new Blob([textureSource], {
 				type: "image/png",
 			});
 			const bitmap = await createImageBitmap(blob, {
 				colorSpaceConversion: "none",
 			});
-			const tex = TextureLoader.loadTextureFromData(bitmap, true);
+			const tex = TextureLoader.loadTextureFromData(
+				bitmap,
+				true,
+				false,
+				`${texType} texture: ${id}`,
+			);
+			this.savedTextures.set(id, tex);
 
 			const debugCavas = document.createElement("canvas");
 			const ctx = debugCavas.getContext("2d");
@@ -157,6 +174,8 @@ export default class GLTFModel extends Transform {
 					createTexture(
 						material.pbrMetallicRoughness.baseColorTexture.texture.source
 							.bufferView.data,
+						"albedo",
+						material.pbrMetallicRoughness.baseColorTexture.texture.id,
 						// true,
 					).then((tex) => {
 						const nodesForThisMaterial = this.nodeMaterialIds.get(material.id);
@@ -183,7 +202,8 @@ export default class GLTFModel extends Transform {
 					createTexture(
 						material.pbrMetallicRoughness.metallicRoughnessTexture.texture
 							.source.bufferView.data,
-						true,
+						"metallicRoughness",
+						material.pbrMetallicRoughness.metallicRoughnessTexture.texture.id,
 					).then((tex) => {
 						const nodesForThisMaterial = this.nodeMaterialIds.get(material.id);
 						for (const node of nodesForThisMaterial) {
@@ -205,6 +225,8 @@ export default class GLTFModel extends Transform {
 					PBR_TEXTURES_LOCATIONS.Normal,
 					createTexture(
 						material.normalTexture.texture.source.bufferView.data,
+						"normal",
+						material.normalTexture.texture.id,
 					).then((tex) => {
 						const nodesForThisMaterial = this.nodeMaterialIds.get(material.id);
 						for (const node of nodesForThisMaterial) {
@@ -223,7 +245,6 @@ export default class GLTFModel extends Transform {
 		const samplers = gltf.samplers.map((samplerInfo) =>
 			SamplerController.getSamplerFromGltfSamplerDef(samplerInfo),
 		);
-
 		for (const node of gltf.nodes) {
 			const meshInfo = node.mesh;
 			if (!meshInfo) {
@@ -231,22 +252,19 @@ export default class GLTFModel extends Transform {
 			}
 
 			for (const primitive of node.mesh.primitives) {
-				if (primitive.material.alphaCutoff) {
-					this.nodeMaterialIds.set(primitive.material.id, []);
-					continue;
-				}
 				const geometry = new GLTFGeometry(primitive);
 				const mesh = new Drawable(geometry);
 				const nodePosition = vec3.create();
 				const nodeScale = vec3.create(1, 1, 1);
 				const nodeRotation = quat.identity();
-
 				const nodesForMaterial =
 					this.nodeMaterialIds.get(primitive.material.id) || [];
 				nodesForMaterial.push(mesh);
 				this.nodeMaterialIds.set(primitive.material.id, nodesForMaterial);
 
 				mesh.label = node.name ?? node.id;
+
+				console.log(node);
 
 				if (node.translation) {
 					vec3.set(
@@ -271,6 +289,10 @@ export default class GLTFModel extends Transform {
 					);
 				}
 
+				mesh.isOpaque = !primitive.material.alphaCutoff;
+				console.log(
+					`setting x: ${nodePosition[0]} y: ${nodePosition[1]} z: ${nodePosition[2]}`,
+				);
 				mesh.setCustomMatrixFromTRS(nodePosition, nodeRotation, nodeScale);
 				mesh.sampler = samplers[0];
 				this.addChild(mesh);

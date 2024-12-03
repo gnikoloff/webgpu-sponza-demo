@@ -10,7 +10,7 @@ export default class GroundPlane extends Drawable {
 
 		this.label = "Ground Plane";
 
-		this.setMaterial(MaterialCache.defaultDeferredMaterial);
+		this.setMaterial(MaterialCache.defaultDeferredPBRMaterial);
 
 		this.materialProps.isReflective = true;
 		this.materialProps.setColor(0.4, 0.4, 0.4);

@@ -114,7 +114,7 @@ export default class InstancedDrawable extends Drawable {
 	override preRender(renderEncoder: GPURenderPassEncoder): void {
 		super.preRender(renderEncoder);
 		renderEncoder.setBindGroup(
-			BIND_GROUP_LOCATIONS.InstanceMatrices,
+			BIND_GROUP_LOCATIONS.InstanceInputs,
 			this.instanceMatricesBindGroup,
 		);
 	}

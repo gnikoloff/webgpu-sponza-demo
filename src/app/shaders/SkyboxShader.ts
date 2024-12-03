@@ -11,7 +11,7 @@ const SkyboxShader = /* wgsl */ `
   ${SHADER_CHUNKS.CameraUniform}
   ${SHADER_CHUNKS.ModelUniform}
 
-  @group(${BIND_GROUP_LOCATIONS.Camera}) @binding(0) var<uniform> camera: CameraUniform;
+  @group(${BIND_GROUP_LOCATIONS.CameraPlusOptionalLights}) @binding(0) var<uniform> camera: CameraUniform;
   @group(1) @binding(0) var inTexture: texture_cube<f32>;
   @group(1) @binding(1) var inSampler: sampler;
 

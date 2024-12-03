@@ -13,11 +13,12 @@ import PipelineStates from "../../renderer/core/PipelineStates";
 
 import DirectionalLight from "../../renderer/lighting/DirectionalLight";
 import { BIND_GROUP_LOCATIONS } from "../../renderer/core/RendererBindings";
+import Scene from "../../renderer/scene/Scene";
 
 export default class DirectionalShadowPass extends RenderPass {
 	public static readonly TEXTURE_SIZE = 2048;
 	public static readonly TEXTURE_CASCADES_COUNT = 2;
-	public static readonly TEXTURE_CASCADE_FAR_DISTANCES: number[] = [6, 40, 200];
+	public static readonly TEXTURE_CASCADE_FAR_DISTANCES: number[] = [6, 15, 200];
 
 	public shadowTexture: GPUTexture;
 	public shadowTextureViewCascade0: GPUTextureView;
@@ -36,8 +37,8 @@ export default class DirectionalShadowPass extends RenderPass {
 	private shadowCameraCascade0BufferUniformValues: StructuredView;
 	private shadowCameraCascade1BufferUniformValues: StructuredView;
 
-	constructor(private sceneDirectionalLight: DirectionalLight) {
-		super();
+	constructor(scene: Scene, private sceneDirectionalLight: DirectionalLight) {
+		super(RenderPassType.Shadow, scene);
 		this.type = RenderPassType.Shadow;
 
 		this.shadowTexture = Renderer.device.createTexture({
@@ -198,7 +199,7 @@ export default class DirectionalShadowPass extends RenderPass {
 		return outMatrix;
 	}
 
-	public render(commandEncoder: GPUCommandEncoder, scene: Transform): void {
+	public render(commandEncoder: GPUCommandEncoder): void {
 		Renderer.activeRenderPass = this.type;
 
 		const oldCameraNear = this.camera.near;
@@ -243,14 +244,12 @@ export default class DirectionalShadowPass extends RenderPass {
 		);
 
 		renderPassEncoderCascade0.setBindGroup(
-			BIND_GROUP_LOCATIONS.Camera,
+			BIND_GROUP_LOCATIONS.CameraPlusOptionalLights,
 			this.shadowCameraCascade0BindGroup,
 		);
 		renderPassEncoderCascade0.pushDebugGroup("Render Shadow Cascade #0");
 
-		scene.traverse((node) => {
-			node.render(renderPassEncoderCascade0);
-		});
+		this.scene.renderOpaqueNodes(renderPassEncoderCascade0);
 
 		renderPassEncoderCascade0.popDebugGroup();
 		renderPassEncoderCascade0.end();
@@ -297,13 +296,11 @@ export default class DirectionalShadowPass extends RenderPass {
 		renderPassEncoderCascade1.pushDebugGroup("Render Shadow Cascade #1");
 
 		renderPassEncoderCascade1.setBindGroup(
-			BIND_GROUP_LOCATIONS.Camera,
+			BIND_GROUP_LOCATIONS.CameraPlusOptionalLights,
 			this.shadowCameraCascade1BindGroup,
 		);
 
-		scene.traverse((node) => {
-			node.render(renderPassEncoderCascade1);
-		});
+		this.scene.renderOpaqueNodes(renderPassEncoderCascade1);
 
 		renderPassEncoderCascade1.popDebugGroup();
 		renderPassEncoderCascade1.end();

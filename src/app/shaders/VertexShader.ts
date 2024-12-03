@@ -5,7 +5,7 @@ import {
 	PBR_TEXTURES_LOCATIONS,
 } from "../../renderer/core/RendererBindings";
 
-export const VERTEX_SHADER_DEFAULT_ENTRY_FN = "vertexMain";
+export const DefaultVertexShaderEntryFn = "vertexMain";
 
 export const FULLSCREEN_TRIANGLE_VERTEX_SHADER_ENTRY_NAME =
 	"fullScreeenTriVertex";
@@ -44,18 +44,18 @@ export const getVertexShader = (
   ${SHADER_CHUNKS.CameraUniform}
   ${SHADER_CHUNKS.InstanceInput}
 
-  @group(${BIND_GROUP_LOCATIONS.Camera}) @binding(0) var<uniform> camera: CameraUniform;
+  @group(${BIND_GROUP_LOCATIONS.CameraPlusOptionalLights}) @binding(0) var<uniform> camera: CameraUniform;
   @group(${BIND_GROUP_LOCATIONS.Model}) @binding(0) var<uniform> model: ModelUniform;
   
   @group(${BIND_GROUP_LOCATIONS.PBRTextures}) @binding(${PBR_TEXTURES_LOCATIONS.Albedo}) var albedoTexture: texture_2d<f32>;
   @group(${BIND_GROUP_LOCATIONS.PBRTextures}) @binding(${PBR_TEXTURES_LOCATIONS.Normal}) var normalTexture: texture_2d<f32>;
 
   #if ${isInstanced}
-    @group(${BIND_GROUP_LOCATIONS.InstanceMatrices}) @binding(0) var<storage> instanceInputs: array<InstanceInput>;
+    @group(${BIND_GROUP_LOCATIONS.InstanceInputs}) @binding(0) var<storage> instanceInputs: array<InstanceInput>;
   #endif
 
   @vertex
-  fn ${VERTEX_SHADER_DEFAULT_ENTRY_FN}(
+  fn ${DefaultVertexShaderEntryFn}(
     @builtin(instance_index) instanceId: u32,
     in: VertexInput
   ) -> VertexOutput {
@@ -73,7 +73,9 @@ export const getVertexShader = (
     #endif
 
     var out: VertexOutput;
-    out.position = camera.projectionViewMatrix * worldMatrix * in.position;
+    let worldPosition = worldMatrix * in.position;
+    out.position = camera.projectionViewMatrix * worldPosition;
+    out.worldPosition = worldPosition.xyz;
 
     // var jitterOffset = camera.jitterOffset;
     // jitterOffset.x = ((jitterOffset.x - 0.5) / f32(camera.viewportWidth)) * 2;

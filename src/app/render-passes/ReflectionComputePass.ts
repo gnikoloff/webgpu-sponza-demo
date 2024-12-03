@@ -1,5 +1,6 @@
 import PipelineStates from "../../renderer/core/PipelineStates";
-import RenderPass from "../../renderer/core/RenderPass";
+import RenderPass, { RenderPassType } from "../../renderer/core/RenderPass";
+import Scene from "../../renderer/scene/Scene";
 import Renderer from "../Renderer";
 import {
 	REFLECTION_PASS_FRAGMENT_SHADER_ENTRY_NAME,
@@ -14,8 +15,8 @@ export default class ReflectionComputePass extends RenderPass {
 	private settingsGpuBuffer: GPUBuffer;
 	private computePSOBindGroupLayout: GPUBindGroupLayout;
 
-	constructor() {
-		super();
+	constructor(scene: Scene) {
+		super(RenderPassType.Reflection, scene);
 		this.settingsGpuBuffer = Renderer.device.createBuffer({
 			label: "Reflection Pass Settings GPUBuffer",
 			size: 4 * Uint32Array.BYTES_PER_ELEMENT,
