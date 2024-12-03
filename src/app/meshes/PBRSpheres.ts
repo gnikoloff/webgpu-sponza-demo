@@ -12,7 +12,7 @@ import {
 	getVertexShader,
 } from "../shaders/VertexShader";
 import GeometryCache from "../utils/GeometryCache";
-import { GBUFFER_OUTPUT_TARGETS } from "../utils/MaterialCache";
+import MaterialCache, { GBUFFER_OUTPUT_TARGETS } from "../utils/MaterialCache";
 import Renderer from "../Renderer";
 
 export default class PBRSpheres extends InstancedDrawable {
@@ -60,8 +60,13 @@ export default class PBRSpheres extends InstancedDrawable {
 		});
 
 		this.setMaterial(material, RenderPassType.Deferred);
+		this.setMaterial(
+			MaterialCache.defaultInstancedShadowMaterial,
+			RenderPassType.Shadow,
+		);
 
 		this.materialProps.setColor(1, 1, 1);
+		this.setPosition(0, 4, 0);
 
 		this.materialProps.isReflective = false;
 

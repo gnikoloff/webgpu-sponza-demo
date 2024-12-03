@@ -17,9 +17,7 @@ import { BIND_GROUP_LOCATIONS } from "../../renderer/core/RendererBindings";
 export default class DirectionalShadowPass extends RenderPass {
 	public static readonly TEXTURE_SIZE = 2048;
 	public static readonly TEXTURE_CASCADES_COUNT = 2;
-	public static readonly TEXTURE_CASCADE_FAR_DISTANCES: number[] = [
-		22, 65, 200,
-	];
+	public static readonly TEXTURE_CASCADE_FAR_DISTANCES: number[] = [6, 40, 200];
 
 	public shadowTexture: GPUTexture;
 	public shadowTextureViewCascade0: GPUTextureView;

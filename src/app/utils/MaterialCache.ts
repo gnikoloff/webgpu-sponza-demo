@@ -1,17 +1,10 @@
 import PipelineStates from "../../renderer/core/PipelineStates";
 import Material from "../../renderer/material/Material";
 import Renderer from "../Renderer";
-import EnvironmentProbeShader, {
-	EnvironmentProbeShaderEntryFn,
-} from "../shaders/EnvironmentProbeShader";
 import {
 	FRAGMENT_SHADER_DEBUG_TEX_COORDS_ENTRY_FN,
 	getDefaultPBRFragmentShader,
 } from "../shaders/FragmentShader";
-import SkyboxShader, {
-	SkyboxShaderFragmentEntryFn,
-	SkyboxShaderVertexEntryFn,
-} from "../shaders/SkyboxShader";
 import {
 	VERTEX_SHADER_DEFAULT_ENTRY_FN,
 	getVertexShader,
@@ -21,6 +14,7 @@ let _defaultDeferredMaterial: Material;
 let _defaultTexturedDeferredMaterial: Material;
 let _defaultDeferredInstancedMaterial: Material;
 let _defaultShadowMaterial: Material;
+let _defaultInstancedShadowMaterial: Material;
 let _defaultEnvironmentProbeMaterial: Material;
 
 export const GBUFFER_OUTPUT_TARGETS: GPUColorTargetState[] = [
@@ -155,6 +149,28 @@ const MaterialCache = Object.freeze({
 		});
 
 		return _defaultShadowMaterial;
+	},
+
+	get defaultInstancedShadowMaterial(): Material {
+		if (_defaultInstancedShadowMaterial) {
+			return _defaultInstancedShadowMaterial;
+		}
+		_defaultInstancedShadowMaterial = new Material({
+			debugLabel: "Default Shadow Material",
+			vertexShaderSrc: getVertexShader({ isInstanced: true }),
+			vertexShaderEntryFn: VERTEX_SHADER_DEFAULT_ENTRY_FN,
+			bindGroupLayouts: [
+				PipelineStates.defaultCameraBindGroupLayout,
+				PipelineStates.defaultModelBindGroupLayout,
+				PipelineStates.defaultModelMaterialBindGroupLayout,
+				PipelineStates.instancesBindGroupLayout,
+			],
+			// primitive: {
+			// 	cullMode: "back",
+			// },
+		});
+
+		return _defaultInstancedShadowMaterial;
 	},
 });
 

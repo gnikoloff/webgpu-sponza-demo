@@ -19,10 +19,7 @@ export default class Geometry {
 
 		this.vertexBuffer = Renderer.device.createBuffer({
 			mappedAtCreation: true,
-			size:
-				vertexCount *
-				VertexDescriptor.itemsPerVertexDefaultLayout *
-				Float32Array.BYTES_PER_ELEMENT,
+			size: interleavedData.length * Float32Array.BYTES_PER_ELEMENT,
 			usage: GPUBufferUsage.VERTEX,
 			label: "Mesh Interleaved Vertex GPUBuffer",
 		});
@@ -31,9 +28,15 @@ export default class Geometry {
 
 		this.vertexBuffer.unmap();
 
+		const indexBufferSize = Uint16Array.BYTES_PER_ELEMENT * indices.length;
+		const indexBufferSizeRemainder = indexBufferSize % 4;
+		const nextIndexBufferSizeDivisibleBy4 =
+			indexBufferSizeRemainder === 0
+				? indexBufferSize
+				: indexBufferSize + (4 - indexBufferSizeRemainder);
 		this.indexBuffer = Renderer.device.createBuffer({
 			mappedAtCreation: true,
-			size: Uint16Array.BYTES_PER_ELEMENT * indices.length,
+			size: nextIndexBufferSizeDivisibleBy4,
 			usage: GPUBufferUsage.INDEX,
 			label: "Mesh Index GPUBuffer",
 		});

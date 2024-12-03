@@ -182,8 +182,8 @@ export default class CameraController {
 		}
 	}
 
-	lookAt([x, y, z]) {
-		vec3.set(this.target, x, y, z);
+	setLookAt(x: number, y: number, z: number) {
+		vec3.set(x, y, z, this.target);
 		return this;
 	}
 

@@ -35,9 +35,16 @@ lightingFolder.add(GUI_PARAMS, "Auto-Rotate Sun").onChange((v: boolean) => {
 
 const shadowFolder = gui.addFolder("Shadow");
 shadowFolder.open();
-shadowFolder.add(GUI_PARAMS, "Debug Shadow Map").onChange((v: boolean) => {
-	renderer.debugShadowMap = v;
-});
+const debugShadowController = shadowFolder
+	.add(GUI_PARAMS, "Debug Shadow Map")
+	.onChange((v: boolean) => {
+		renderer.debugShadowMap = v;
+		if (v && GUI_PARAMS["Debug G-Buffer"]) {
+			GUI_PARAMS["Debug G-Buffer"] = false;
+		}
+	});
+debugShadowController.listen();
+
 shadowFolder
 	.add(GUI_PARAMS, "Debug Shadow Cascade Index")
 	.onChange((v: boolean) => {
@@ -47,11 +54,16 @@ shadowFolder
 const deferredRendererFolder = gui.addFolder("Deferred Renderer");
 deferredRendererFolder.open();
 
-deferredRendererFolder
+const debugGBufferController = deferredRendererFolder
 	.add(GUI_PARAMS, "Debug G-Buffer")
 	.onChange((v: boolean) => {
 		renderer.debugGBuffer = v;
+		if (v && GUI_PARAMS["Debug Shadow Map"]) {
+			GUI_PARAMS["Debug Shadow Map"] = false;
+		}
 	});
+debugGBufferController.listen();
+
 deferredRendererFolder
 	.add(GUI_PARAMS, "Debug Point Lights Mask")
 	.onChange((v: boolean) => {

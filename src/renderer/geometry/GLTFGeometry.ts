@@ -1,4 +1,7 @@
-import { GLTFMeshPostprocessed } from "@loaders.gl/gltf";
+import {
+	GLTFMeshPostprocessed,
+	GLTFMeshPrimitivePostprocessed,
+} from "@loaders.gl/gltf";
 import { TypedArray } from "webgpu-utils";
 import { Vec2, Vec3, vec2, vec3 } from "wgpu-matrix";
 
@@ -7,14 +10,8 @@ import Face from "./Face";
 import VertexDescriptor from "../core/VertexDescriptor";
 
 export default class GLTFGeometry extends Geometry {
-	constructor(meshInfo: GLTFMeshPostprocessed) {
+	constructor(primitive: GLTFMeshPrimitivePostprocessed) {
 		super();
-
-		const primitive = meshInfo.primitives[0];
-		console.log(meshInfo.primitives);
-		if (!primitive) {
-			throw new Error("GLTF Mesh with 0 primitives");
-		}
 
 		const positionAttrib = primitive.attributes.POSITION;
 		if (!positionAttrib) {
@@ -25,13 +22,10 @@ export default class GLTFGeometry extends Geometry {
 		const texCoord0Attrib = primitive.attributes.TEXCOORD_0;
 		const tangentAttrib = primitive.attributes.TANGENT;
 		const indicesSlot = primitive.indices;
-		// debugger;
 
 		const positions = positionAttrib.value;
 		const normals = normalAttrib.value;
 		const texCoords = texCoord0Attrib.value;
-		// debugger;
-
 		const indices = indicesSlot.value as Uint16Array;
 
 		if (tangentAttrib) {
@@ -92,7 +86,6 @@ export default class GLTFGeometry extends Geometry {
 			interleavedArray[interleavedArrIdx++] = ty;
 			interleavedArray[interleavedArrIdx++] = tz;
 		}
-
 		this.createBuffersWithDataDirectly(
 			indices.length,
 			interleavedArray,
@@ -125,7 +118,7 @@ export default class GLTFGeometry extends Geometry {
 			normals.push(normal);
 		}
 
-		for (let i = 0; i < texCoordsIn.length / 3; i++) {
+		for (let i = 0; i < texCoordsIn.length / 2; i++) {
 			const uv0x = texCoordsIn[i * 2 + 0];
 			const uv0y = texCoordsIn[i * 2 + 1];
 

@@ -56,6 +56,8 @@ export default class Drawable extends Transform {
 
 	public set sampler(v: GPUSampler) {
 		this.setSampler(v);
+		this.modelMaterialBindGroupEntries[0].resource = v;
+		this.updateTexturesBindGroup();
 	}
 
 	public getSampler(): GPUSampler {
@@ -71,11 +73,7 @@ export default class Drawable extends Transform {
 
 		this.modelMaterialBindGroupEntries[location].resource =
 			texture.createView();
-		this.texturesBindGroup = Renderer.device.createBindGroup({
-			label: "Model Textures Bind Group",
-			layout: PipelineStates.defaultModelMaterialBindGroupLayout,
-			entries: this.modelMaterialBindGroupEntries,
-		});
+		this.updateTexturesBindGroup();
 	}
 
 	public getTexture(location: TextureLocation): GPUTexture {
@@ -84,6 +82,14 @@ export default class Drawable extends Transform {
 
 	public get material(): Material {
 		return this.materials.get(Renderer.activeRenderPass);
+	}
+
+	private updateTexturesBindGroup() {
+		this.texturesBindGroup = Renderer.device.createBindGroup({
+			label: "Model Textures Bind Group",
+			layout: PipelineStates.defaultModelMaterialBindGroupLayout,
+			entries: this.modelMaterialBindGroupEntries,
+		});
 	}
 
 	constructor(geometry: Geometry) {

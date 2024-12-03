@@ -13,10 +13,10 @@ export default class GroundContainer extends Transform {
 
 		this.plane
 			.setRotationX(Math.PI * -0.5)
-			.setPositionY(0)
+			.setPositionY(-4)
 			.setScale(GROUND_SIZE, GROUND_SIZE, GROUND_SIZE);
 
-		this.addChild(this.plane);
+		// this.addChild(this.plane);
 
 		// this.addChild(this.pipes);
 	}

@@ -5,7 +5,7 @@ import GetPBRLightingShaderUtils from "../../renderer/shader/PBRLightingShaderUt
 import CSMShadowShaderUtils from "../../renderer/shader/CSMShadowShaderUtils";
 import NormalEncoderShaderUtils from "../../renderer/shader/NormalEncoderShaderUtils";
 import { LightType } from "../../renderer/lighting/Light";
-import GBufferCommonShaderBindings from "../render-passes/GBufferIntegratePass/shader/GBufferCommonShaderBindings";
+import GBufferCommonShaderBindings from "../render-passes/LightingPass/shader/GBufferCommonShaderBindings";
 
 export const LIGHT_FRAGMENT_SHADER_ENTRY_NAME = "pointLightFragShader";
 export const POINT_LIGHT_VERTEX_SHADER_ENTRY_NAME = "pointLightVertex";
@@ -110,9 +110,9 @@ export const getGBufferFragShader = (
       #endif
     );
 
-    let bayerDitherOffset = textureSample(bayerDitherTexture, bayerDitherSampler, vec2f(coord.xy) / 8).r / 32.0 - (1.0 / 128.0);
+    // let bayerDitherOffset = textureSample(bayerDitherTexture, bayerDitherSampler, vec2f(coord.xy) / 8).r / 32.0 - (1.0 / 128.0);
 
-    color += vec4f(bayerDitherOffset);
+    // color += vec4f(bayerDitherOffset);
 
     // color = color / (color + vec4f(vec3f(1.0), 0.0));
     // // gamma correct

@@ -1,4 +1,4 @@
-export default class LightPass {
+export default class LightSubPass {
 	protected static readonly RENDER_TARGETS: GPUColorTargetState[] = [
 		{
 			format: "rgba16float",

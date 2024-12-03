@@ -14,7 +14,7 @@ export default class SamplerController extends BaseUtilObject {
 		if (_defaultNearestSampler) {
 			return _defaultNearestSampler;
 		}
-		_defaultNearestSampler = SamplerController.createSampler({
+		_defaultNearestSampler = this.createSampler({
 			minFilter: "nearest",
 			magFilter: "nearest",
 		});
@@ -25,7 +25,7 @@ export default class SamplerController extends BaseUtilObject {
 		if (_defaultSampler) {
 			return _defaultSampler;
 		}
-		_defaultSampler = SamplerController.createSampler({
+		_defaultSampler = this.createSampler({
 			minFilter: "linear",
 			magFilter: "linear",
 			mipmapFilter: "linear",
@@ -82,6 +82,7 @@ export default class SamplerController extends BaseUtilObject {
 				descriptor.mipmapFilter = "linear";
 				break;
 		}
+		descriptor.maxAnisotropy = 8;
 
 		return this.createSampler(descriptor);
 	}

@@ -21,6 +21,7 @@ import SamplerController from "../texture/SamplerController";
 export default class GLTFModel extends Transform {
 	private texturesToLoad: Map<TextureLocation, Promise<GPUTexture>> = new Map();
 	private gltfDefinition: GLTFPostprocessed;
+	private nodeMaterialIds: Map<string, Drawable[]> = new Map([]);
 
 	public getAlbedoTexture(): Promise<GPUTexture> {
 		return this.getTexture(PBR_TEXTURES_LOCATIONS.Albedo);
@@ -58,7 +59,7 @@ export default class GLTFModel extends Transform {
 		});
 	}
 
-	public setTextureForAll(texture: GPUTexture, location: TextureLocation = 0) {
+	public setTextureForAll(texture: GPUTexture, location: TextureLocation = 1) {
 		this.traverse((node) => {
 			if (node instanceof Drawable) {
 				node.setTexture(texture, location);
@@ -77,7 +78,7 @@ export default class GLTFModel extends Transform {
 	public setTextureFor(
 		nodeName: string,
 		texture: GPUTexture,
-		location: TextureLocation = 0,
+		location: TextureLocation = 1,
 	) {
 		const node = this.findChildByLabel(nodeName);
 		if (!node) {
@@ -158,11 +159,10 @@ export default class GLTFModel extends Transform {
 							.bufferView.data,
 						// true,
 					).then((tex) => {
-						this.setTextureFor(
-							"node_damagedHelmet_-6514",
-							tex,
-							PBR_TEXTURES_LOCATIONS.Albedo,
-						);
+						const nodesForThisMaterial = this.nodeMaterialIds.get(material.id);
+						for (const node of nodesForThisMaterial) {
+							node.setTexture(tex, PBR_TEXTURES_LOCATIONS.Albedo);
+						}
 
 						return tex;
 					}),
@@ -183,13 +183,12 @@ export default class GLTFModel extends Transform {
 					createTexture(
 						material.pbrMetallicRoughness.metallicRoughnessTexture.texture
 							.source.bufferView.data,
-						// false,
+						true,
 					).then((tex) => {
-						this.setTextureFor(
-							"node_damagedHelmet_-6514",
-							tex,
-							PBR_TEXTURES_LOCATIONS.MetallicRoughness,
-						);
+						const nodesForThisMaterial = this.nodeMaterialIds.get(material.id);
+						for (const node of nodesForThisMaterial) {
+							node.setTexture(tex, PBR_TEXTURES_LOCATIONS.MetallicRoughness);
+						}
 
 						return tex;
 					}),
@@ -207,65 +206,75 @@ export default class GLTFModel extends Transform {
 					createTexture(
 						material.normalTexture.texture.source.bufferView.data,
 					).then((tex) => {
-						this.setTextureFor(
-							"node_damagedHelmet_-6514",
-							tex,
-							PBR_TEXTURES_LOCATIONS.Normal,
-						);
+						const nodesForThisMaterial = this.nodeMaterialIds.get(material.id);
+						for (const node of nodesForThisMaterial) {
+							node.setTexture(tex, PBR_TEXTURES_LOCATIONS.Normal);
+						}
 
 						return tex;
 					}),
 				);
 			}
-			return Promise.all(loadPromises);
 		}
+		return Promise.all(loadPromises);
 	}
 
 	private createNodesFrom(gltf: GLTFPostprocessed) {
 		const samplers = gltf.samplers.map((samplerInfo) =>
 			SamplerController.getSamplerFromGltfSamplerDef(samplerInfo),
 		);
+
 		for (const node of gltf.nodes) {
 			const meshInfo = node.mesh;
 			if (!meshInfo) {
 				continue;
 			}
-			const geometry = new GLTFGeometry(meshInfo);
-			const a = new Drawable(geometry);
-			const nodePosition = vec3.create();
-			const nodeScale = vec3.create(1, 1, 1);
-			const nodeRotation = quat.identity();
 
-			a.label = node.name ?? node.id;
+			for (const primitive of node.mesh.primitives) {
+				if (primitive.material.alphaCutoff) {
+					this.nodeMaterialIds.set(primitive.material.id, []);
+					continue;
+				}
+				const geometry = new GLTFGeometry(primitive);
+				const mesh = new Drawable(geometry);
+				const nodePosition = vec3.create();
+				const nodeScale = vec3.create(1, 1, 1);
+				const nodeRotation = quat.identity();
 
-			if (node.translation) {
-				vec3.set(
-					node.translation[0],
-					node.translation[1],
-					node.translation[2],
-					nodePosition,
-				);
+				const nodesForMaterial =
+					this.nodeMaterialIds.get(primitive.material.id) || [];
+				nodesForMaterial.push(mesh);
+				this.nodeMaterialIds.set(primitive.material.id, nodesForMaterial);
+
+				mesh.label = node.name ?? node.id;
+
+				if (node.translation) {
+					vec3.set(
+						node.translation[0],
+						node.translation[1],
+						node.translation[2],
+						nodePosition,
+					);
+				}
+
+				if (node.scale) {
+					vec3.set(node.scale[0], node.scale[1], node.scale[2], nodeScale);
+				}
+
+				if (node.rotation) {
+					quat.set(
+						node.rotation[0],
+						node.rotation[1],
+						node.rotation[2],
+						node.rotation[3],
+						nodeRotation,
+					);
+				}
+
+				mesh.setCustomMatrixFromTRS(nodePosition, nodeRotation, nodeScale);
+				mesh.sampler = samplers[0];
+				this.addChild(mesh);
 			}
-
-			if (node.scale) {
-				vec3.set(node.scale[0], node.scale[1], node.scale[2], nodeScale);
-			}
-
-			if (node.rotation) {
-				quat.set(
-					node.rotation[0],
-					node.rotation[1],
-					node.rotation[2],
-					node.rotation[3],
-					nodeRotation,
-				);
-			}
-
-			a.setCustomMatrixFromTRS(nodePosition, nodeRotation, nodeScale);
-
-			a.sampler = samplers[0];
-
-			this.addChild(a);
 		}
 	}
 }

@@ -10,9 +10,9 @@ import TextureLoader from "../../../renderer/texture/TextureLoader";
 import Skybox from "../../meshes/Skybox";
 import { BIND_GROUP_LOCATIONS } from "../../../renderer/core/RendererBindings";
 import FullScreenVertexShaderUtils from "../../../renderer/shader/FullScreenVertexShaderUtils";
-import { DirectionalLightPass } from "./DirectionalLightPass";
-import PointLightsRenderPass from "./PointLightsRenderPass";
-import PointLightsMaskPass from "./PointLightsMaskPass";
+import { DirectionalLightSubPass } from "./DirectionalLightSubPass";
+import PointLightsRenderSubPass from "./PointLightsRenderSubPass";
+import PointLightsMaskSubPass from "./PointLightsMaskSubPass";
 
 export default class GBufferIntegratePass extends RenderPass {
 	public outTexture: GPUTexture;
@@ -24,9 +24,9 @@ export default class GBufferIntegratePass extends RenderPass {
 	private gbufferCommonBindGroupLayout: GPUBindGroupLayout;
 	private lightsMaskBindGroupLayout: GPUBindGroupLayout;
 
-	private dirLightPass?: DirectionalLightPass;
-	private pointsLightRenderPass?: PointLightsRenderPass;
-	private pointsLightMasPass?: PointLightsMaskPass;
+	private dirLightPass?: DirectionalLightSubPass;
+	private pointsLightRenderPass?: PointLightsRenderSubPass;
+	private pointsLightMasPass?: PointLightsMaskSubPass;
 
 	private dirLights: DirectionalLight[] = [];
 	private pointLights: PointLight[] = [];
@@ -262,14 +262,14 @@ export default class GBufferIntegratePass extends RenderPass {
 			entries: gbufferTexturesBindGroupEntries,
 		});
 
-		this.dirLightPass = new DirectionalLightPass(
+		this.dirLightPass = new DirectionalLightSubPass(
 			this.gbufferCommonBindGroupLayout,
 			this.gbufferTexturesBindGroup,
 			this.shadowCascadesBuffer,
 			this.shadowDepthTextureView,
 		);
 
-		this.pointsLightRenderPass = new PointLightsRenderPass(
+		this.pointsLightRenderPass = new PointLightsRenderSubPass(
 			this.gbufferCommonBindGroupLayout,
 			this.gbufferTexturesBindGroup,
 		);
@@ -295,7 +295,7 @@ export default class GBufferIntegratePass extends RenderPass {
 			entries: lightsMaskBindGroupEntries,
 		});
 
-		this.pointsLightMasPass = new PointLightsMaskPass(
+		this.pointsLightMasPass = new PointLightsMaskSubPass(
 			this.lightsMaskBindGroupLayout,
 			lightMaskBindGroup,
 		);

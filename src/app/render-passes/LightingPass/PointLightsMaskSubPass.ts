@@ -4,12 +4,12 @@ import PointLight from "../../../renderer/lighting/PointLight";
 import Drawable from "../../../renderer/scene/Drawable";
 import Renderer from "../../Renderer";
 import GeometryCache from "../../utils/GeometryCache";
-import LightPass from "./LightPass";
+import LightSubPass from "./LightSubPass";
 import GetGBufferVertexShader, {
 	GBufferVertexEntryFn,
 } from "./shader/GBufferVertexShader";
 
-export default class PointLightsMaskPass extends LightPass {
+export default class PointLightsMaskSubPass extends LightSubPass {
 	private maskPSO: GPURenderPipeline;
 
 	private pointLights: PointLight[] = [];
@@ -70,6 +70,10 @@ export default class PointLightsMaskPass extends LightPass {
 	}
 
 	public override render(renderPassEncoder: GPURenderPassEncoder) {
+		if (!this.pointLights.length) {
+			return;
+		}
+
 		renderPassEncoder.setStencilReference(128);
 
 		renderPassEncoder.setPipeline(this.maskPSO);

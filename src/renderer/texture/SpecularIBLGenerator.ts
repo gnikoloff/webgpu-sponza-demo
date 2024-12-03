@@ -156,7 +156,6 @@ export default class SpecularIBLGenerator extends BaseUtilObject {
 			new Float32Array(roughnessBuffer.getMappedRange()).set(
 				new Float32Array([roughness]),
 			);
-			console.log(roughness);
 			roughnessBuffer.unmap();
 
 			inputBindGroupEntries[4].resource = {

@@ -6,7 +6,7 @@ import Drawable from "../../../renderer/scene/Drawable";
 import Renderer from "../../Renderer";
 import GeometryCache from "../../utils/GeometryCache";
 import DirectionalShadowPass from "../DirectionalShadowPass";
-import LightPass from "./LightPass";
+import LightSubPass from "./LightSubPass";
 import GetGBufferIntegrateShader, {
 	GBufferIntegrateShaderEntryFn,
 } from "./shader/GBufferIntegrateShader";
@@ -14,7 +14,7 @@ import GetGBufferVertexShader, {
 	GBufferVertexEntryFn,
 } from "./shader/GBufferVertexShader";
 
-export default class PointLightsRenderPass extends LightPass {
+export default class PointLightsRenderSubPass extends LightSubPass {
 	private renderPSO: GPURenderPipeline;
 	private pointLights: PointLight[] = [];
 
@@ -60,7 +60,7 @@ export default class PointLightsRenderPass extends LightPass {
 					),
 				),
 				entryPoint: GBufferIntegrateShaderEntryFn,
-				targets: PointLightsRenderPass.RENDER_TARGETS,
+				targets: PointLightsRenderSubPass.RENDER_TARGETS,
 			},
 			depthStencil: {
 				format: Renderer.depthStencilFormat,

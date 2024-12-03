@@ -7,12 +7,12 @@ import FullscreenTriangleShader, {
 	FullscreenTriangleShaderEntryFn,
 } from "../../shaders/FullscreenTriangleShader";
 import DirectionalShadowPass from "../DirectionalShadowPass";
-import LightPass from "./LightPass";
+import LightSubPass from "./LightSubPass";
 import GetGBufferIntegrateShader, {
 	GBufferIntegrateShaderEntryFn,
 } from "./shader/GBufferIntegrateShader";
 
-export class DirectionalLightPass extends LightPass {
+export class DirectionalLightSubPass extends LightSubPass {
 	private renderPSO: GPURenderPipeline;
 	private dirLightShadowBindGroupLayout: GPUBindGroupLayout;
 	private dirLightShadowBindGroupEntries: GPUBindGroupEntry[];
@@ -174,7 +174,7 @@ export class DirectionalLightPass extends LightPass {
 					"Directional Light Pass Shader Module",
 				),
 				entryPoint: GBufferIntegrateShaderEntryFn,
-				targets: DirectionalLightPass.RENDER_TARGETS,
+				targets: DirectionalLightSubPass.RENDER_TARGETS,
 			},
 			depthStencil: {
 				format: Renderer.depthStencilFormat,

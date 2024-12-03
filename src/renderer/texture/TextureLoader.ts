@@ -281,7 +281,6 @@ export default class TextureLoader extends BaseUtilObject {
 		if (!generateMips) {
 			return texture;
 		}
-
 		TextureController.generateMipsFor2DTexture(texture);
 
 		return texture;
