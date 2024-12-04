@@ -6,14 +6,32 @@ import Scene from "../../renderer/scene/Scene";
 import Renderer from "../Renderer";
 
 export default class TransparentRenderPass extends RenderPass {
-	public inPlaceTexture: GPUTexture;
 	public inPlaceTextureView: GPUTextureView;
-
-	public inPlaceDepthStencilTexture: GPUTexture;
 	public inPlaceDepthStencilTextureView: GPUTextureView;
 
 	constructor(scene: Scene) {
 		super(RenderPassType.Transparent, scene);
+	}
+
+	public override toggleDebugCamera(v: boolean) {
+		this.cameraBindGroup = Renderer.device.createBindGroup({
+			label: `Camera Bind Group for: Transparent Pass`,
+			layout: PipelineStates.defaultCameraPlusLightsBindGroupLayout,
+			entries: [
+				{
+					binding: 0,
+					resource: {
+						buffer: v ? this.debugCamera.gpuBuffer : this.camera.gpuBuffer,
+					},
+				},
+				{
+					binding: 1,
+					resource: {
+						buffer: this.scene.lightsBuffer,
+					},
+				},
+			],
+		});
 	}
 
 	public setCamera(camera: Camera) {
@@ -72,7 +90,7 @@ export default class TransparentRenderPass extends RenderPass {
 			this.cameraBindGroup,
 		);
 
-		this.scene.renderTransparentNodes(renderPassEncoder);
+		this.scene.renderTransparentNodes(renderPassEncoder, this.camera);
 
 		renderPassEncoder.popDebugGroup();
 		renderPassEncoder.end();

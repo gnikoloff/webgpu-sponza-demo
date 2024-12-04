@@ -3,7 +3,7 @@ import CyllinderGeometry from "../../../renderer/geometry/CyllinderGeometry";
 import InstancedDrawable from "../../../renderer/scene/InstancedDrawable";
 import MaterialCache from "../../utils/MaterialCache";
 import { GROUND_SIZE } from "../../constants";
-import { QUATERNION_COMP_ORDER } from "../../../renderer/utils/math";
+import { QUATERNION_COMP_ORDER } from "../../../renderer/math/math";
 
 export default class GroundPipes extends InstancedDrawable {
 	private static readonly PIPE_RADIUS = 0.009;

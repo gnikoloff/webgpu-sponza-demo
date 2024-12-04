@@ -1,4 +1,4 @@
-import { mat4 } from "wgpu-matrix";
+import { mat4, vec3 } from "wgpu-matrix";
 import {
 	StructuredView,
 	makeShaderDataDefinitions,
@@ -22,6 +22,7 @@ import {
 	SAMPLER_LOCATIONS,
 	TextureLocation,
 } from "../core/RendererBindings";
+import BoundingBox from "../math/BoundingBox";
 
 export default class Drawable extends Transform {
 	public static readonly INDEX_FORMAT: GPUIndexFormat = "uint16";
@@ -49,6 +50,27 @@ export default class Drawable extends Transform {
 	private prevFrameModelMatrix = mat4.create();
 
 	protected bufferUniformValues: StructuredView;
+
+	private _worldBoundingBox = new BoundingBox();
+	public get worldBoundingBox(): BoundingBox {
+		vec3.transformMat4(
+			this.geometry.boundingBox.min,
+			this.modelMatrix,
+			this._worldBoundingBox.min,
+		);
+		vec3.transformMat4(
+			this.geometry.boundingBox.max,
+			this.modelMatrix,
+			this._worldBoundingBox.max,
+		);
+		return this._worldBoundingBox;
+	}
+	public get boundingBox(): BoundingBox {
+		return this.geometry.boundingBox;
+	}
+	public set boundingBox(v: BoundingBox) {
+		this.geometry.boundingBox = v;
+	}
 
 	private _sampler: GPUSampler = SamplerController.defaultSampler;
 

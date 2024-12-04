@@ -6,6 +6,8 @@ import {
 } from "webgpu-utils";
 import Renderer from "../../app/Renderer";
 import { SHADER_CHUNKS } from "../shader/chunks";
+import Drawable from "../scene/Drawable";
+import Plane from "../math/Plane";
 
 const HAMILTON_SEQUENCE = [
 	[0.5, 0.333333],
@@ -59,12 +61,13 @@ export default class Camera {
 	private prevFrameProjectionViewMatrix = mat4.create();
 	private frameCounter = 0;
 
+	protected frustumPlanes: Plane[] = [];
+
 	protected viewportWidth: number;
 	protected viewportHeight: number;
 	// prettier-ignore
 	protected hamiltonSequence = new Array(16).fill([]).map(() => new Array(2).fill(0));
 	protected bufferUniformValues: StructuredView;
-	// protected needsUploadToGPU = true;
 
 	constructor() {
 		const cameraShaderDefs = makeShaderDataDefinitions(
@@ -84,6 +87,10 @@ export default class Camera {
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 			label: "Camera GPUBuffer",
 		});
+
+		for (let i = 0; i < 6; i++) {
+			this.frustumPlanes.push(new Plane(vec3.create(), 0));
+		}
 	}
 
 	public set x(v: number) {
@@ -142,6 +149,30 @@ export default class Camera {
 		return frustumCorners;
 	}
 
+	public cullMeshes(meshes: Drawable[], outMeshes: Drawable[]): number {
+		let nonCulledCount = 0;
+
+		for (let i = 0; i < meshes.length; i++) {
+			const mesh = meshes[i];
+			const bbox = mesh.worldBoundingBox;
+			let insideCount = 0;
+
+			for (const plane of this.frustumPlanes) {
+				if (plane.checkIfBBoxIsInside(bbox)) {
+					insideCount++;
+				}
+			}
+
+			const isInside = insideCount === 6;
+			if (isInside) {
+				outMeshes[nonCulledCount] = meshes[i];
+				nonCulledCount++;
+			}
+		}
+
+		return nonCulledCount;
+	}
+
 	public setPosition(x: number, y: number, z: number) {
 		this.position[0] = x;
 		this.position[1] = y;
@@ -168,8 +199,6 @@ export default class Camera {
 			viewMatrix: this.viewMatrix,
 		});
 
-		// this.needsUploadToGPU = true;
-
 		this.updateProjectionViewMatrix();
 		return this;
 	}
@@ -178,7 +207,8 @@ export default class Camera {
 		this.bufferUniformValues.set({
 			projectionMatrix: this.projectionMatrix,
 		});
-		// this.needsUploadToGPU = true;
+		this.updateProjectionViewMatrix();
+
 		return this;
 	}
 
@@ -190,7 +220,9 @@ export default class Camera {
 			inverseProjectionViewMatrix: this.inverseProjectionViewMatrix,
 			prevFrameProjectionViewMatrix: this.prevFrameProjectionViewMatrix,
 		});
-		// this.needsUploadToGPU = true;
+
+		this.updateFrustumPlanes();
+
 		return this;
 	}
 
@@ -232,12 +264,55 @@ export default class Camera {
 			0,
 			this.bufferUniformValues.arrayBuffer,
 		);
-		// this.needsUploadToGPU = false;
 	}
 
 	public onFrameEnd() {
 		mat4.copy(this.projectionViewMatrix, this.prevFrameProjectionViewMatrix);
 		this.frameCounter++;
 		this.hasChangedSinceLastFrame = false;
+	}
+
+	private updateFrustumPlanes() {
+		const vpMatrix = this.projectionViewMatrix;
+
+		// left plane
+		this.frustumPlanes[0].normal[0] = vpMatrix[3] + vpMatrix[0];
+		this.frustumPlanes[0].normal[1] = vpMatrix[7] + vpMatrix[4];
+		this.frustumPlanes[0].normal[2] = vpMatrix[11] + vpMatrix[8];
+		this.frustumPlanes[0].d = vpMatrix[15] + vpMatrix[12];
+
+		// right plane
+		this.frustumPlanes[1].normal[0] = vpMatrix[3] - vpMatrix[0];
+		this.frustumPlanes[1].normal[1] = vpMatrix[7] - vpMatrix[4];
+		this.frustumPlanes[1].normal[2] = vpMatrix[11] - vpMatrix[8];
+		this.frustumPlanes[1].d = vpMatrix[15] - vpMatrix[12];
+
+		// bottom plane
+		this.frustumPlanes[2].normal[0] = vpMatrix[3] + vpMatrix[1];
+		this.frustumPlanes[2].normal[1] = vpMatrix[7] + vpMatrix[5];
+		this.frustumPlanes[2].normal[2] = vpMatrix[11] + vpMatrix[9];
+		this.frustumPlanes[2].d = vpMatrix[15] + vpMatrix[13];
+
+		// top plane
+		this.frustumPlanes[3].normal[0] = vpMatrix[3] - vpMatrix[1];
+		this.frustumPlanes[3].normal[1] = vpMatrix[7] - vpMatrix[5];
+		this.frustumPlanes[3].normal[2] = vpMatrix[11] - vpMatrix[9];
+		this.frustumPlanes[3].d = vpMatrix[15] - vpMatrix[13];
+
+		// near plane
+		this.frustumPlanes[4].normal[0] = vpMatrix[3] + vpMatrix[2];
+		this.frustumPlanes[4].normal[1] = vpMatrix[7] + vpMatrix[6];
+		this.frustumPlanes[4].normal[2] = vpMatrix[11] + vpMatrix[10];
+		this.frustumPlanes[4].d = vpMatrix[15] + vpMatrix[14];
+
+		// far plane
+		this.frustumPlanes[5].normal[0] = vpMatrix[3] - vpMatrix[2];
+		this.frustumPlanes[5].normal[1] = vpMatrix[7] - vpMatrix[6];
+		this.frustumPlanes[5].normal[2] = vpMatrix[11] - vpMatrix[10];
+		this.frustumPlanes[5].d = vpMatrix[15] - vpMatrix[14];
+
+		for (let plane of this.frustumPlanes) {
+			plane.normalize();
+		}
 	}
 }

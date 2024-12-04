@@ -7,6 +7,7 @@ const renderer = await Renderer.initialize($canvas);
 
 const GUI_PARAMS = {
 	"Play Animation": true,
+	"Toggle Debug Camera": true,
 	"Enable TAA": true,
 	"Debug G-Buffer": true,
 	"Debug Shadow Map": false,
@@ -14,12 +15,16 @@ const GUI_PARAMS = {
 	"Debug Shadow Cascade Index": false,
 	"Auto-Rotate Sun": false,
 	"Debug Skybox": true,
+	"Debug Bounding Boxes": false,
 };
 
 const gui = new dat.GUI({ width: 243 });
 
 gui.add(GUI_PARAMS, "Play Animation").onChange((v: boolean) => {
 	renderer.enableAnimation = v;
+});
+gui.add(GUI_PARAMS, "Toggle Debug Camera").onChange((v) => {
+	renderer.toggleDebugCamera = v;
 });
 
 // const envFolder = gui.addFolder("Environment");
@@ -44,6 +49,14 @@ const debugShadowController = shadowFolder
 		}
 	});
 debugShadowController.listen();
+
+const environmentFolder = gui.addFolder("Environment");
+environmentFolder.open();
+const debugBBoxesController = environmentFolder
+	.add(GUI_PARAMS, "Debug Bounding Boxes")
+	.onChange((v) => {
+		renderer.debugBoundingBoxes = v;
+	});
 
 shadowFolder
 	.add(GUI_PARAMS, "Debug Shadow Cascade Index")
@@ -106,5 +119,6 @@ function resize() {
 	renderer.debugShadowMap = GUI_PARAMS["Debug Shadow Map"];
 	renderer.debugPointLights = GUI_PARAMS["Debug Point Lights Mask"];
 	renderer.autoRotateSun = GUI_PARAMS["Auto-Rotate Sun"];
+	renderer.toggleDebugCamera = GUI_PARAMS["Toggle Debug Camera"];
 	// renderer.debugSkybox = GUI_PARAMS["Debug Skybox"];
 }

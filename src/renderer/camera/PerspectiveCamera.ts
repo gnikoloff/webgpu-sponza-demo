@@ -1,6 +1,6 @@
 import { mat4 } from "wgpu-matrix";
 import Camera from "./Camera";
-import { deg2Rad } from "../utils/math";
+import { deg2Rad } from "../math/math";
 
 export default class PerspectiveCamera extends Camera {
 	constructor(

@@ -13,6 +13,7 @@ export enum RenderPassType {
 	EnvironmentCube,
 	TAAResolve,
 	Reflection,
+	DebugBounds,
 }
 
 const RenderPassNames: Map<RenderPassType, string> = new Map([
@@ -23,16 +24,37 @@ const RenderPassNames: Map<RenderPassType, string> = new Map([
 	[RenderPassType.EnvironmentCube, "Environment Cube Pass"],
 	[RenderPassType.TAAResolve, "TAA Resolve Pass"],
 	[RenderPassType.Reflection, "SSR Pass"],
+	[RenderPassType.DebugBounds, "Debug Bounds Pass"],
 ]);
 
 export default class RenderPass {
 	protected cameraBindGroup?: GPUBindGroup;
 	protected camera?: Camera;
+	protected debugCamera?: Camera;
 
 	constructor(public type: RenderPassType, protected scene: Scene) {}
 
 	protected createRenderPassDescriptor(): GPURenderPassDescriptor {
 		throw new Error("Needs implementation");
+	}
+
+	public setDebugCamera(camera: Camera) {
+		this.debugCamera = camera;
+	}
+
+	public toggleDebugCamera(v: boolean) {
+		this.cameraBindGroup = Renderer.device.createBindGroup({
+			label: `Camera Bind Group for: ${RenderPassNames.get(this.type)}`,
+			layout: PipelineStates.defaultCameraBindGroupLayout,
+			entries: [
+				{
+					binding: 0,
+					resource: {
+						buffer: v ? this.debugCamera.gpuBuffer : this.camera.gpuBuffer,
+					},
+				},
+			],
+		});
 	}
 
 	public setCamera(camera: Camera) {
@@ -67,10 +89,6 @@ export default class RenderPass {
 				this.cameraBindGroup,
 			);
 		}
-
-		scene.traverse((node) => {
-			node.render(renderPassEncoder);
-		});
 
 		renderPassEncoder.end();
 	}

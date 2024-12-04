@@ -37,6 +37,7 @@ import DebugContainer from "./debug/DebugContainer";
 import { TextureDebugMeshType } from "./debug/DebugTextureCanvas";
 import Scene from "../renderer/scene/Scene";
 import TransparentRenderPass from "./render-passes/TransparentRenderPass";
+import DebugBoundsPass from "./render-passes/DebugBoundsPass";
 // import EnvironmentProbePass from "./render-passes/EnvironmentProbePass";
 
 export default class Renderer {
@@ -86,7 +87,10 @@ export default class Renderer {
 
 	public orthoCamera: OrthographicCamera;
 	public mainCamera: PerspectiveCamera;
+	public debugCamera: PerspectiveCamera;
 	public mainCameraCtrl: CameraController;
+
+	public debugBoundingBoxes = false;
 
 	private scene = new Scene();
 	private skybox: Skybox;
@@ -106,6 +110,7 @@ export default class Renderer {
 	private taaResolvePass: TAAResolvePass;
 	private shadowPass: DirectionalShadowPass;
 	private transparentPass: TransparentRenderPass;
+	private debugBBoxesPass: DebugBoundsPass;
 	// private environmentProbePass: EnvironmentProbePass;
 
 	private debugContainer: DebugContainer;
@@ -159,6 +164,18 @@ export default class Renderer {
 		this._enableAnimation = v;
 	}
 
+	private _toggleDebugCamera = false;
+	public get toggleDebugCamera(): boolean {
+		return this._toggleDebugCamera;
+	}
+	public set toggleDebugCamera(v: boolean) {
+		this._toggleDebugCamera = v;
+		// this.gbufferRenderPass.toggleDebugCamera(v);
+		// this.gbufferIntegratePass.toggleDebugCamera(v);
+		// this.transparentPass.toggleDebugCamera(v);
+		// this.taaResolvePass.toggleDebugCamera(v);
+	}
+
 	constructor() {
 		// OBJLoader.loadObjFileContents("/Buda_b.obj").then((buda) => {
 		// 	const model1 = new OBJDrawable(buda.models[0]);
@@ -195,9 +212,10 @@ export default class Renderer {
 			MAIN_CAMERA_FAR,
 		);
 		this.mainCamera.shouldJitter = true;
-		this.mainCamera.setPosition(-10, 2, 0);
-		// this.mainCamera.setLookAt(0, 4, 0);
+		this.mainCamera.setPosition(-7, 2, 0);
+		this.mainCamera.setLookAt(0, 2, 0);
 		this.mainCamera.updateViewMatrix();
+
 		this.mainCameraCtrl = new CameraController(
 			this.mainCamera,
 			Renderer.$canvas,
@@ -205,6 +223,16 @@ export default class Renderer {
 		);
 		this.mainCameraCtrl.setLookAt(0, 2, 0);
 		this.mainCameraCtrl.startTick();
+
+		this.debugCamera = new PerspectiveCamera(
+			45,
+			1,
+			MAIN_CAMERA_NEAR,
+			MAIN_CAMERA_FAR,
+		);
+		this.debugCamera.setPosition(6, 12, 1);
+		this.debugCamera.setLookAt(0, 7, 0);
+		this.debugCamera.updateViewMatrix();
 
 		this.orthoCamera = new OrthographicCamera(
 			0,
@@ -360,6 +388,14 @@ export default class Renderer {
 		this.scene.addChild(a);
 		a.setPositionY(2).updateWorldMatrix();
 		a.load().then(() => {
+			if (!this.debugBBoxesPass) {
+				this.debugBBoxesPass = new DebugBoundsPass(this.scene);
+			}
+			this.debugBBoxesPass.setCamera(this.debugCamera);
+			this.debugBBoxesPass.inPlaceTextureView =
+				this.transparentPass.inPlaceTextureView;
+			this.debugBBoxesPass.inPlaceDepthStencilTextureView =
+				this.transparentPass.inPlaceDepthStencilTextureView;
 			a.setIsReflective(false);
 			a.setMaterial(MaterialCache.defaultTexturedDeferredMaterial);
 
@@ -378,12 +414,14 @@ export default class Renderer {
 	}
 
 	public resize(w: number, h: number) {
+		this.debugCamera.onResize(w, h);
 		this.mainCamera.onResize(w, h);
 		this.orthoCamera.onResize(w, h);
 
 		if (!this.gbufferRenderPass) {
 			this.gbufferRenderPass = new GBufferRenderPass(this.scene);
 			this.gbufferRenderPass.setCamera(this.mainCamera);
+			this.gbufferRenderPass.setDebugCamera(this.debugCamera);
 		}
 		this.gbufferRenderPass.onResize(w, h);
 		if (!this.gbufferIntegratePass) {
@@ -397,16 +435,19 @@ export default class Renderer {
 				this.shadowPass.shadowCascadesBuffer,
 			);
 			this.gbufferIntegratePass.setCamera(this.mainCamera);
+			this.gbufferIntegratePass.setDebugCamera(this.debugCamera);
 			this.gbufferIntegratePass.skybox = this.skybox;
 		}
 		// this.gbufferIntegratePass.setLights(this.lights);
 		this.gbufferIntegratePass.setCamera(this.mainCamera);
+		this.gbufferIntegratePass.setDebugCamera(this.debugCamera);
 		this.gbufferIntegratePass.onResize(w, h);
 
 		if (!this.transparentPass) {
 			this.transparentPass = new TransparentRenderPass(this.scene);
 		}
 		this.transparentPass.setCamera(this.mainCamera);
+		this.transparentPass.setDebugCamera(this.debugCamera);
 		this.transparentPass.inPlaceDepthStencilTextureView =
 			this.gbufferRenderPass.depthStencilTextureView;
 		this.transparentPass.inPlaceTextureView =
@@ -420,6 +461,7 @@ export default class Renderer {
 			);
 		}
 		this.taaResolvePass.onResize(w, h);
+		this.taaResolvePass.setDebugCamera(this.debugCamera);
 
 		if (!this.reflectionComputePass) {
 			this.reflectionComputePass = new ReflectionComputePass(this.scene);
@@ -483,6 +525,7 @@ export default class Renderer {
 			// );
 		}
 
+		this.debugCamera.onFrameStart();
 		this.mainCamera.onFrameStart();
 		this.orthoCamera.onFrameStart();
 
@@ -515,11 +558,19 @@ export default class Renderer {
 		if (this.enableTAA) {
 			this.taaResolvePass.render(commandEncoder);
 		}
+		if (this.debugBBoxesPass) {
+			this.debugBBoxesPass.inPlaceTextureView =
+				this.taaResolvePass.outTextureView;
+			if (this.debugBoundingBoxes) {
+				this.debugBBoxesPass.render(commandEncoder);
+			}
+		}
 		this.reflectionComputePass.computeReflections(
 			commandEncoder,
 			Renderer.canvasContext.getCurrentTexture(),
 			this.enableTAA
-				? this.taaResolvePass.outTextureView
+				? this.debugBBoxesPass?.inPlaceTextureView ||
+						this.taaResolvePass.outTextureView
 				: this.gbufferIntegratePass.outTextureView,
 		);
 
@@ -555,6 +606,7 @@ export default class Renderer {
 
 		device.queue.submit([commandEncoder.finish()]);
 
+		this.debugCamera.onFrameEnd();
 		this.mainCamera.onFrameEnd();
 		this.orthoCamera.onFrameEnd();
 	}

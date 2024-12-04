@@ -2,7 +2,7 @@ import HDRjs from "hdr.js";
 import Renderer from "../../app/Renderer";
 import CubeTextureController from "./CubeTextureController";
 import TextureController from "./TextureController";
-import { numMipLevelsForSize } from "../utils/math";
+import { numMipLevelsForSize } from "../math/math";
 import BaseUtilObject from "../core/BaseUtilObject";
 
 export interface HDRImageResult {

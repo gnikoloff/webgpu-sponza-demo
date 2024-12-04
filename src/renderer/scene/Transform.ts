@@ -1,5 +1,6 @@
 import { Mat4, Quat, Vec3, mat3, mat4, quat, vec3 } from "wgpu-matrix";
-import { MAT4x4_IDENTITY_MATRIX, QUATERNION_COMP_ORDER } from "../utils/math";
+import { MAT4x4_IDENTITY_MATRIX, QUATERNION_COMP_ORDER } from "../math/math";
+import BoundingBox from "../math/BoundingBox";
 
 type UUIDString = `${string}-${string}-${string}-${string}-${string}`;
 

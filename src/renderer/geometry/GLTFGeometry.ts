@@ -37,6 +37,9 @@ export default class GLTFGeometry extends Geometry {
 				tangents,
 				indices,
 			);
+			this.boundingBox.setMinAABBfromGLTF(positionAttrib.min);
+			this.boundingBox.setMaxAABBfromGLTF(positionAttrib.max);
+			console.log("mesh has tangents");
 		} else {
 			this.consumeMeshWithoutTangents(positions, normals, texCoords, indices);
 		}

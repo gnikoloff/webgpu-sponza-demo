@@ -264,7 +264,14 @@ export default class GLTFModel extends Transform {
 
 				mesh.label = node.name ?? node.id;
 
-				console.log(node);
+				const bboxMin = primitive.attributes?.POSITION?.min;
+				if (bboxMin) {
+					mesh.boundingBox.setMinAABBfromGLTF(bboxMin);
+				}
+				const bboxMax = primitive.attributes?.POSITION?.max;
+				if (bboxMax) {
+					mesh.boundingBox.setMaxAABBfromGLTF(bboxMax);
+				}
 
 				if (node.translation) {
 					vec3.set(
@@ -290,9 +297,6 @@ export default class GLTFModel extends Transform {
 				}
 
 				mesh.isOpaque = !primitive.material.alphaCutoff;
-				console.log(
-					`setting x: ${nodePosition[0]} y: ${nodePosition[1]} z: ${nodePosition[2]}`,
-				);
 				mesh.setCustomMatrixFromTRS(nodePosition, nodeRotation, nodeScale);
 				mesh.sampler = samplers[0];
 				this.addChild(mesh);

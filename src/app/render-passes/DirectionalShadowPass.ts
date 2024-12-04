@@ -249,7 +249,7 @@ export default class DirectionalShadowPass extends RenderPass {
 		);
 		renderPassEncoderCascade0.pushDebugGroup("Render Shadow Cascade #0");
 
-		this.scene.renderOpaqueNodes(renderPassEncoderCascade0);
+		this.scene.renderOpaqueNodes(renderPassEncoderCascade0, this.camera);
 
 		renderPassEncoderCascade0.popDebugGroup();
 		renderPassEncoderCascade0.end();
@@ -300,7 +300,7 @@ export default class DirectionalShadowPass extends RenderPass {
 			this.shadowCameraCascade1BindGroup,
 		);
 
-		this.scene.renderOpaqueNodes(renderPassEncoderCascade1);
+		this.scene.renderOpaqueNodes(renderPassEncoderCascade1, this.camera);
 
 		renderPassEncoderCascade1.popDebugGroup();
 		renderPassEncoderCascade1.end();

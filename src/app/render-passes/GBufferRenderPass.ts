@@ -147,7 +147,7 @@ export default class GBufferRenderPass extends RenderPass {
 
 		renderPassEncoder.setStencilReference(128);
 
-		this.scene.renderOpaqueNodes(renderPassEncoder);
+		this.scene.renderOpaqueNodes(renderPassEncoder, this.camera);
 
 		renderPassEncoder.popDebugGroup();
 		renderPassEncoder.end();

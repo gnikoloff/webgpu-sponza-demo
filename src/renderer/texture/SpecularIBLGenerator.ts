@@ -4,7 +4,7 @@ import PipelineStates from "../core/PipelineStates";
 import SpecularIBLShaderUtils, {
 	SpecularIBLShaderUtilsEntryFn,
 } from "../shader/SpecularIBLShaderUtils";
-import { numMipLevelsForSize } from "../utils/math";
+import { numMipLevelsForSize } from "../math/math";
 import CubeTextureController from "./CubeTextureController";
 import SamplerController from "./SamplerController";
 

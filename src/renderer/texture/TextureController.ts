@@ -9,7 +9,7 @@ import {
 	MipComputeGeneratorShaderEntryFn,
 } from "../shader/MipComputeGeneratorShaderUtils";
 import { HDRImageResult } from "./TextureLoader";
-import { numMipLevelsForSize } from "../utils/math";
+import { numMipLevelsForSize } from "../math/math";
 import BaseUtilObject from "../core/BaseUtilObject";
 
 function initBindGroup(

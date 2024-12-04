@@ -91,6 +91,15 @@ export const SHADER_CHUNKS = Object.freeze({
     `;
 	},
 
+	get AABB(): string {
+		return /* wgsl */ `
+      struct AABB {
+        min: vec3f,
+        max: vec3f,
+      };
+    `;
+	},
+
 	get Light(): string {
 		return /* wgsl */ `
 

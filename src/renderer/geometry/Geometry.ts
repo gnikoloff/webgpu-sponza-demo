@@ -2,9 +2,11 @@ import { Vec3, vec2, vec3, vec4 } from "wgpu-matrix";
 import Renderer from "../../app/Renderer";
 import Face from "./Face";
 import VertexDescriptor from "../core/VertexDescriptor";
+import BoundingBox from "../math/BoundingBox";
 
 export default class Geometry {
 	public faces: Face[] = [];
+	public boundingBox = new BoundingBox();
 
 	public vertexBuffer: GPUBuffer;
 	public indexBuffer?: GPUBuffer;
@@ -72,6 +74,14 @@ export default class Geometry {
 			handleFace(face);
 		}
 
+		let minX = Number.POSITIVE_INFINITY;
+		let minY = Number.POSITIVE_INFINITY;
+		let minZ = Number.POSITIVE_INFINITY;
+
+		let maxX = Number.NEGATIVE_INFINITY;
+		let maxY = Number.NEGATIVE_INFINITY;
+		let maxZ = Number.NEGATIVE_INFINITY;
+
 		for (let i = 0; i < indices.length; i += 3) {
 			const idx0 = indices[i + 0];
 			const idx1 = indices[i + 1];
@@ -81,11 +91,22 @@ export default class Geometry {
 			handleVertex(idx2);
 		}
 
+		this.boundingBox.setMinAABB(minX, minY, minZ);
+		this.boundingBox.setMaxAABB(maxX, maxY, maxZ);
+
 		function handleVertex(index: number) {
 			const normal = normals[index];
 			const position = vertices[index];
 			const texCoord = uvs[index];
 			const tangent = tan1[index];
+
+			minX = Math.min(minX, position[0]);
+			minY = Math.min(minY, position[1]);
+			minZ = Math.min(minZ, position[2]);
+
+			maxX = Math.max(maxX, position[0]);
+			maxY = Math.max(maxY, position[1]);
+			maxZ = Math.max(maxZ, position[2]);
 
 			const t = vec3.normalize(
 				vec3.sub(tangent, vec3.mulScalar(normal, vec3.dot(normal, tangent))),

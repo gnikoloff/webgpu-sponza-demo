@@ -8,7 +8,7 @@ import { BIND_GROUP_LOCATIONS } from "../../renderer/core/RendererBindings";
 import {
 	SKYBOX_CUBEMAP_CAMERA_LOOK_ATS,
 	SKYBOX_CUBEMAP_CAMERA_UPS,
-} from "../../renderer/utils/math";
+} from "../../renderer/math/math";
 
 export default class EnvironmentProbePass extends RenderPass {
 	private static readonly ENVIRONMENT_TEXTURE_SIZE = 512;

@@ -8,14 +8,21 @@ import Drawable from "./Drawable";
 import Transform from "./Transform";
 
 export default class Scene extends Transform {
-	public opaqueNodes: Drawable[] = [];
-	public transparentNodes: Drawable[] = [];
+	public opaqueMeshes: Drawable[] = [];
+	public transparentMeshes: Drawable[] = [];
+
+	private culledOpaqueMeshes: Drawable[] = [];
+	private culledTransparentMeshes: Drawable[] = [];
 
 	public lightsBuffer?: GPUBuffer;
 
 	private _pointLights: PointLight[] = [];
 	private _directionalLights: DirectionalLight[] = [];
 	private _lights: Light[] = [];
+
+	public get nodesCount(): number {
+		return this.opaqueMeshes.length + this.transparentMeshes.length;
+	}
 
 	public getLights(): Light[] {
 		return this._lights;
@@ -47,43 +54,63 @@ export default class Scene extends Transform {
 		return this._directionalLights[idx];
 	}
 
-	public renderOpaqueNodes(renderPassEncoder: GPURenderPassEncoder) {
-		for (const node of this.opaqueNodes) {
-			node.render(renderPassEncoder);
+	public renderOpaqueNodes(
+		renderPassEncoder: GPURenderPassEncoder,
+		camera: Camera,
+	) {
+		const nonCulledCount = camera.cullMeshes(
+			this.opaqueMeshes,
+			this.culledOpaqueMeshes,
+		);
+
+		for (let i = 0; i < nonCulledCount; i++) {
+			this.culledOpaqueMeshes[i].render(renderPassEncoder);
 		}
 	}
 
-	public renderTransparentNodes(renderPassEncoder: GPURenderPassEncoder) {
-		for (const node of this.transparentNodes) {
-			node.render(renderPassEncoder);
+	public renderTransparentNodes(
+		renderPassEncoder: GPURenderPassEncoder,
+		camera: Camera,
+	) {
+		const nonCulledCount = camera.cullMeshes(
+			this.transparentMeshes,
+			this.culledTransparentMeshes,
+		);
+
+		for (let i = 0; i < nonCulledCount; i++) {
+			this.culledTransparentMeshes[i].render(renderPassEncoder);
 		}
 	}
 
 	public sortTransparentNodesFrom(camera: Camera) {
-		console.log("---");
-		if (this.transparentNodes.length) {
-			// debugger;
-			this.transparentNodes[10].worldPosition;
-		}
-		this.transparentNodes.sort((a, b) => {
-			const diffAx = camera.position[0] - a.worldPosition[0];
-			const diffAy = camera.position[1] - a.worldPosition[1];
-			const diffAz = camera.position[2] - a.worldPosition[2];
+		this.transparentMeshes.sort((a, b) => {
+			const aBBoxCenter = a.worldBoundingBox.boundingBoxCenter;
+			const bBBoxCenter = b.worldBoundingBox.boundingBoxCenter;
+			const aWorldPosX =
+				a.worldPosition[0] !== 0 ? a.worldPosition[0] : aBBoxCenter[0];
+			const aWorldPosY =
+				a.worldPosition[1] !== 0 ? a.worldPosition[1] : aBBoxCenter[0];
+			const aWorldPosZ =
+				a.worldPosition[2] !== 0 ? a.worldPosition[2] : aBBoxCenter[0];
 
-			const diffBx = camera.position[0] - b.worldPosition[0];
-			const diffBy = camera.position[1] - b.worldPosition[1];
-			const diffBz = camera.position[2] - b.worldPosition[2];
+			const bWorldPosX =
+				b.worldPosition[0] !== 0 ? b.worldPosition[0] : bBBoxCenter[0];
+			const bWorldPosY =
+				b.worldPosition[1] !== 0 ? b.worldPosition[1] : bBBoxCenter[0];
+			const bWorldPosZ =
+				b.worldPosition[2] !== 0 ? b.worldPosition[2] : bBBoxCenter[0];
+			const diffAx = camera.position[0] - aWorldPosX;
+			const diffAy = camera.position[1] - aWorldPosY;
+			const diffAz = camera.position[2] - aWorldPosZ;
 
-			const d0 = vec3.lenSq(vec3.sub(camera.position, a.worldPosition));
-			const d1 = vec3.lenSq(vec3.sub(camera.position, b.worldPosition));
-			// console.log(`d0 ${d0}`);
-			// console.log(`d1 ${d1}`);
+			const diffBx = camera.position[0] - bWorldPosX;
+			const diffBy = camera.position[1] - bWorldPosY;
+			const diffBz = camera.position[2] - bWorldPosZ;
 
-			const diffASq = diffAx * diffAy * diffAz;
-			const diffBSq = diffBx * diffBy * diffBz;
-			const out = diffASq - diffBSq;
-			// console.log(out);
-			// debugger;
+			const d0 = diffAx * diffAy * diffAz;
+			const d1 = diffBx * diffBy * diffBz;
+
+			const out = d1 - d0;
 			return out;
 		});
 	}
@@ -122,12 +149,14 @@ export default class Scene extends Transform {
 	protected override onChildAdd(child: Transform): void {
 		if (child instanceof Drawable) {
 			if (child.isOpaque) {
-				this.opaqueNodes.push(child);
-				// console.log(`new opaque nodes count: ${this.opaqueNodes.length}`);
+				this.opaqueMeshes.push(child);
+				this.culledOpaqueMeshes.push(child);
+				// console.log(`new opaque nodes count: ${this.opaqueMeshes.length}`);
 			} else {
-				this.transparentNodes.push(child);
+				this.transparentMeshes.push(child);
+				this.culledTransparentMeshes.push(child);
 				// console.log(
-				// 	`new transparent nodes count: ${this.transparentNodes.length}`,
+				// 	`new transparent nodes count: ${this.transparentMeshes.length}`,
 				// );
 			}
 		}
@@ -135,13 +164,17 @@ export default class Scene extends Transform {
 
 	protected override onChildRemove(child: Transform): void {
 		super.onChildRemove(child);
+
+		const filterOut = ({ id }: Transform) => id !== child.id;
+
 		if (child instanceof Drawable) {
 			if (child.isOpaque) {
-				this.opaqueNodes = this.opaqueNodes.filter(({ id }) => id !== child.id);
+				this.opaqueMeshes = this.opaqueMeshes.filter(filterOut);
+				this.culledOpaqueMeshes = this.culledOpaqueMeshes.filter(filterOut);
 			} else {
-				this.transparentNodes = this.transparentNodes.filter(
-					({ id }) => id !== child.id,
-				);
+				this.transparentMeshes = this.transparentMeshes.filter(filterOut);
+				this.culledTransparentMeshes =
+					this.culledTransparentMeshes.filter(filterOut);
 			}
 		}
 	}

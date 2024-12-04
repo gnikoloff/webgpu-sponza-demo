@@ -2,7 +2,7 @@
 
 import { vec3 } from "wgpu-matrix";
 import PerspectiveCamera from "./PerspectiveCamera";
-import { clamp } from "../utils/math";
+import { clamp } from "../math/math";
 
 class DampedAction {
 	private value = 0.0;

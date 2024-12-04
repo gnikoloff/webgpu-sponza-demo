@@ -3,7 +3,7 @@ import {
 	SKYBOX_CUBEMAP_CAMERA_LOOK_ATS,
 	SKYBOX_CUBEMAP_CAMERA_UPS,
 	numMipLevelsForSize,
-} from "../utils/math";
+} from "../math/math";
 import HDRToCubeMapShaderUtils, {
 	HDRToCubeMapShaderUtilsEntryFragmentFn,
 	HDRToCubeMapShaderUtilsEntryVertexFn,
