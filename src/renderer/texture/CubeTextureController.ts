@@ -201,7 +201,7 @@ export default class CubeTextureController extends BaseUtilObject {
 			vertex: {
 				module: PipelineStates.createShaderModule(HDRToCubeMapShaderUtils),
 				entryPoint: HDRToCubeMapShaderUtilsEntryVertexFn,
-				buffers: [VertexDescriptor.defaultLayout],
+				buffers: VertexDescriptor.defaultLayout,
 			},
 			fragment: {
 				module: PipelineStates.createShaderModule(HDRToCubeMapShaderUtils),
@@ -253,7 +253,7 @@ export default class CubeTextureController extends BaseUtilObject {
 				Drawable.INDEX_FORMAT,
 			);
 			renderPass.setVertexBuffer(0, cubeGeometry.vertexBuffer);
-			renderPass.drawIndexed(cubeGeometry.vertexCount);
+			renderPass.drawIndexed(cubeGeometry.indexCount);
 
 			renderPass.end();
 		}

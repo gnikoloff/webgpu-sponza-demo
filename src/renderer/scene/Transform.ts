@@ -9,11 +9,10 @@ export default class Transform {
 	private _rotation = vec3.fromValues(0, 0, 0);
 	private _scale = vec3.fromValues(1, 1, 1);
 	private _worldPosition = vec3.create();
-	private _quaterion = quat.create();
 
 	private translateMatrix = mat4.identity();
 	private scaleMatrix = mat4.identity();
-	private rotationMatrix = mat4.identity();
+	public rotationMatrix = mat4.identity();
 	private cachedMatrix = mat4.create();
 	private worldMatrix = mat4.identity();
 	private _customMatrix?: Mat4;
@@ -27,6 +26,8 @@ export default class Transform {
 
 	public parent?: Transform;
 	public children: Transform[] = [];
+
+	public quaternion = quat.create();
 
 	protected _visible = true;
 	public get visible(): boolean {
@@ -79,13 +80,13 @@ export default class Transform {
 		} else {
 			mat4.identity(this.scaleMatrix);
 			mat4.scale(this.scaleMatrix, this.scale, this.scaleMatrix);
-			this._quaterion = quat.fromEuler(
+			this.quaternion = quat.fromEuler(
 				this.rotation[0],
 				this.rotation[1],
 				this.rotation[2],
 				QUATERNION_COMP_ORDER,
 			);
-			mat4.fromQuat(this._quaterion, this.rotationMatrix);
+			mat4.fromQuat(this.quaternion, this.rotationMatrix);
 			mat4.identity(this.translateMatrix);
 			mat4.translate(this.translateMatrix, this.position, this.translateMatrix);
 

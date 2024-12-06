@@ -8,59 +8,28 @@ export default class Geometry {
 	public faces: Face[] = [];
 	public boundingBox = new BoundingBox();
 
-	public vertexBuffer: GPUBuffer;
+	public vertexBuffers: GPUBuffer[] = [];
 	public indexBuffer?: GPUBuffer;
-	public vertexCount = 0;
 
-	protected createBuffersWithDataDirectly(
-		vertexCount: number,
-		interleavedData: Float32Array,
-		indices: Uint16Array,
-	) {
-		this.vertexCount = vertexCount;
+	public indexCount = 0;
 
-		this.vertexBuffer = Renderer.device.createBuffer({
-			mappedAtCreation: true,
-			size: interleavedData.length * Float32Array.BYTES_PER_ELEMENT,
-			usage: GPUBufferUsage.VERTEX,
-			label: "Mesh Interleaved Vertex GPUBuffer",
-		});
-		const data = new Float32Array(this.vertexBuffer.getMappedRange());
-		data.set(interleavedData, 0);
-
-		this.vertexBuffer.unmap();
-
-		const indexBufferSize = Uint16Array.BYTES_PER_ELEMENT * indices.length;
-		const indexBufferSizeRemainder = indexBufferSize % 4;
-		const nextIndexBufferSizeDivisibleBy4 =
-			indexBufferSizeRemainder === 0
-				? indexBufferSize
-				: indexBufferSize + (4 - indexBufferSizeRemainder);
-		this.indexBuffer = Renderer.device.createBuffer({
-			mappedAtCreation: true,
-			size: nextIndexBufferSizeDivisibleBy4,
-			usage: GPUBufferUsage.INDEX,
-			label: "Mesh Index GPUBuffer",
-		});
-		const indexData = new Uint16Array(this.indexBuffer.getMappedRange());
-		indexData.set(indices);
-		this.indexBuffer.unmap();
-	}
+	public vertexBufferOffsets: Map<GPUBuffer, [number, number]> = new Map();
+	public indexBufferOffsets: [number, number] = [0, 0];
 
 	protected createBuffersWithTangentsManually(
-		vertexCount: number,
+		indexCount: number,
 		vertices: Vec3[],
 		normals: Vec3[],
 		uvs: Vec3[],
 		indices: Uint16Array,
 	) {
-		this.vertexCount = vertexCount;
+		this.indexCount = indexCount;
 
 		const sdir = vec3.create();
 		const tdir = vec3.create();
 
 		const interleavedArray = new Float32Array(
-			VertexDescriptor.itemsPerVertexDefaultLayout * vertexCount,
+			VertexDescriptor.itemsPerVertexDefaultLayout * indexCount,
 		);
 
 		const tan1: Vec3[] = new Array(vertices.length)
@@ -158,18 +127,20 @@ export default class Geometry {
 			vec3.add(tan2[face.indexV2], tdir, tan2[face.indexV2]);
 		}
 
-		this.vertexBuffer = Renderer.device.createBuffer({
+		const vertexBuffer = Renderer.device.createBuffer({
 			mappedAtCreation: true,
 			size:
-				vertexCount *
+				indexCount *
 				VertexDescriptor.itemsPerVertexDefaultLayout *
 				Float32Array.BYTES_PER_ELEMENT,
 			usage: GPUBufferUsage.VERTEX,
 			label: "Mesh Interleaved Vertex GPUBuffer",
 		});
-		const data = new Float32Array(this.vertexBuffer.getMappedRange());
+		const data = new Float32Array(vertexBuffer.getMappedRange());
 		data.set(interleavedArray, 0);
-		this.vertexBuffer.unmap();
+		vertexBuffer.unmap();
+
+		this.vertexBuffers.push(vertexBuffer);
 
 		this.indexBuffer = Renderer.device.createBuffer({
 			mappedAtCreation: true,

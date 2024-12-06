@@ -377,18 +377,15 @@ export default class GBufferIntegratePass extends RenderPass {
 
 		// Skybox
 		if (this.skybox) {
-			const skyboxRenderPassEncoder = commandEncoder.beginRenderPass(
-				this.createSkyboxRenderPassDescriptor(),
-			);
-
-			skyboxRenderPassEncoder.setBindGroup(
-				BIND_GROUP_LOCATIONS.CameraPlusOptionalLights,
-				this.cameraBindGroup,
-			);
-
-			this.skybox.render(skyboxRenderPassEncoder);
-
-			skyboxRenderPassEncoder.end();
+			// const skyboxRenderPassEncoder = commandEncoder.beginRenderPass(
+			// 	this.createSkyboxRenderPassDescriptor(),
+			// );
+			// skyboxRenderPassEncoder.setBindGroup(
+			// 	BIND_GROUP_LOCATIONS.CameraPlusOptionalLights,
+			// 	this.cameraBindGroup,
+			// );
+			// this.skybox.render(skyboxRenderPassEncoder);
+			// skyboxRenderPassEncoder.end();
 		}
 	}
 }

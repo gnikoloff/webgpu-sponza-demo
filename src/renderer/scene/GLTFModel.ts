@@ -5,6 +5,12 @@ import {
 	postProcessGLTF,
 } from "@loaders.gl/gltf";
 import { quat, vec3 } from "wgpu-matrix";
+import {
+	GLTFBufferViewPostprocessed,
+	GLTFMaterialPostprocessed,
+	GLTFSamplerPostprocessed,
+	GLTFTexturePostprocessed,
+} from "@loaders.gl/gltf/dist/lib/types/gltf-postprocessed-schema";
 
 import Transform from "./Transform";
 import GLTFGeometry from "../geometry/GLTFGeometry";
@@ -17,27 +23,17 @@ import {
 	TextureLocation,
 } from "../core/RendererBindings";
 import SamplerController from "../texture/SamplerController";
+import Renderer from "../../app/Renderer";
 
-type PBRTextureType = "albedo" | "normal" | "metallicRoughness";
+const GL_ELEMENT_ARRAY_BUFFER = 34963;
+const GL_ARRAY_BUFFER = 34962;
 
-var a = 0;
 export default class GLTFModel extends Transform {
 	private gltfDefinition: GLTFPostprocessed;
-	private texturesToLoad: Map<TextureLocation, Promise<GPUTexture>> = new Map();
 	private nodeMaterialIds: Map<string, Drawable[]> = new Map([]);
-	private savedTextures: Map<string, GPUTexture> = new Map([]);
-
-	public getAlbedoTexture(): Promise<GPUTexture> {
-		return this.getTexture(PBR_TEXTURES_LOCATIONS.Albedo);
-	}
-
-	public getNormalTexture(): Promise<GPUTexture> {
-		return this.getTexture(PBR_TEXTURES_LOCATIONS.Normal);
-	}
-
-	public getTexture(location: TextureLocation): Promise<GPUTexture> {
-		return this.texturesToLoad.get(location);
-	}
+	private gpuSamplers: Map<string, GPUSampler> = new Map();
+	private gpuTextures: Map<string, Promise<GPUTexture>> = new Map();
+	private gpuBuffers: Map<string, GPUBuffer> = new Map();
 
 	constructor(public url: string) {
 		super();
@@ -101,28 +97,56 @@ export default class GLTFModel extends Transform {
 		const gltfWithBuffers = await load(this.url, GLTFLoader);
 		this.gltfDefinition = postProcessGLTF(gltfWithBuffers);
 
-		// const sampler = this.gltfDefinition.samplers[0];
-
-		this.loadTextures().then((tex) => console.log(tex));
-		this.createNodesFrom(this.gltfDefinition);
+		this.initGPUTexturesFrom(this.gltfDefinition.textures);
+		this.initGPUSamplersFrom(this.gltfDefinition.samplers);
+		this.initGPUBuffersFrom(this.gltfDefinition.bufferViews);
+		this.initMaterialsFrom(this.gltfDefinition.materials);
+		this.initNodesFrom(this.gltfDefinition);
 	}
 
-	public async loadTextures(): Promise<GPUTexture[]> {
-		const { gltfDefinition: gltf } = this;
+	private async initMaterialsFrom(materials: GLTFMaterialPostprocessed[]) {
+		for (const material of materials) {
+			if (
+				material.pbrMetallicRoughness &&
+				material.pbrMetallicRoughness.baseColorTexture
+			) {
+				const texture = await this.gpuTextures.get(
+					material.pbrMetallicRoughness.baseColorTexture.texture.id,
+				);
+				const nodesForThisMaterial = this.nodeMaterialIds.get(material.id);
+				for (const node of nodesForThisMaterial) {
+					node.setTexture(texture, PBR_TEXTURES_LOCATIONS.Albedo);
+				}
 
-		const loadPromises: Promise<GPUTexture>[] = [];
+				if (material.pbrMetallicRoughness.metallicRoughnessTexture) {
+					const texture = await this.gpuTextures.get(
+						material.pbrMetallicRoughness.metallicRoughnessTexture.texture.id,
+					);
+					const nodesForThisMaterial = this.nodeMaterialIds.get(material.id);
+					for (const node of nodesForThisMaterial) {
+						node.setTexture(texture, PBR_TEXTURES_LOCATIONS.MetallicRoughness);
+					}
+				}
+			}
 
+			if (material.normalTexture) {
+				const texture = await this.gpuTextures.get(
+					material.normalTexture.texture.id,
+				);
+				const nodesForThisMaterial = this.nodeMaterialIds.get(material.id);
+				for (const node of nodesForThisMaterial) {
+					node.setTexture(texture, PBR_TEXTURES_LOCATIONS.Normal);
+				}
+			}
+		}
+	}
+
+	private async initGPUTexturesFrom(textures: GLTFTexturePostprocessed[]) {
 		const createTexture = async (
 			textureSource: Uint8Array,
-			texType: PBRTextureType,
 			id: string,
 			showDebug = false,
 		): Promise<GPUTexture> => {
-			let outTexture: GPUTexture;
-			if ((outTexture = this.savedTextures.get(id))) {
-				console.log(`cache hit ${a++}`);
-				return outTexture;
-			}
 			const blob = new Blob([textureSource], {
 				type: "image/png",
 			});
@@ -133,9 +157,8 @@ export default class GLTFModel extends Transform {
 				bitmap,
 				true,
 				false,
-				`${texType} texture: ${id}`,
+				`GLTF Texture: ${id}`,
 			);
-			this.savedTextures.set(id, tex);
 
 			const debugCavas = document.createElement("canvas");
 			const ctx = debugCavas.getContext("2d");
@@ -159,92 +182,55 @@ export default class GLTFModel extends Transform {
 			return tex;
 		};
 
-		for (const material of gltf.materials) {
-			if (
-				material.pbrMetallicRoughness &&
-				material.pbrMetallicRoughness.baseColorTexture &&
-				material.pbrMetallicRoughness.baseColorTexture.texture.source &&
-				material.pbrMetallicRoughness.baseColorTexture.texture.source
-					.bufferView &&
-				material.pbrMetallicRoughness.baseColorTexture.texture.source.bufferView
-					.data
-			) {
-				this.texturesToLoad.set(
-					PBR_TEXTURES_LOCATIONS.Albedo,
-					createTexture(
-						material.pbrMetallicRoughness.baseColorTexture.texture.source
-							.bufferView.data,
-						"albedo",
-						material.pbrMetallicRoughness.baseColorTexture.texture.id,
-						// true,
-					).then((tex) => {
-						const nodesForThisMaterial = this.nodeMaterialIds.get(material.id);
-						for (const node of nodesForThisMaterial) {
-							node.setTexture(tex, PBR_TEXTURES_LOCATIONS.Albedo);
-						}
-
-						return tex;
-					}),
-				);
-			}
-
-			if (
-				material.pbrMetallicRoughness &&
-				material.pbrMetallicRoughness.metallicRoughnessTexture &&
-				material.pbrMetallicRoughness.metallicRoughnessTexture.texture.source &&
-				material.pbrMetallicRoughness.metallicRoughnessTexture.texture.source
-					.bufferView &&
-				material.pbrMetallicRoughness.metallicRoughnessTexture.texture.source
-					.bufferView.data
-			) {
-				this.texturesToLoad.set(
-					PBR_TEXTURES_LOCATIONS.MetallicRoughness,
-					createTexture(
-						material.pbrMetallicRoughness.metallicRoughnessTexture.texture
-							.source.bufferView.data,
-						"metallicRoughness",
-						material.pbrMetallicRoughness.metallicRoughnessTexture.texture.id,
-					).then((tex) => {
-						const nodesForThisMaterial = this.nodeMaterialIds.get(material.id);
-						for (const node of nodesForThisMaterial) {
-							node.setTexture(tex, PBR_TEXTURES_LOCATIONS.MetallicRoughness);
-						}
-
-						return tex;
-					}),
-				);
-			}
-
-			if (
-				material.normalTexture &&
-				material.normalTexture.texture.source &&
-				material.normalTexture.texture.source.bufferView &&
-				material.normalTexture.texture.source.bufferView.data
-			) {
-				this.texturesToLoad.set(
-					PBR_TEXTURES_LOCATIONS.Normal,
-					createTexture(
-						material.normalTexture.texture.source.bufferView.data,
-						"normal",
-						material.normalTexture.texture.id,
-					).then((tex) => {
-						const nodesForThisMaterial = this.nodeMaterialIds.get(material.id);
-						for (const node of nodesForThisMaterial) {
-							node.setTexture(tex, PBR_TEXTURES_LOCATIONS.Normal);
-						}
-
-						return tex;
-					}),
-				);
-			}
+		for (const texture of textures) {
+			const texPromise = createTexture(
+				texture.source.bufferView.data,
+				texture.id,
+			);
+			this.gpuTextures.set(texture.id, texPromise);
 		}
-		return Promise.all(loadPromises);
 	}
 
-	private createNodesFrom(gltf: GLTFPostprocessed) {
-		const samplers = gltf.samplers.map((samplerInfo) =>
-			SamplerController.getSamplerFromGltfSamplerDef(samplerInfo),
-		);
+	private initGPUSamplersFrom(samplers: GLTFSamplerPostprocessed[]) {
+		for (const samplerInfo of samplers) {
+			const sampler =
+				SamplerController.getSamplerFromGltfSamplerDef(samplerInfo);
+			this.gpuSamplers.set(samplerInfo.id, sampler);
+		}
+	}
+
+	private initGPUBuffersFrom(buffViews: GLTFBufferViewPostprocessed[]) {
+		for (let buffView of buffViews) {
+			let usage: GPUBufferUsageFlags = 0;
+
+			if (buffView.target === GL_ELEMENT_ARRAY_BUFFER) {
+				usage |= GPUBufferUsage.INDEX;
+			}
+
+			if (buffView.target === GL_ARRAY_BUFFER) {
+				usage |= GPUBufferUsage.VERTEX;
+			}
+
+			const alignedLength = Math.ceil(buffView.byteLength / 4) * 4;
+			const gpuBuffer = Renderer.device.createBuffer({
+				label: buffView.id,
+				mappedAtCreation: true,
+				size: alignedLength,
+				usage,
+			});
+			new Uint8Array(gpuBuffer.getMappedRange()).set(
+				new Uint8Array(
+					buffView.buffer.arrayBuffer,
+					buffView.byteOffset,
+					buffView.byteLength,
+				),
+			);
+			gpuBuffer.unmap();
+			this.gpuBuffers.set(buffView.id, gpuBuffer);
+		}
+	}
+
+	private initNodesFrom(gltf: GLTFPostprocessed) {
 		for (const node of gltf.nodes) {
 			const meshInfo = node.mesh;
 			if (!meshInfo) {
@@ -252,7 +238,7 @@ export default class GLTFModel extends Transform {
 			}
 
 			for (const primitive of node.mesh.primitives) {
-				const geometry = new GLTFGeometry(primitive);
+				const geometry = new GLTFGeometry(primitive, this.gpuBuffers);
 				const mesh = new Drawable(geometry);
 				const nodePosition = vec3.create();
 				const nodeScale = vec3.create(1, 1, 1);
@@ -298,7 +284,7 @@ export default class GLTFModel extends Transform {
 
 				mesh.isOpaque = !primitive.material.alphaCutoff;
 				mesh.setCustomMatrixFromTRS(nodePosition, nodeRotation, nodeScale);
-				mesh.sampler = samplers[0];
+				mesh.sampler = this.gpuSamplers.get("sampler-0");
 				this.addChild(mesh);
 			}
 		}

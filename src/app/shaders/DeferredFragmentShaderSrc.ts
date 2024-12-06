@@ -46,7 +46,7 @@ export const getDefaultDeferredPBRFragmentShader = ({
     let TBN = mat3x3f(T, B, N);
 
     // var textureNormal = textureSampleLevel(normalTexture, texSampler, uv, 5.0).rgb * 2 - 1;
-    let textureNormal = srgbToLinear(textureSample(normalTexture, texSampler, uv).rgb * 2 - 1);
+    let textureNormal = textureSample(normalTexture, texSampler, uv).rgb * 2 - 1;
     
     if (${hasPBRTextures}) {
       N = normalize(TBN * textureNormal);

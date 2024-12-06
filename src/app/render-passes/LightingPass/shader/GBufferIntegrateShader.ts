@@ -53,12 +53,14 @@ const GetGBufferIntegrateShader = (
     let coord = in.position;
     let pixelCoords = vec2i(floor(coord.xy));
     let encodedN = textureLoad(normalTexture, pixelCoords, 0).rg;
-    let metallic = textureLoad(normalTexture, pixelCoords, 0).b;
+    let metallic = 0.4;//textureLoad(normalTexture, pixelCoords, 0).b;
     let roughness = textureLoad(normalTexture, pixelCoords, 0).a;
     let N = normalize(decodeNormal(encodedN));
     
     let albedo = textureLoad(colorTexture, pixelCoords, 0).xyz;
     let depth = textureLoad(depthTexture, pixelCoords, 0);
+
+    // return vec4f(N, 1.0);
 
     var material = Material();
     material.albedo = albedo;

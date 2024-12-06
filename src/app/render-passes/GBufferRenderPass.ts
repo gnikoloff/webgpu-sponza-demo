@@ -1,6 +1,5 @@
 import Renderer from "../Renderer";
 import RenderPass, { RenderPassType } from "../../renderer/core/RenderPass";
-import Transform from "../../renderer/scene/Transform";
 import Scene from "../../renderer/scene/Scene";
 import { BIND_GROUP_LOCATIONS } from "../../renderer/core/RendererBindings";
 

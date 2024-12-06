@@ -1,4 +1,4 @@
-import CameraController from "../renderer/camera/CameraController";
+import CameraOrbitController from "../renderer/camera/CameraOrbitController";
 import PerspectiveCamera from "../renderer/camera/PerspectiveCamera";
 import {
 	MAIN_CAMERA_FAR,
@@ -38,8 +38,10 @@ import { TextureDebugMeshType } from "./debug/DebugTextureCanvas";
 import Scene from "../renderer/scene/Scene";
 import TransparentRenderPass from "./render-passes/TransparentRenderPass";
 import DebugBoundsPass from "./render-passes/DebugBoundsPass";
+import CameraFlyController from "../renderer/camera/CameraFlyController";
 // import EnvironmentProbePass from "./render-passes/EnvironmentProbePass";
 
+const a = document.getElementById("a");
 export default class Renderer {
 	public static $canvas: HTMLCanvasElement;
 	public static canvasContext: GPUCanvasContext;
@@ -88,7 +90,8 @@ export default class Renderer {
 	public orthoCamera: OrthographicCamera;
 	public mainCamera: PerspectiveCamera;
 	public debugCamera: PerspectiveCamera;
-	public mainCameraCtrl: CameraController;
+	// public mainCameraCtrl: CameraOrbitController;
+	public mainCameraCtrl: CameraFlyController;
 
 	public debugBoundingBoxes = false;
 
@@ -206,26 +209,32 @@ export default class Renderer {
 		// });
 
 		this.mainCamera = new PerspectiveCamera(
-			45,
+			70,
 			1,
 			MAIN_CAMERA_NEAR,
 			MAIN_CAMERA_FAR,
 		);
 		this.mainCamera.shouldJitter = true;
-		this.mainCamera.setPosition(-7, 2, 0);
+		this.mainCamera.setPosition(4, 3, 0);
 		this.mainCamera.setLookAt(0, 2, 0);
 		this.mainCamera.updateViewMatrix();
 
-		this.mainCameraCtrl = new CameraController(
+		// this.mainCameraCtrl = new CameraOrbitController(
+		// 	this.mainCamera,
+		// 	Renderer.$canvas,
+		// 	true,
+		// );
+		// this.mainCameraCtrl.setLookAt(0, 2, 0);
+		// this.mainCameraCtrl.startTick();
+
+		this.mainCameraCtrl = new CameraFlyController(
 			this.mainCamera,
-			Renderer.$canvas,
-			true,
+			// Renderer.$canvas,
 		);
-		this.mainCameraCtrl.setLookAt(0, 2, 0);
 		this.mainCameraCtrl.startTick();
 
 		this.debugCamera = new PerspectiveCamera(
-			45,
+			70,
 			1,
 			MAIN_CAMERA_NEAR,
 			MAIN_CAMERA_FAR,
@@ -261,7 +270,7 @@ export default class Renderer {
 
 		this.debugContainer = new DebugContainer();
 
-		this.ground = new GroundContainer();
+		// this.ground = new GroundContainer();
 		// this.scene.addChild(this.ground);
 
 		this.cube = new Drawable(new CubeGeometry(1, 1, 1));
@@ -317,8 +326,8 @@ export default class Renderer {
 			.setPositionZ(1.2)
 			.updateWorldMatrix();
 
-		this.pbrSpheres = new PBRSpheres();
-		this.scene.addChild(this.pbrSpheres);
+		// this.pbrSpheres = new PBRSpheres();
+		// this.scene.addChild(this.pbrSpheres);
 
 		// this.scene.addChild(this.cube);
 		// this.scene.addChild(this.cube1);
@@ -386,7 +395,8 @@ export default class Renderer {
 
 		const a = new GLTFModel("/sponza/Sponza.gltf");
 		this.scene.addChild(a);
-		a.setPositionY(2).updateWorldMatrix();
+		a.setPositionY(2) //.setRotationY(Math.PI * 0.5)
+			.updateWorldMatrix();
 		a.load().then(() => {
 			if (!this.debugBBoxesPass) {
 				this.debugBBoxesPass = new DebugBoundsPass(this.scene);
@@ -511,6 +521,8 @@ export default class Renderer {
 		const deltaDiff = now - Renderer.prevTimeMs;
 		Renderer.prevTimeMs = now;
 		Renderer.elapsedTimeMs += this.enableAnimation ? deltaDiff : 0;
+
+		a.textContent = `Display Meshes: ${this.scene.visibleNodesCount} / ${this.scene.nodesCount}`;
 
 		const device = Renderer.device;
 

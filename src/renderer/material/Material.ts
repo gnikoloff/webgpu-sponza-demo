@@ -22,7 +22,7 @@ export default class Material {
 	constructor({
 		vertexShaderSrc,
 		vertexShaderEntryFn,
-		vertexBuffers = [VertexDescriptor.defaultLayout],
+		vertexBuffers = VertexDescriptor.defaultLayout,
 		fragmentShaderSrc,
 		fragmentShaderEntryFn,
 		bindGroupLayouts = [

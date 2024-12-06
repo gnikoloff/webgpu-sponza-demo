@@ -41,7 +41,7 @@ export const getDebugFragmentShader = (
     let depth = textureSample(myTexture, mySampler, uv);
 
     let near: f32 = 0.1; // Example near plane
-    let far: f32 = 30.0; // Example far plane
+    let far: f32 = 20.0; // Example far plane
 
     // Linearize the depth (from clip space depth to linear depth)
     let depth_linear = near * far / (far - depth * (far - near));
@@ -57,7 +57,7 @@ export const getDebugFragmentShader = (
     let depth = textureSample(myTexture, mySampler, uv);
 
     let near: f32 = 0.1; // Example near plane
-    let far: f32 = 100.0; // Example far plane
+    let far: f32 = 1.0; // Example far plane
 
     // Linearize the depth (from clip space depth to linear depth)
     let depth_linear = near * far / (far - depth * (far - near));

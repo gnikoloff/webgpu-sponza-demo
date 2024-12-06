@@ -14,6 +14,7 @@ import {
 	DefaultVertexShaderEntryFn,
 	getVertexShader,
 } from "../shaders/VertexShader";
+import VertexDescriptor from "../../renderer/core/VertexDescriptor";
 
 let _defaultDeferredPBRMaterial: Material;
 let _defaultTexturedDeferredMaterial: Material;
@@ -43,6 +44,7 @@ const MaterialCache = Object.freeze({
 			debugLabel: `Forward Pass Default PBR Material`,
 			vertexShaderSrc: getVertexShader(),
 			vertexShaderEntryFn: DefaultVertexShaderEntryFn,
+			vertexBuffers: VertexDescriptor.defaultGLTFLayout,
 			fragmentShaderSrc: getDefaultForwardPBRFragmentShader({
 				hasPBRTextures: true,
 			}),
@@ -95,6 +97,7 @@ const MaterialCache = Object.freeze({
 			debugLabel: "Deferred Pass Default PBR Material",
 			vertexShaderSrc: getVertexShader(),
 			vertexShaderEntryFn: DefaultVertexShaderEntryFn,
+			vertexBuffers: VertexDescriptor.defaultGLTFLayout,
 			fragmentShaderSrc: getDefaultDeferredPBRFragmentShader(),
 			fragmentShaderEntryFn: DeferredRenderPBRShaderEntryFn,
 			constants: {
@@ -129,6 +132,7 @@ const MaterialCache = Object.freeze({
 			debugLabel: "Default Textured Deferred PBR",
 			vertexShaderSrc: getVertexShader(),
 			vertexShaderEntryFn: DefaultVertexShaderEntryFn,
+			vertexBuffers: VertexDescriptor.defaultGLTFLayout,
 			fragmentShaderSrc: getDefaultDeferredPBRFragmentShader({
 				hasPBRTextures: true,
 			}),

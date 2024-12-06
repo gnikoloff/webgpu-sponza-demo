@@ -15,6 +15,7 @@ import PipelineStates from "../core/PipelineStates";
 import TextureLoader from "../texture/TextureLoader";
 import SamplerController from "../texture/SamplerController";
 import Transform from "./Transform";
+import BoundingBox from "../math/BoundingBox";
 import { RenderPassType } from "../core/RenderPass";
 import {
 	BIND_GROUP_LOCATIONS,
@@ -22,7 +23,6 @@ import {
 	SAMPLER_LOCATIONS,
 	TextureLocation,
 } from "../core/RendererBindings";
-import BoundingBox from "../math/BoundingBox";
 
 export default class Drawable extends Transform {
 	public static readonly INDEX_FORMAT: GPUIndexFormat = "uint16";
@@ -218,18 +218,26 @@ export default class Drawable extends Transform {
 			this.uploadModelBufferToGPU = false;
 		}
 
-		if (this.geometry.indexBuffer) {
-			renderEncoder.setIndexBuffer(
-				this.geometry.indexBuffer,
-				Drawable.INDEX_FORMAT,
+		renderEncoder.setIndexBuffer(
+			this.geometry.indexBuffer,
+			Drawable.INDEX_FORMAT,
+			this.geometry.indexBufferOffsets[0],
+			// this.geometry.indexBufferOffsets[1],
+		);
+
+		for (let i = 0; i < this.geometry.vertexBuffers.length; i++) {
+			const offsets = this.geometry.vertexBufferOffsets.get(
+				this.geometry.vertexBuffers[i],
+			);
+			renderEncoder.setVertexBuffer(
+				i,
+				this.geometry.vertexBuffers[i],
+				offsets[0],
+				// offsets[1],
 			);
 		}
-		renderEncoder.setVertexBuffer(0, this.geometry.vertexBuffer);
 		renderEncoder.setBindGroup(BIND_GROUP_LOCATIONS.Model, this.modelBindGroup);
-		// renderEncoder.setBindGroup(
-		// 	BIND_GROUP_LOCATIONS.Samplers,
-		// 	this.samplersBindGroup,
-		// );
+
 		renderEncoder.setBindGroup(
 			BIND_GROUP_LOCATIONS.PBRTextures,
 			this.texturesBindGroup,
@@ -240,7 +248,7 @@ export default class Drawable extends Transform {
 		this.material.bind(renderEncoder);
 
 		renderEncoder.drawIndexed(
-			this.geometry.vertexCount,
+			this.geometry.indexCount,
 			this.instanceCount,
 			this.firstIndex,
 			this.baseVertex,

@@ -11,7 +11,7 @@ export const SHADER_CHUNKS = Object.freeze({
         @location(${SHADER_ATTRIB_LOCATIONS.Position}) position: vec4f,
         @location(${SHADER_ATTRIB_LOCATIONS.Normal}) normal: vec3f,
         @location(${SHADER_ATTRIB_LOCATIONS.TexCoord}) uv: vec2f,
-        @location(${SHADER_ATTRIB_LOCATIONS.Tangent}) tangent: vec3f,
+        @location(${SHADER_ATTRIB_LOCATIONS.Tangent}) tangent: vec4f,
       };
 
     `;

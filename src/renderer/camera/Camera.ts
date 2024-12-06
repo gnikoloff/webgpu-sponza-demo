@@ -1,4 +1,4 @@
-import { Vec3, Vec4, mat4, vec3, vec4 } from "wgpu-matrix";
+import { Mat4, Vec3, Vec4, mat4, quat, vec3, vec4 } from "wgpu-matrix";
 import {
 	StructuredView,
 	makeShaderDataDefinitions,
@@ -8,6 +8,7 @@ import Renderer from "../../app/Renderer";
 import { SHADER_CHUNKS } from "../shader/chunks";
 import Drawable from "../scene/Drawable";
 import Plane from "../math/Plane";
+import Transform from "../scene/Transform";
 
 const HAMILTON_SEQUENCE = [
 	[0.5, 0.333333],
@@ -28,11 +29,9 @@ const HAMILTON_SEQUENCE = [
 	[0.03125, 0.592593],
 ];
 
-export default class Camera {
+export default class Camera extends Transform {
 	public static readonly UP_VECTOR = vec3.fromValues(0, 1, 0);
 
-	public position = vec3.fromValues(0, 0, 0);
-	public rotation = vec3.fromValues(0, 0, 0);
 	public lookAt = vec3.fromValues(0, 0, 0);
 
 	public hasChangedSinceLastFrame = true;
@@ -70,6 +69,7 @@ export default class Camera {
 	protected bufferUniformValues: StructuredView;
 
 	constructor() {
+		super();
 		const cameraShaderDefs = makeShaderDataDefinitions(
 			SHADER_CHUNKS.CameraUniform,
 		);
@@ -173,15 +173,6 @@ export default class Camera {
 		return nonCulledCount;
 	}
 
-	public setPosition(x: number, y: number, z: number) {
-		this.position[0] = x;
-		this.position[1] = y;
-		this.position[2] = z;
-		this.bufferUniformValues.set({
-			position: this.position,
-		});
-	}
-
 	public setLookAt(x: number, y: number, z: number) {
 		this.lookAt[0] = x;
 		this.lookAt[1] = y;
@@ -194,7 +185,16 @@ export default class Camera {
 
 	public updateViewMatrix(): this {
 		mat4.lookAt(this.position, this.lookAt, Camera.UP_VECTOR, this.viewMatrix);
+		this.bufferUniformValues.set({
+			viewMatrix: this.viewMatrix,
+		});
 
+		this.updateProjectionViewMatrix();
+		return this;
+	}
+
+	public updateViewMatrixWithMat(v: Mat4): this {
+		this.viewMatrix = v;
 		this.bufferUniformValues.set({
 			viewMatrix: this.viewMatrix,
 		});

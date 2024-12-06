@@ -49,7 +49,7 @@ export default class PointLightsRenderSubPass extends LightSubPass {
 					"Point Light Render Pass Vertex Shader",
 				),
 				entryPoint: GBufferVertexEntryFn,
-				buffers: [VertexDescriptor.defaultLayout],
+				buffers: VertexDescriptor.defaultLayout,
 			},
 			fragment: {
 				module: PipelineStates.createShaderModule(
@@ -89,14 +89,14 @@ export default class PointLightsRenderSubPass extends LightSubPass {
 		renderPassEncoder.setBindGroup(0, this.gbufferCommonBindGroup);
 		renderPassEncoder.setVertexBuffer(
 			0,
-			GeometryCache.pointLightSphereGeometry.vertexBuffer,
+			GeometryCache.pointLightSphereGeometry.vertexBuffers[0],
 		);
 		renderPassEncoder.setIndexBuffer(
 			GeometryCache.pointLightSphereGeometry.indexBuffer,
 			Drawable.INDEX_FORMAT,
 		);
 		renderPassEncoder.drawIndexed(
-			GeometryCache.pointLightSphereGeometry.vertexCount,
+			GeometryCache.pointLightSphereGeometry.indexCount,
 			this.pointLights.length,
 		);
 	}

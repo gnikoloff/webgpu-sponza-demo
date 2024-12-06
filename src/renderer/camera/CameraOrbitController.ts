@@ -32,7 +32,7 @@ class DampedAction {
 	}
 }
 
-export default class CameraController {
+export default class CameraOrbitController {
 	private camera: PerspectiveCamera;
 	private domElement: HTMLElement;
 	private target: vec3 = vec3.create();

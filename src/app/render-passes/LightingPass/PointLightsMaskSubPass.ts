@@ -38,7 +38,7 @@ export default class PointLightsMaskSubPass extends LightSubPass {
 					"Point Light Mask Pass Vertex Shader",
 				),
 				entryPoint: GBufferVertexEntryFn,
-				buffers: [VertexDescriptor.defaultLayout],
+				buffers: VertexDescriptor.defaultLayout,
 			},
 			depthStencil: {
 				format: Renderer.depthStencilFormat,
@@ -80,14 +80,14 @@ export default class PointLightsMaskSubPass extends LightSubPass {
 		renderPassEncoder.setBindGroup(0, this.lightMaskBindGroup);
 		renderPassEncoder.setVertexBuffer(
 			0,
-			GeometryCache.pointLightSphereGeometry.vertexBuffer,
+			GeometryCache.pointLightSphereGeometry.vertexBuffers[0],
 		);
 		renderPassEncoder.setIndexBuffer(
 			GeometryCache.pointLightSphereGeometry.indexBuffer,
 			Drawable.INDEX_FORMAT,
 		);
 		renderPassEncoder.drawIndexed(
-			GeometryCache.pointLightSphereGeometry.vertexCount,
+			GeometryCache.pointLightSphereGeometry.indexCount,
 			this.pointLights.length,
 		);
 	}

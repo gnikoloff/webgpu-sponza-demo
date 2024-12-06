@@ -30,7 +30,7 @@ export default class CyllinderGeometry extends Geometry {
 		}
 
 		this.createBuffersWithTangentsManually({
-			vertexCount: indices.length,
+			indexCount: indices.length,
 			interleavedVertexArr: new Float32Array(interleavedArray),
 			indicesArr: new Uint16Array(indices),
 		});

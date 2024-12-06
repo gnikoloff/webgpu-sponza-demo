@@ -1,4 +1,3 @@
-import { vec3 } from "wgpu-matrix";
 import Renderer from "../../app/Renderer";
 import Camera from "../camera/Camera";
 import DirectionalLight from "../lighting/DirectionalLight";
@@ -20,8 +19,15 @@ export default class Scene extends Transform {
 	private _directionalLights: DirectionalLight[] = [];
 	private _lights: Light[] = [];
 
+	private nonCulledTransparentCount = 0;
+	private nonCulledOpaqueCount = 0;
+
 	public get nodesCount(): number {
 		return this.opaqueMeshes.length + this.transparentMeshes.length;
+	}
+
+	public get visibleNodesCount(): number {
+		return this.nonCulledOpaqueCount + this.nonCulledTransparentCount;
 	}
 
 	public getLights(): Light[] {
@@ -56,12 +62,21 @@ export default class Scene extends Transform {
 
 	public renderOpaqueNodes(
 		renderPassEncoder: GPURenderPassEncoder,
-		camera: Camera,
+		camera?: Camera,
 	) {
+		if (!camera) {
+			for (const mesh of this.opaqueMeshes) {
+				mesh.render(renderPassEncoder);
+			}
+			return;
+		}
+
 		const nonCulledCount = camera.cullMeshes(
 			this.opaqueMeshes,
 			this.culledOpaqueMeshes,
 		);
+
+		this.nonCulledOpaqueCount = nonCulledCount;
 
 		for (let i = 0; i < nonCulledCount; i++) {
 			this.culledOpaqueMeshes[i].render(renderPassEncoder);
@@ -76,6 +91,8 @@ export default class Scene extends Transform {
 			this.transparentMeshes,
 			this.culledTransparentMeshes,
 		);
+
+		this.nonCulledTransparentCount = nonCulledCount;
 
 		for (let i = 0; i < nonCulledCount; i++) {
 			this.culledTransparentMeshes[i].render(renderPassEncoder);
