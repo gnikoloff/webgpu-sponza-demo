@@ -1,5 +1,5 @@
 import { wgsl } from "wgsl-preprocessor/wgsl-preprocessor.js";
-import { LightType } from "../lighting/Light";
+import { LightType } from "../types";
 
 interface IPBRLightingShaderUtils {
 	isDeferred: boolean;

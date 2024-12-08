@@ -1,4 +1,9 @@
-export type ShaderAttribLocation = 0 | 1 | 2 | 3;
+import {
+	BindGroupLocation,
+	SamplerLocation,
+	ShaderAttribLocation,
+	TextureLocation,
+} from "../types";
 
 export const SHADER_ATTRIB_LOCATIONS = Object.freeze({
 	get Position(): ShaderAttribLocation {
@@ -14,8 +19,6 @@ export const SHADER_ATTRIB_LOCATIONS = Object.freeze({
 		return 3;
 	},
 });
-
-export type BindGroupLocation = 0 | 1 | 2 | 3 | 4;
 
 export const BIND_GROUP_LOCATIONS = Object.freeze({
 	get CameraPlusOptionalLights(): BindGroupLocation {
@@ -46,15 +49,11 @@ export const RENDER_TARGET_LOCATIONS = Object.freeze({
 	},
 });
 
-export type SamplerLocation = 0;
-
 export const SAMPLER_LOCATIONS = Object.freeze({
 	get Default(): SamplerLocation {
 		return 0;
 	},
 });
-
-export type TextureLocation = 1 | 2 | 3 | 4;
 
 export const PBR_TEXTURES_LOCATIONS = Object.freeze({
 	get Albedo(): TextureLocation {

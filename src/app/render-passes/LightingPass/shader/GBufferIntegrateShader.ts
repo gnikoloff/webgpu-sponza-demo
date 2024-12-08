@@ -1,10 +1,10 @@
 import { wgsl } from "wgsl-preprocessor/wgsl-preprocessor.js";
-import { LightType } from "../../../../renderer/lighting/Light";
 import { SHADER_CHUNKS } from "../../../../renderer/shader/chunks";
 import GetPBRLightingShaderUtils from "../../../../renderer/shader/PBRLightingShaderUtils";
 import CSMShadowShaderUtils from "../../../../renderer/shader/CSMShadowShaderUtils";
 import NormalEncoderShaderUtils from "../../../../renderer/shader/NormalEncoderShaderUtils";
 import GBufferCommonShaderBindings from "./GBufferCommonShaderBindings";
+import { LightType } from "../../../../renderer/types";
 
 export const GBufferIntegrateShaderEntryFn = "integrateMain";
 

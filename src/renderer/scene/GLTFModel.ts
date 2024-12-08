@@ -15,7 +15,6 @@ import {
 import Transform from "./Transform";
 import GLTFGeometry from "../geometry/GLTFGeometry";
 import Drawable from "./Drawable";
-import { RenderPassType } from "../core/RenderPass";
 import Material from "../material/Material";
 import TextureLoader from "../texture/TextureLoader";
 import {
@@ -24,6 +23,7 @@ import {
 } from "../core/RendererBindings";
 import SamplerController from "../texture/SamplerController";
 import Renderer from "../../app/Renderer";
+import { RenderPassType } from "../types";
 
 const GL_ELEMENT_ARRAY_BUFFER = 34963;
 const GL_ARRAY_BUFFER = 34962;

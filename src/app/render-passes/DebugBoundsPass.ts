@@ -1,6 +1,6 @@
 import Camera from "../../renderer/camera/Camera";
 import PipelineStates from "../../renderer/core/PipelineStates";
-import RenderPass, { RenderPassType } from "../../renderer/core/RenderPass";
+import RenderPass from "../../renderer/core/RenderPass";
 import { BIND_GROUP_LOCATIONS } from "../../renderer/core/RendererBindings";
 import BoundingBox from "../../renderer/math/BoundingBox";
 import Drawable from "../../renderer/scene/Drawable";
@@ -9,6 +9,7 @@ import DebugBoundingBoxesShaderUtils, {
 	DebugBoundingBoxesFragmentShaderEntryFn,
 	DebugBoundingBoxesVertexShaderEntryFn,
 } from "../../renderer/shader/DebugBoundingBoxesShaderUtils";
+import { RenderPassType } from "../../renderer/types";
 import Renderer from "../Renderer";
 
 export default class DebugBoundsPass extends RenderPass {

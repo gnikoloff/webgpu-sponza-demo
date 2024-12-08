@@ -16,13 +16,13 @@ import TextureLoader from "../texture/TextureLoader";
 import SamplerController from "../texture/SamplerController";
 import Transform from "./Transform";
 import BoundingBox from "../math/BoundingBox";
-import { RenderPassType } from "../core/RenderPass";
 import {
 	BIND_GROUP_LOCATIONS,
 	PBR_TEXTURES_LOCATIONS,
 	SAMPLER_LOCATIONS,
 	TextureLocation,
 } from "../core/RendererBindings";
+import { RenderPassType } from "../types";
 
 export default class Drawable extends Transform {
 	public static readonly INDEX_FORMAT: GPUIndexFormat = "uint16";

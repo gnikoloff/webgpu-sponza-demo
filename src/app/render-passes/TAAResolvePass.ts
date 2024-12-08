@@ -1,6 +1,7 @@
 import PipelineStates from "../../renderer/core/PipelineStates";
-import RenderPass, { RenderPassType } from "../../renderer/core/RenderPass";
+import RenderPass from "../../renderer/core/RenderPass";
 import Scene from "../../renderer/scene/Scene";
+import { RenderPassType } from "../../renderer/types";
 import Renderer from "../Renderer";
 
 import {

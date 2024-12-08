@@ -1,5 +1,6 @@
 import { Vec3, vec3 } from "wgpu-matrix";
-import Light, { LightType, LightTypeToShaderType } from "./Light";
+import Light, { LightTypeToShaderType } from "./Light";
+import { LightType } from "../types";
 
 export default class PointLight extends Light {
 	private _radius: number;

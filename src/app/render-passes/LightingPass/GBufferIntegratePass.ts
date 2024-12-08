@@ -1,4 +1,4 @@
-import RenderPass, { RenderPassType } from "../../../renderer/core/RenderPass";
+import RenderPass from "../../../renderer/core/RenderPass";
 import Renderer from "../../Renderer";
 import PointLight from "../../../renderer/lighting/PointLight";
 import TextureLoader from "../../../renderer/texture/TextureLoader";
@@ -7,6 +7,7 @@ import DirectionalLightSubPass from "./DirectionalLightSubPass";
 import PointLightsRenderSubPass from "./PointLightsRenderSubPass";
 import PointLightsMaskSubPass from "./PointLightsMaskSubPass";
 import Scene from "../../../renderer/scene/Scene";
+import { RenderPassType } from "../../../renderer/types";
 
 export default class GBufferIntegratePass extends RenderPass {
 	public outTexture: GPUTexture;

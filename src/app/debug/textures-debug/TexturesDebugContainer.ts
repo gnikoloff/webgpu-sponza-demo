@@ -1,8 +1,7 @@
 import GBufferDebugSection from "./GBufferDebugSection";
 import ShadowDebugSection from "./ShadowDebugSection";
-import styles from "./debug.css?inline";
 
-export default class DebugContainer {
+export default class TexturesDebugContainer {
 	private static readonly ROOT_EL_ID = "webgpu-debug-root";
 
 	private $root: HTMLDivElement;
@@ -13,7 +12,7 @@ export default class DebugContainer {
 
 	constructor() {
 		this.$root = document.createElement("div");
-		this.$root.id = DebugContainer.ROOT_EL_ID;
+		this.$root.id = TexturesDebugContainer.ROOT_EL_ID;
 		document.body.appendChild(this.$root);
 
 		this.gbufferDebugSection = new GBufferDebugSection();
@@ -21,10 +20,6 @@ export default class DebugContainer {
 
 		this.shadowDebugSection = new ShadowDebugSection();
 		this.shadowDebugSection.appendTo(this.$root);
-
-		const sheet = document.createElement("style");
-		sheet.innerHTML = styles;
-		document.head.appendChild(sheet);
 	}
 
 	public reveal() {

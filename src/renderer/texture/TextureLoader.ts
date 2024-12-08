@@ -4,12 +4,7 @@ import CubeTextureController from "./CubeTextureController";
 import TextureController from "./TextureController";
 import { numMipLevelsForSize } from "../math/math";
 import BaseUtilObject from "../core/BaseUtilObject";
-
-export interface HDRImageResult {
-	width: number;
-	height: number;
-	rgbaHalfFloat: Uint16Array;
-}
+import { HDRImageResult } from "../types";
 
 // prettier-ignore
 const BAYERN_PATTERN = new Uint8Array([

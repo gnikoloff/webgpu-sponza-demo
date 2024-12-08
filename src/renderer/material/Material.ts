@@ -1,20 +1,7 @@
 import Renderer from "../../app/Renderer";
 import PipelineStates from "../core/PipelineStates";
 import VertexDescriptor from "../core/VertexDescriptor";
-
-export interface IMaterial {
-	vertexShaderSrc: string;
-	vertexShaderEntryFn: string;
-	vertexBuffers?: GPUVertexBufferLayout[];
-	fragmentShaderSrc?: string;
-	fragmentShaderEntryFn?: string;
-	bindGroupLayouts?: GPUBindGroupLayout[];
-	constants?: Record<string, number>;
-	targets?: GPUColorTargetState[];
-	depthStencilState?: GPUDepthStencilState;
-	primitive?: GPUPrimitiveState;
-	debugLabel?: string;
-}
+import { IMaterial } from "../types";
 
 export default class Material {
 	private renderPSO: GPURenderPipeline;

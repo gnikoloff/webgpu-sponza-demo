@@ -1,10 +1,10 @@
 import PipelineStates from "../../../renderer/core/PipelineStates";
-import { LightType } from "../../../renderer/lighting/Light";
 import FullScreenVertexShaderUtils, {
 	FullScreenVertexShaderEntryFn,
 } from "../../../renderer/shader/FullScreenVertexShaderUtils";
 import SamplerController from "../../../renderer/texture/SamplerController";
 import TextureLoader from "../../../renderer/texture/TextureLoader";
+import { LightType } from "../../../renderer/types";
 import Renderer from "../../Renderer";
 
 import DirectionalShadowPass from "../DirectionalShadowPass";

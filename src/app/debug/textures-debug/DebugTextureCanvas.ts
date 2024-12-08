@@ -1,9 +1,9 @@
-import PipelineStates from "../../renderer/core/PipelineStates";
+import PipelineStates from "../../../renderer/core/PipelineStates";
 import FullScreenVertexShaderUtils, {
 	FullScreenVertexShaderEntryFn,
-} from "../../renderer/shader/FullScreenVertexShaderUtils";
-import SamplerController from "../../renderer/texture/SamplerController";
-import Renderer from "../Renderer";
+} from "../../../renderer/shader/FullScreenVertexShaderUtils";
+import SamplerController from "../../../renderer/texture/SamplerController";
+import Renderer from "../../Renderer";
 import {
 	DebugFragmentShaderEntryFn,
 	getDebugFragmentShader,

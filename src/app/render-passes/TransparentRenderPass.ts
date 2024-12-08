@@ -1,8 +1,9 @@
 import Camera from "../../renderer/camera/Camera";
 import PipelineStates from "../../renderer/core/PipelineStates";
-import RenderPass, { RenderPassType } from "../../renderer/core/RenderPass";
+import RenderPass from "../../renderer/core/RenderPass";
 import { BIND_GROUP_LOCATIONS } from "../../renderer/core/RendererBindings";
 import Scene from "../../renderer/scene/Scene";
+import { RenderPassType } from "../../renderer/types";
 import Renderer from "../Renderer";
 
 export default class TransparentRenderPass extends RenderPass {

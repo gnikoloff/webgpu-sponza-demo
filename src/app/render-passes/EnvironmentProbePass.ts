@@ -1,6 +1,6 @@
 import { Mat4, mat4, vec3 } from "wgpu-matrix";
 import PerspectiveCamera from "../../renderer/camera/PerspectiveCamera";
-import RenderPass, { RenderPassType } from "../../renderer/core/RenderPass";
+import RenderPass from "../../renderer/core/RenderPass";
 import Transform from "../../renderer/scene/Transform";
 import Renderer from "../Renderer";
 
@@ -9,6 +9,7 @@ import {
 	SKYBOX_CUBEMAP_CAMERA_LOOK_ATS,
 	SKYBOX_CUBEMAP_CAMERA_UPS,
 } from "../../renderer/math/math";
+import { RenderPassType } from "../../renderer/types";
 
 export default class EnvironmentProbePass extends RenderPass {
 	private static readonly ENVIRONMENT_TEXTURE_SIZE = 512;

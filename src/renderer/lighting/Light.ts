@@ -6,12 +6,7 @@ import {
 import Transform from "../scene/Transform";
 import { SHADER_CHUNKS } from "../shader/chunks";
 import { Vec3, vec3 } from "wgpu-matrix";
-
-export enum LightType {
-	Directional,
-	Point,
-	Ambient,
-}
+import { LightType } from "../types";
 
 export const LightTypeToShaderType: Map<LightType, number> = new Map([
 	[LightType.Directional, 0],

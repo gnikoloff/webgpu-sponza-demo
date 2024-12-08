@@ -1,7 +1,8 @@
 import Renderer from "../Renderer";
-import RenderPass, { RenderPassType } from "../../renderer/core/RenderPass";
+import RenderPass from "../../renderer/core/RenderPass";
 import Scene from "../../renderer/scene/Scene";
 import { BIND_GROUP_LOCATIONS } from "../../renderer/core/RendererBindings";
+import { RenderPassType } from "../../renderer/types";
 
 export default class GBufferRenderPass extends RenderPass {
 	public normalMetallicRoughnessTexture: GPUTexture;
@@ -115,7 +116,7 @@ export default class GBufferRenderPass extends RenderPass {
 			},
 		];
 
-		return {
+		return this.getTimestampedRenderPassDescriptor({
 			colorAttachments: mainRenderPassColorAttachments,
 			depthStencilAttachment: {
 				view: this.depthStencilTextureView,
@@ -127,7 +128,7 @@ export default class GBufferRenderPass extends RenderPass {
 				stencilClearValue: 0,
 			},
 			label: "GBuffer Render Pass",
-		};
+		});
 	}
 
 	public override render(commandEncoder: GPUCommandEncoder): void {
@@ -150,5 +151,7 @@ export default class GBufferRenderPass extends RenderPass {
 
 		renderPassEncoder.popDebugGroup();
 		renderPassEncoder.end();
+
+		this.resolveTiming(commandEncoder);
 	}
 }

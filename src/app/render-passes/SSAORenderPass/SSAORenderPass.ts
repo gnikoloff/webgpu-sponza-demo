@@ -1,5 +1,5 @@
 import PipelineStates from "../../../renderer/core/PipelineStates";
-import RenderPass, { RenderPassType } from "../../../renderer/core/RenderPass";
+import RenderPass from "../../../renderer/core/RenderPass";
 import Scene from "../../../renderer/scene/Scene";
 import Renderer from "../../Renderer";
 import FullScreenVertexShaderUtils, {
@@ -11,6 +11,7 @@ import SSAOShaderSrc, {
 } from "../../shaders/SSAOShader";
 import { vec4 } from "wgpu-matrix";
 import { lerp } from "../../../renderer/math/math";
+import { RenderPassType } from "../../../renderer/types";
 
 export default class SSAORenderPass extends RenderPass {
 	public outTexture: GPUTexture;
@@ -273,10 +274,10 @@ export default class SSAORenderPass extends RenderPass {
 				view: this.ssaoTextureView,
 			},
 		];
-		return {
+		return this.getTimestampedRenderPassDescriptor({
 			label: "SSAO Render Pass Descriptor",
 			colorAttachments,
-		};
+		});
 	}
 
 	protected createBlurRenderPassDescriptor(): GPURenderPassDescriptor {
@@ -296,9 +297,9 @@ export default class SSAORenderPass extends RenderPass {
 	public override async render(
 		commandEncoder: GPUCommandEncoder,
 	): Promise<void> {
-		if (!this.noiseTexture) {
-			return;
-		}
+		// if (!this.noiseTexture) {
+		// 	return;
+		// }
 
 		const renderPassDesc = this.createRenderPassDescriptor();
 		const renderPass = commandEncoder.beginRenderPass(renderPassDesc);
@@ -310,6 +311,8 @@ export default class SSAORenderPass extends RenderPass {
 
 		renderPass.popDebugGroup();
 		renderPass.end();
+
+		this.resolveTiming(commandEncoder);
 
 		const blurPassDesc = this.createBlurRenderPassDescriptor();
 		const blurPass = commandEncoder.beginRenderPass(blurPassDesc);

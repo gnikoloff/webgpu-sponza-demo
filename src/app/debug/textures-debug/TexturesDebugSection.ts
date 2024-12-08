@@ -10,7 +10,7 @@ const debugSectionTypeToTitle: Map<DebugSectionType, string> = new Map([
 	[DebugSectionType.Shadow, "Shadows Debug"],
 ]);
 
-export default class DebugSection {
+export default class TexturesDebugSection {
 	protected static createRootElement(): HTMLDivElement {
 		const $el = document.createElement("div");
 		$el.style.setProperty("padding", "1rem");
@@ -25,7 +25,7 @@ export default class DebugSection {
 	protected canvases: Map<TextureDebugMeshType, DebugTextureCanvas> = new Map();
 
 	constructor(type: DebugSectionType) {
-		this.$root = DebugSection.createRootElement();
+		this.$root = TexturesDebugSection.createRootElement();
 		this.$main = document.createElement("div");
 		this.$main.classList.add("section");
 

@@ -1,6 +1,6 @@
 import { wgsl } from "wgsl-preprocessor/wgsl-preprocessor.js";
-import NormalEncoderShaderUtils from "../../../renderer/shader/NormalEncoderShaderUtils";
-import { SHADER_CHUNKS } from "../../../renderer/shader/chunks";
+import NormalEncoderShaderUtils from "../../../../renderer/shader/NormalEncoderShaderUtils";
+import { SHADER_CHUNKS } from "../../../../renderer/shader/chunks";
 import { TextureDebugMeshType } from "../DebugTextureCanvas";
 
 export const DebugFragmentShaderEntryFn = "fragmentShaderDebugTexture";

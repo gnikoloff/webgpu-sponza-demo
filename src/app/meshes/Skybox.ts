@@ -1,9 +1,9 @@
 import Camera from "../../renderer/camera/Camera";
 import PipelineStates from "../../renderer/core/PipelineStates";
-import { RenderPassType } from "../../renderer/core/RenderPass";
 import Material from "../../renderer/material/Material";
 import Drawable from "../../renderer/scene/Drawable";
 import SamplerController from "../../renderer/texture/SamplerController";
+import { RenderPassType } from "../../renderer/types";
 import Renderer from "../Renderer";
 import SkyboxShader, {
 	SkyboxShaderFragmentEntryFn,

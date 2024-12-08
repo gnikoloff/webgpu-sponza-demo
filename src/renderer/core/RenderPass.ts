@@ -4,37 +4,40 @@ import PipelineStates from "./PipelineStates";
 import Transform from "../scene/Transform";
 import Scene from "../scene/Scene";
 import { BIND_GROUP_LOCATIONS } from "./RendererBindings";
+import { RenderPassType } from "../types";
+import { RenderPassNames } from "../constants";
+import RenderPassTimingHelper from "../debug/RenderPassTimingHelper";
 
-export enum RenderPassType {
-	Deferred,
-	DeferredLighting,
-	SSAO,
-	Transparent,
-	Shadow,
-	EnvironmentCube,
-	TAAResolve,
-	Reflection,
-	DebugBounds,
-}
-
-const RenderPassNames: Map<RenderPassType, string> = new Map([
-	[RenderPassType.Deferred, "G-Buffer Render Pass"],
-	[RenderPassType.DeferredLighting, "Lighting Pass"],
-	[RenderPassType.SSAO, "SSAO Render Pass"],
-	[RenderPassType.Transparent, "Transparent Pass"],
-	[RenderPassType.Shadow, "Shadow Pass"],
-	[RenderPassType.EnvironmentCube, "Environment Cube Pass"],
-	[RenderPassType.TAAResolve, "TAA Resolve Pass"],
-	[RenderPassType.Reflection, "SSR Pass"],
-	[RenderPassType.DebugBounds, "Debug Bounds Pass"],
-]);
-
-export default class RenderPass {
+export default class RenderPass extends RenderPassTimingHelper {
 	protected cameraBindGroup?: GPUBindGroup;
 	protected camera?: Camera;
 	protected debugCamera?: Camera;
 
-	constructor(public type: RenderPassType, protected scene: Scene) {}
+	protected timestampQuery?: GPUQuerySet;
+	protected timestampQueryResolveBuffer?: GPUBuffer;
+	public timestampQueryResultBuffer?: GPUBuffer;
+
+	constructor(public type: RenderPassType, protected scene: Scene) {
+		super(type);
+
+		if (Renderer.supportsGPUTimestampQuery) {
+			this.timestampQuery = Renderer.device.createQuerySet({
+				type: "timestamp",
+				count: 2,
+			});
+			const name = RenderPassNames.get(type);
+			this.timestampQueryResolveBuffer = Renderer.device.createBuffer({
+				label: `Timestamp Query Resolve Buffer for Pass: ${name}`,
+				size: this.timestampQuery.count * 8,
+				usage: GPUBufferUsage.QUERY_RESOLVE | GPUBufferUsage.COPY_SRC,
+			});
+			this.timestampQueryResultBuffer = Renderer.device.createBuffer({
+				label: `Timestamp Query Result Buffer for Pass: ${name}`,
+				size: this.timestampQueryResolveBuffer.size,
+				usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+			});
+		}
+	}
 
 	protected createRenderPassDescriptor(): GPURenderPassDescriptor {
 		throw new Error("Needs implementation");

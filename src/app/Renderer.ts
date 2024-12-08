@@ -1,4 +1,3 @@
-import CameraOrbitController from "../renderer/camera/CameraOrbitController";
 import PerspectiveCamera from "../renderer/camera/PerspectiveCamera";
 import {
 	MAIN_CAMERA_FAR,
@@ -22,7 +21,6 @@ import TAAResolvePass from "./render-passes/TAAResolvePass";
 import PointLight from "../renderer/lighting/PointLight";
 import Light from "../renderer/lighting/Light";
 import DirectionalLight from "../renderer/lighting/DirectionalLight";
-import { RenderPassType } from "../renderer/core/RenderPass";
 import DirectionalShadowPass from "./render-passes/DirectionalShadowPass";
 import GLTFModel from "../renderer/scene/GLTFModel";
 import { BIND_GROUP_LOCATIONS } from "../renderer/core/RendererBindings";
@@ -33,13 +31,16 @@ import TextureController from "../renderer/texture/TextureController";
 import SpecularIBLGenerator from "../renderer/texture/SpecularIBLGenerator";
 import BDRFLutGenerator from "../renderer/texture/BDRFLutGenerator";
 import PBRSpheres from "./meshes/PBRSpheres";
-import DebugContainer from "./debug/DebugContainer";
-import { TextureDebugMeshType } from "./debug/DebugTextureCanvas";
+import TexturesDebugContainer from "./debug/textures-debug/TexturesDebugContainer";
+import { TextureDebugMeshType } from "./debug/textures-debug/DebugTextureCanvas";
 import Scene from "../renderer/scene/Scene";
 import TransparentRenderPass from "./render-passes/TransparentRenderPass";
 import DebugBoundsPass from "./render-passes/DebugBoundsPass";
 import CameraFlyController from "../renderer/camera/CameraFlyController";
 import SSAORenderPass from "./render-passes/SSAORenderPass/SSAORenderPass";
+import RollingAverage from "../renderer/debug/RollingAverage";
+import TimingDebugContainer from "./debug/timings-debug/TimingDebugContainer";
+import { RenderPassType } from "../renderer/types";
 // import EnvironmentProbePass from "./render-passes/EnvironmentProbePass";
 
 const a = document.getElementById("a");
@@ -47,6 +48,7 @@ export default class Renderer {
 	public static $canvas: HTMLCanvasElement;
 	public static canvasContext: GPUCanvasContext;
 	public static device: GPUDevice;
+	public static supportsGPUTimestampQuery: boolean;
 	public static elapsedTimeMs = 0;
 
 	public static activeRenderPass?: RenderPassType;
@@ -67,15 +69,28 @@ export default class Renderer {
 
 		Renderer.pixelFormat = navigator.gpu.getPreferredCanvasFormat();
 
-		const depth32Stencil8RenderFeature: GPUFeatureName =
-			"depth32float-stencil8";
-		const bgra8UnormStorageFeature: GPUFeatureName = "bgra8unorm-storage";
+		const requiredFeatures: GPUFeatureName[] = [];
+
+		const supportsGPUTimestampQuery = adapter.features.has("timestamp-query");
+
+		if (supportsGPUTimestampQuery) {
+			requiredFeatures.push("timestamp-query");
+		}
+
+		const supportsDepth32Stencil8Texture = adapter.features.has(
+			"depth32float-stencil8",
+		);
+
+		if (supportsDepth32Stencil8Texture) {
+			requiredFeatures.push("depth32float-stencil8");
+		}
+		requiredFeatures.push("bgra8unorm-storage");
+		console.log(requiredFeatures);
 		Renderer.device = await adapter.requestDevice({
-			requiredFeatures:
-				Renderer.pixelFormat === "bgra8unorm"
-					? [bgra8UnormStorageFeature, depth32Stencil8RenderFeature]
-					: [depth32Stencil8RenderFeature],
+			requiredFeatures,
 		});
+
+		Renderer.supportsGPUTimestampQuery = supportsGPUTimestampQuery;
 
 		Renderer.canvasContext.configure({
 			device: Renderer.device,
@@ -118,7 +133,11 @@ export default class Renderer {
 	private debugBBoxesPass: DebugBoundsPass;
 	// private environmentProbePass: EnvironmentProbePass;
 
-	private debugContainer: DebugContainer;
+	private jsAverage = new RollingAverage();
+	private fpsAverage = new RollingAverage();
+
+	private texturesDebugContainer: TexturesDebugContainer;
+	private timingDebugContainer: TimingDebugContainer;
 
 	private orthoCameraBindGroup: GPUBindGroup;
 
@@ -140,7 +159,9 @@ export default class Renderer {
 	}
 	public set debugGBuffer(v: boolean) {
 		this._debugGBuffer = v;
-		v ? this.debugContainer.reveal() : this.debugContainer.hide();
+		v
+			? this.texturesDebugContainer.reveal()
+			: this.texturesDebugContainer.hide();
 	}
 
 	private _debugShadowMap = false;
@@ -149,7 +170,9 @@ export default class Renderer {
 	}
 	public set debugShadowMap(v: boolean) {
 		this._debugShadowMap = v;
-		v ? this.debugContainer.reveal() : this.debugContainer.hide();
+		v
+			? this.texturesDebugContainer.reveal()
+			: this.texturesDebugContainer.hide();
 	}
 
 	public get debugShadowCascadeIndex(): boolean {
@@ -270,7 +293,8 @@ export default class Renderer {
 			],
 		});
 
-		this.debugContainer = new DebugContainer();
+		this.texturesDebugContainer = new TexturesDebugContainer();
+		this.timingDebugContainer = new TimingDebugContainer();
 
 		// this.ground = new GroundContainer();
 		// this.scene.addChild(this.ground);
@@ -492,53 +516,55 @@ export default class Renderer {
 		}
 		this.reflectionComputePass.onResize(w, h);
 
-		this.debugContainer.gbufferDebugSection.setTextureFor(
+		this.texturesDebugContainer.gbufferDebugSection.setTextureFor(
 			TextureDebugMeshType.Albedo,
 			this.gbufferRenderPass.colorReflectanceTexture,
 		);
-		this.debugContainer.gbufferDebugSection.setTextureFor(
+		this.texturesDebugContainer.gbufferDebugSection.setTextureFor(
 			TextureDebugMeshType.Normal,
 			this.gbufferRenderPass.normalMetallicRoughnessTexture,
 		);
-		this.debugContainer.gbufferDebugSection.setTextureFor(
+		this.texturesDebugContainer.gbufferDebugSection.setTextureFor(
 			TextureDebugMeshType.Metallic,
 			this.gbufferRenderPass.normalMetallicRoughnessTexture,
 		);
-		this.debugContainer.gbufferDebugSection.setTextureFor(
+		this.texturesDebugContainer.gbufferDebugSection.setTextureFor(
 			TextureDebugMeshType.Roughness,
 			this.gbufferRenderPass.normalMetallicRoughnessTexture,
 		);
-		this.debugContainer.gbufferDebugSection.setTextureFor(
+		this.texturesDebugContainer.gbufferDebugSection.setTextureFor(
 			TextureDebugMeshType.AO,
 			this.ssaoPass.outTexture,
 		);
-		this.debugContainer.gbufferDebugSection.setTextureFor(
+		this.texturesDebugContainer.gbufferDebugSection.setTextureFor(
 			TextureDebugMeshType.Reflectance,
 			this.gbufferRenderPass.colorReflectanceTexture,
 		);
-		this.debugContainer.gbufferDebugSection.setTextureFor(
+		this.texturesDebugContainer.gbufferDebugSection.setTextureFor(
 			TextureDebugMeshType.Depth,
 			this.gbufferRenderPass.depthStencilTexture,
 		);
-		this.debugContainer.gbufferDebugSection.setTextureFor(
+		this.texturesDebugContainer.gbufferDebugSection.setTextureFor(
 			TextureDebugMeshType.Velocity,
 			this.gbufferRenderPass.velocityTexture,
 		);
-		this.debugContainer.shadowDebugSection.setTextureFor(
+		this.texturesDebugContainer.shadowDebugSection.setTextureFor(
 			TextureDebugMeshType.ShadowDepthCascade0,
 			this.shadowPass.shadowTexture,
 		);
-		this.debugContainer.shadowDebugSection.setTextureFor(
+		this.texturesDebugContainer.shadowDebugSection.setTextureFor(
 			TextureDebugMeshType.ShadowDepthCascade1,
 			this.shadowPass.shadowTexture,
 		);
 	}
 
-	public renderFrame(elapsedTime: number) {
+	public async renderFrame(elapsedTime: number) {
 		const now = (elapsedTime - Renderer.elapsedTimeMs) * 0.001;
 		const deltaDiff = now - Renderer.prevTimeMs;
 		Renderer.prevTimeMs = now;
 		Renderer.elapsedTimeMs += this.enableAnimation ? deltaDiff : 0;
+
+		const jsPerfStartTime = performance.now();
 
 		a.textContent = `Display Meshes: ${this.scene.visibleNodesCount} / ${this.scene.nodesCount}`;
 
@@ -613,7 +639,7 @@ export default class Renderer {
 			},
 		];
 
-		this.debugContainer.render(commandEncoder);
+		this.texturesDebugContainer.render(commandEncoder);
 
 		const hudRenderPassDescriptor: GPURenderPassDescriptor = {
 			colorAttachments: hudRenderPassColorAttachments,
@@ -640,5 +666,27 @@ export default class Renderer {
 		this.debugCamera.onFrameEnd();
 		this.mainCamera.onFrameEnd();
 		this.orthoCamera.onFrameEnd();
+
+		const jsPerfTime = performance.now() - jsPerfStartTime;
+		this.jsAverage.addSample(jsPerfTime);
+		this.fpsAverage.addSample(1 / deltaDiff);
+
+		if (Renderer.supportsGPUTimestampQuery) {
+			const [gBufferRenderPassTimeResult, ssaoRenderPassTimeResult] =
+				await Promise.all([
+					this.gbufferRenderPass.getResult(),
+					this.ssaoPass.getResult(),
+				]);
+			this.timingDebugContainer.$root.innerHTML = `
+        FPS: ${this.fpsAverage.get().toFixed(1)}ms<br/>
+        JS: ${this.jsAverage.get().toFixed(1)}ms<br/>
+        G-Buffer Render Pass: ${gBufferRenderPassTimeResult.toFixed(1)}ms<br/>
+        SSAO Render Pass: ${ssaoRenderPassTimeResult.toFixed(1)}ms<br/>
+        Total GPU Time: ${(
+					(gBufferRenderPassTimeResult + ssaoRenderPassTimeResult) /
+					1
+				).toFixed(1)}
+      `;
+		}
 	}
 }

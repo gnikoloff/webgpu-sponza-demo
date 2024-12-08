@@ -1,8 +1,8 @@
 import PipelineStates from "../../../renderer/core/PipelineStates";
 import VertexDescriptor from "../../../renderer/core/VertexDescriptor";
-import { LightType } from "../../../renderer/lighting/Light";
 import PointLight from "../../../renderer/lighting/PointLight";
 import Drawable from "../../../renderer/scene/Drawable";
+import { LightType } from "../../../renderer/types";
 import Renderer from "../../Renderer";
 import GeometryCache from "../../utils/GeometryCache";
 import DirectionalShadowPass from "../DirectionalShadowPass";
