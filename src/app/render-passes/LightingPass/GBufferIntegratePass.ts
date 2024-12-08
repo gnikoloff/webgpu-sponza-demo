@@ -3,7 +3,6 @@ import Renderer from "../../Renderer";
 import PointLight from "../../../renderer/lighting/PointLight";
 import TextureLoader from "../../../renderer/texture/TextureLoader";
 import Skybox from "../../meshes/Skybox";
-import { BIND_GROUP_LOCATIONS } from "../../../renderer/core/RendererBindings";
 import DirectionalLightSubPass from "./DirectionalLightSubPass";
 import PointLightsRenderSubPass from "./PointLightsRenderSubPass";
 import PointLightsMaskSubPass from "./PointLightsMaskSubPass";
@@ -78,6 +77,7 @@ export default class GBufferIntegratePass extends RenderPass {
 		private colorReflectanceTextureView: GPUTextureView,
 		private depthTextureView: GPUTextureView,
 		private depthStencilTextureView: GPUTextureView,
+		private ssaoTextureView: GPUTextureView,
 		private shadowDepthTextureView: GPUTextureView,
 		private shadowCascadesBuffer: GPUBuffer,
 	) {
@@ -111,24 +111,29 @@ export default class GBufferIntegratePass extends RenderPass {
 			{
 				binding: 4,
 				visibility: GPUShaderStage.FRAGMENT,
-				sampler: {},
+				texture: {},
 			},
 			{
 				binding: 5,
+				visibility: GPUShaderStage.FRAGMENT,
+				sampler: {},
+			},
+			{
+				binding: 6,
 				visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
 				buffer: {
 					type: "uniform",
 				},
 			},
 			{
-				binding: 6,
+				binding: 7,
 				visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
 				buffer: {
 					type: "read-only-storage",
 				},
 			},
 			{
-				binding: 7,
+				binding: 8,
 				visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
 				buffer: {
 					type: "uniform",
@@ -223,26 +228,30 @@ export default class GBufferIntegratePass extends RenderPass {
 			},
 			{
 				binding: 3,
-				resource: TextureLoader.bayerDitherPatternTexture.createView(),
+				resource: this.ssaoTextureView,
 			},
 			{
 				binding: 4,
-				resource: bayerDitherSampler,
+				resource: TextureLoader.bayerDitherPatternTexture.createView(),
 			},
 			{
 				binding: 5,
+				resource: bayerDitherSampler,
+			},
+			{
+				binding: 6,
 				resource: {
 					buffer: this.camera.gpuBuffer,
 				},
 			},
 			{
-				binding: 6,
+				binding: 7,
 				resource: {
 					buffer: this.scene.lightsBuffer,
 				},
 			},
 			{
-				binding: 7,
+				binding: 8,
 				resource: {
 					buffer: this.debugLightsBuffer,
 				},

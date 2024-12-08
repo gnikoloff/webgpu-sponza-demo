@@ -20,7 +20,6 @@ export const getDefaultDeferredPBRFragmentShader = ({
   ${SHADER_CHUNKS.GBufferOutput}
   ${SHADER_CHUNKS.ModelUniform}
   ${SHADER_CHUNKS.InstanceInput}
-  ${SHADER_CHUNKS.sRGBToLinear}
 
   @group(${BIND_GROUP_LOCATIONS.CameraPlusOptionalLights}) @binding(0) var<uniform> camera: CameraUniform;
   @group(${BIND_GROUP_LOCATIONS.Model}) @binding(0) var<uniform> model: ModelUniform;
@@ -40,16 +39,16 @@ export const getDefaultDeferredPBRFragmentShader = ({
   fn ${DeferredRenderPBRShaderEntryFn}(in: VertexOutput) -> GBufferOutput  {
     let uv = in.uv;
     
-    var N = normalize(in.normal);
-    let T = normalize(in.tangent);
-    let B = normalize(in.bitangent);
-    let TBN = mat3x3f(T, B, N);
+    var viewSpaceN = normalize(in.viewNormal);
+    let viewSpaceT = normalize(in.viewTangent);
+    let viewSpaceB = normalize(in.viewBitangent);
+    let viewSpaceTBN = mat3x3f(viewSpaceT, viewSpaceB, viewSpaceN);
 
     // var textureNormal = textureSampleLevel(normalTexture, texSampler, uv, 5.0).rgb * 2 - 1;
     let textureNormal = textureSample(normalTexture, texSampler, uv).rgb * 2 - 1;
     
     if (${hasPBRTextures}) {
-      N = normalize(TBN * textureNormal);
+      viewSpaceN = normalize(viewSpaceTBN * textureNormal);
     }
 
     var out: GBufferOutput;
@@ -64,13 +63,13 @@ export const getDefaultDeferredPBRFragmentShader = ({
 
 
     if (${hasPBRTextures}) {
-      let metallicRoughnessSRGB = srgbToLinear(textureSample(metallicRoughnessTexture, texSampler, uv).rgb);
-      metallic = metallicRoughnessSRGB.b;
-      roughness = metallicRoughnessSRGB.g;
+      let metallicRoughness = textureSample(metallicRoughnessTexture, texSampler, uv).rgb;
+      metallic = metallicRoughness.b;
+      roughness = metallicRoughness.g;
     }
 
     out.normalMetallicRoughness = vec4f(
-      encodeNormal(N),
+      encodeNormal(viewSpaceN),
       metallic,
       roughness
     );

@@ -11,6 +11,7 @@ import {
 
 export enum TextureDebugMeshType {
 	Normal,
+	AO,
 	Metallic,
 	Roughness,
 	Reflectance,
@@ -24,7 +25,8 @@ export enum TextureDebugMeshType {
 
 const TextureTypesToDisplayNames: Map<TextureDebugMeshType, string> = new Map([
 	[TextureDebugMeshType.Albedo, "Albedo"],
-	[TextureDebugMeshType.Normal, "Normal"],
+	[TextureDebugMeshType.Normal, "View-Space Normal"],
+	[TextureDebugMeshType.AO, "Screen-Space AO"],
 	[TextureDebugMeshType.Metallic, "Metallic"],
 	[TextureDebugMeshType.Roughness, "Roughness"],
 	[TextureDebugMeshType.Reflectance, "Reflectance"],

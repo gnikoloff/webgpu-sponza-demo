@@ -29,7 +29,7 @@ export default class SamplerController extends BaseUtilObject {
 			minFilter: "linear",
 			magFilter: "linear",
 			mipmapFilter: "linear",
-			maxAnisotropy: 8,
+			maxAnisotropy: 4,
 		});
 		return _defaultSampler;
 	}
@@ -82,7 +82,7 @@ export default class SamplerController extends BaseUtilObject {
 				descriptor.mipmapFilter = "linear";
 				break;
 		}
-		// descriptor.maxAnisotropy = 8;
+		descriptor.maxAnisotropy = 8;
 
 		return this.createSampler(descriptor);
 	}

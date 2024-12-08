@@ -28,6 +28,9 @@ import Renderer from "../../app/Renderer";
 const GL_ELEMENT_ARRAY_BUFFER = 34963;
 const GL_ARRAY_BUFFER = 34962;
 
+// hacky - we need to select the floor only to apply reflectance on
+const SPONZA_FLOOR_TEX_ID = "5823059166183034438";
+
 export default class GLTFModel extends Transform {
 	private gltfDefinition: GLTFPostprocessed;
 	private nodeMaterialIds: Map<string, Drawable[]> = new Map([]);
@@ -81,10 +84,6 @@ export default class GLTFModel extends Transform {
 		location: TextureLocation = 1,
 	) {
 		const node = this.findChildByLabel(nodeName);
-		if (!node) {
-			console.error(`Could not find a child node with label: ${nodeName}`);
-			return;
-		}
 		if (!(node instanceof Drawable)) {
 			console.error("Found child is not instance of a Drawable");
 			return;
@@ -142,50 +141,14 @@ export default class GLTFModel extends Transform {
 	}
 
 	private async initGPUTexturesFrom(textures: GLTFTexturePostprocessed[]) {
-		const createTexture = async (
-			textureSource: Uint8Array,
-			id: string,
-			showDebug = false,
-		): Promise<GPUTexture> => {
-			const blob = new Blob([textureSource], {
-				type: "image/png",
-			});
-			const bitmap = await createImageBitmap(blob, {
-				colorSpaceConversion: "none",
-			});
-			const tex = TextureLoader.loadTextureFromData(
-				bitmap,
+		for (const texture of textures) {
+			const texPromise = TextureLoader.loadTextureFromData(
+				texture.source.bufferView.data,
+				"rgba8unorm",
 				true,
 				false,
-				`GLTF Texture: ${id}`,
-			);
-
-			const debugCavas = document.createElement("canvas");
-			const ctx = debugCavas.getContext("2d");
-
-			debugCavas.width = tex.width / 2;
-			debugCavas.height = tex.height / 2;
-
-			ctx.drawImage(bitmap, 0, 0);
-
-			if (showDebug) {
-				debugCavas.style.setProperty("position", "fixed");
-				debugCavas.style.setProperty("z-index", "99");
-				debugCavas.style.setProperty("left", "2rem");
-				debugCavas.style.setProperty("bottom", "2rem");
-				debugCavas.style.setProperty("width", `${tex.width * 0.1}px`);
-				debugCavas.style.setProperty("height", `${tex.height * 0.1}px`);
-				document.body.appendChild(debugCavas);
-			}
-
-			bitmap.close();
-			return tex;
-		};
-
-		for (const texture of textures) {
-			const texPromise = createTexture(
-				texture.source.bufferView.data,
-				texture.id,
+				false,
+				`GLTF Texture: ${texture.id}`,
 			);
 			this.gpuTextures.set(texture.id, texPromise);
 		}
@@ -248,6 +211,16 @@ export default class GLTFModel extends Transform {
 				nodesForMaterial.push(mesh);
 				this.nodeMaterialIds.set(primitive.material.id, nodesForMaterial);
 
+				if (
+					primitive.material.pbrMetallicRoughness.baseColorTexture &&
+					primitive.material.pbrMetallicRoughness.baseColorTexture.texture.source.uri.includes(
+						SPONZA_FLOOR_TEX_ID,
+					)
+				) {
+					mesh.materialProps.isReflective = true;
+				} else {
+					mesh.materialProps.isReflective = false;
+				}
 				mesh.label = node.name ?? node.id;
 
 				const bboxMin = primitive.attributes?.POSITION?.min;

@@ -1,7 +1,5 @@
 import { Mat4, Quat, Vec3, mat3, mat4, quat, vec3 } from "wgpu-matrix";
 import { MAT4x4_IDENTITY_MATRIX, QUATERNION_COMP_ORDER } from "../math/math";
-import BoundingBox from "../math/BoundingBox";
-
 type UUIDString = `${string}-${string}-${string}-${string}-${string}`;
 
 export default class Transform {
@@ -12,7 +10,7 @@ export default class Transform {
 
 	private translateMatrix = mat4.identity();
 	private scaleMatrix = mat4.identity();
-	public rotationMatrix = mat4.identity();
+	private rotationMatrix = mat4.identity();
 	private cachedMatrix = mat4.create();
 	private worldMatrix = mat4.identity();
 	private _customMatrix?: Mat4;

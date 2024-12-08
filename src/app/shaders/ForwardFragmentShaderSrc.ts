@@ -22,7 +22,6 @@ export const getDefaultForwardPBRFragmentShader = ({
   ${SHADER_CHUNKS.InstanceInput}
   ${SHADER_CHUNKS.CommonHelpers}
   ${SHADER_CHUNKS.Light}
-  ${SHADER_CHUNKS.sRGBToLinear}
 
   @group(${BIND_GROUP_LOCATIONS.CameraPlusOptionalLights}) @binding(0) var<uniform> camera: CameraUniform;
   @group(${BIND_GROUP_LOCATIONS.CameraPlusOptionalLights}) @binding(1) var<storage, read> lightsBuffer: array<Light>;
@@ -47,11 +46,11 @@ export const getDefaultForwardPBRFragmentShader = ({
   fn ${ForwardRenderPBRShaderEntryFn}(in: VertexOutput) -> @location(0) vec4f {
     let uv = in.uv;
 
-    var N = normalize(in.normal);
-    let T = normalize(in.tangent);
-    let B = normalize(in.bitangent);
+    var N = normalize(in.viewNormal);
+    let T = normalize(in.viewTangent);
+    let B = normalize(in.viewBitangent);
     let TBN = mat3x3f(T, B, N);
-    let textureNormal = srgbToLinear(textureSample(normalTexture, texSampler, uv).rgb) * 2 - 1;
+    let textureNormal = textureSample(normalTexture, texSampler, uv).rgb * 2 - 1;
     if (${hasPBRTextures}) {
       N = normalize(TBN * textureNormal);
     }
@@ -65,12 +64,12 @@ export const getDefaultForwardPBRFragmentShader = ({
     #endif
 
     if (${hasPBRTextures}) {
-      let metallicRoughnessSRGB = srgbToLinear(textureSample(metallicRoughnessTexture, texSampler, uv).rgb);
-      metallic = metallicRoughnessSRGB.b;
-      roughness = metallicRoughnessSRGB.g;
+      let metallicRoughness = textureSample(metallicRoughnessTexture, texSampler, uv).rgb;
+      metallic = metallicRoughness.b;
+      roughness = metallicRoughness.g;
     }
 
-    let modelTexColor = srgbToLinear(textureSample(albedoTexture, texSampler, uv).rgb);
+    let modelTexColor = textureSample(albedoTexture, texSampler, uv).rgb;
     var color = vec4f(model.baseColor, 1);
     if (${hasPBRTextures}) {
       color = textureSample(albedoTexture, texSampler, uv);
@@ -88,7 +87,6 @@ export const getDefaultForwardPBRFragmentShader = ({
     material.ambientOcclusion = 1.0;
 
     let V = normalize(camera.position - in.worldPosition);
-
 
     return PBRLighting(
       &material,

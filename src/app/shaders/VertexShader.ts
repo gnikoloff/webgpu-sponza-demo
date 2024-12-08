@@ -86,13 +86,19 @@ export const getVertexShader = (
     out.currFrameClipPos = out.position;
     out.prevFrameClipPos = camera.prevFrameProjectionViewMatrix * prevWorldMatrix * in.position;
     
-    let T = normalize(model.normalMatrix * in.tangent.xyz);
-    let N = normalize(model.normalMatrix * in.normal);
-    let B = normalize(cross(N, T));
+    let viewSpaceNormMatrix = mat3x3f(
+      camera.viewMatrix[0].xyz,
+      camera.viewMatrix[1].xyz,
+      camera.viewMatrix[2].xyz
+    ) * model.normalMatrix;
 
-    out.tangent = T;
-    out.bitangent = B;
-    out.normal = N;
+    let viewTangent = normalize(viewSpaceNormMatrix * in.tangent.xyz);
+    let viewNormal = normalize(viewSpaceNormMatrix * in.normal);
+    let viewBitangent = normalize(cross(viewNormal, viewTangent)) * in.tangent.w;
+
+    out.viewTangent = viewTangent;
+    out.viewBitangent = viewBitangent;
+    out.viewNormal = viewNormal;
     out.instanceId = instanceId;
     out.uv = in.uv;
 

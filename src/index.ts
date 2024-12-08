@@ -89,15 +89,12 @@ antialiasFolder.add(GUI_PARAMS, "Enable TAA").onChange((v: boolean) => {
 	renderer.enableTAA = v;
 });
 
-let oldTimeMs = 0;
-
 requestAnimationFrame(renderFrame);
 window.addEventListener("resize", resize);
 resize();
 
 function renderFrame() {
 	const nowMs = performance.now();
-
 	requestAnimationFrame(renderFrame);
 
 	renderer.renderFrame(nowMs);

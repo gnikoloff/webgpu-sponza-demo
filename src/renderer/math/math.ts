@@ -1,9 +1,8 @@
 import { RotationOrder, mat4 } from "wgpu-matrix";
-import BoundingBox from "./BoundingBox";
-import Plane from "./Plane";
-
 export const clamp = (num: number, min: number, max: number): number =>
 	Math.min(Math.max(num, min), max);
+
+export const lerp = (a: number, b: number, t: number) => a + t * (b - a);
 
 export const deg2Rad = (deg: number): number => (deg * Math.PI) / 180;
 

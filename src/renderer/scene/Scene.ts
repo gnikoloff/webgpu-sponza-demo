@@ -85,8 +85,14 @@ export default class Scene extends Transform {
 
 	public renderTransparentNodes(
 		renderPassEncoder: GPURenderPassEncoder,
-		camera: Camera,
+		camera?: Camera,
 	) {
+		if (!camera) {
+			for (const mesh of this.transparentMeshes) {
+				mesh.render(renderPassEncoder);
+			}
+			return;
+		}
 		const nonCulledCount = camera.cullMeshes(
 			this.transparentMeshes,
 			this.culledTransparentMeshes,

@@ -14,19 +14,19 @@ export default /* wgsl */ `
 
   @vertex
   fn ${EnvironmentProbeShaderEntryFn}(in: VertexInput) -> VertexOutput {
-    let T = normalize(model.normalMatrix * in.tangent.xyz);
-    let N = normalize(model.normalMatrix * in.normal);
-    let B = normalize(cross(N, T));
+    // let T = normalize(model.normalMatrix * in.tangent.xyz);
+    // let N = normalize(model.normalMatrix * in.normal);
+    // let B = normalize(cross(N, T));
 
-    let projViewMatrix = projViewMatrices[currentFace];
+    // let projViewMatrix = projViewMatrices[currentFace];
 
-    var out: VertexOutput;
-    out.position = projViewMatrix * model.worldMatrix * in.position;
-    out.uv = in.uv;
-    out.tangent = T;
-    out.bitangent = B;
-    out.normal = N;
+    // var out: VertexOutput;
+    // out.position = projViewMatrix * model.worldMatrix * in.position;
+    // out.uv = in.uv;
+    // out.tangent = T;
+    // out.bitangent = B;
+    // out.normal = N;
 
-    return out;
+    // return out;
   }
 `;

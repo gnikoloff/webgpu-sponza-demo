@@ -1,16 +1,10 @@
 import { Mat4, mat4 } from "wgpu-matrix";
-import {
-	StructuredView,
-	makeShaderDataDefinitions,
-	makeStructuredView,
-} from "webgpu-utils";
 
 import Drawable from "./Drawable";
 import Geometry from "../geometry/Geometry";
 import Renderer from "../../app/Renderer";
 import PipelineStates from "../core/PipelineStates";
 import { BIND_GROUP_LOCATIONS } from "../core/RendererBindings";
-import { SHADER_CHUNKS } from "../shader/chunks";
 
 interface InstanceValue {
 	worldMatrix: Mat4;

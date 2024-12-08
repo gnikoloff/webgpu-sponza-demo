@@ -31,6 +31,7 @@ export const getDebugFragmentShader = (
     var color: vec4f;
     #if ${debugTexType === TextureDebugMeshType.Normal}
     color = vec4f(decodeNormal(textureSample(myTexture, mySampler, uv).rg), 1.0);
+    // color = vec4f(textureSample(myTexture, mySampler, uv).rgb, 1.0);
     #elif ${debugTexType === TextureDebugMeshType.Metallic}
     color = vec4f(textureSample(myTexture, mySampler, uv).bbb, 1.0);
     #elif ${debugTexType === TextureDebugMeshType.Roughness}
@@ -72,6 +73,8 @@ export const getDebugFragmentShader = (
     color = vec4f(textureSample(myTexture, mySampler, in.uv).rg, 0, 1);
     #elif ${debugTexType === TextureDebugMeshType.Albedo}
     color = vec4f(textureSample(myTexture, mySampler, uv).rgb, 1);
+    #elif ${debugTexType === TextureDebugMeshType.AO}
+    color = vec4f(textureSample(myTexture, mySampler, uv).rrr, 1);
     #else
     color = textureSample(myTexture, mySampler, uv);
     #endif

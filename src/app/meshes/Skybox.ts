@@ -1,3 +1,4 @@
+import Camera from "../../renderer/camera/Camera";
 import PipelineStates from "../../renderer/core/PipelineStates";
 import { RenderPassType } from "../../renderer/core/RenderPass";
 import Material from "../../renderer/material/Material";
@@ -114,10 +115,10 @@ export default class Skybox extends Drawable {
 		}
 	}
 
-	render(renderEncoder: GPURenderPassEncoder): void {
+	override render(renderEncoder: GPURenderPassEncoder, camera: Camera): void {
 		if (!this._texture) {
 			return;
 		}
-		super.render(renderEncoder);
+		super.render(renderEncoder, camera);
 	}
 }

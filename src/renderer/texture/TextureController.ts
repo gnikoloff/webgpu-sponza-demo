@@ -147,7 +147,9 @@ export default class TextureController extends BaseUtilObject {
 		Renderer.device.queue.submit([commandEncoder.finish()]);
 	};
 
-	public static generateMipsFor2DTexture = (
+	public static generateMipsFor2DTextureWithRenderPSO = () => {};
+
+	public static generateMipsFor2DTextureWithComputePSO = (
 		texture: GPUTexture,
 		debugLabel = "Mipmapped 2D Texture",
 	) => {

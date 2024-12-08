@@ -23,10 +23,10 @@ export const SHADER_CHUNKS = Object.freeze({
       struct VertexOutput {
         @builtin(position) position: vec4f,
         @location(0) worldPosition: vec3f,
-        @location(1) normal: vec3f,
+        @location(1) viewNormal: vec3f,
         @location(2) uv: vec2f,
-        @location(3) tangent: vec3f,
-        @location(4) bitangent: vec3f,
+        @location(3) viewTangent: vec3f,
+        @location(4) viewBitangent: vec3f,
         @location(5) currFrameClipPos: vec4f,
         @location(6) prevFrameClipPos: vec4f,
         @location(7) @interpolate(flat) instanceId: u32,
@@ -70,11 +70,41 @@ export const SHADER_CHUNKS = Object.freeze({
         viewMatrix: mat4x4f,
         projectionViewMatrix: mat4x4f,
         inverseProjectionViewMatrix: mat4x4f,
+        inverseViewMatrix: mat4x4f,
+        inverseProjectionMatrix: mat4x4f,
         prevFrameProjectionViewMatrix: mat4x4f,
         viewportWidth: u32,
         viewportHeight: u32,
         jitterOffset: vec2f,
       };
+
+      @must_use
+      fn calcWorldPos(
+        camera: ptr<uniform, CameraUniform>,
+        coord: vec4f,
+        depth: f32
+      ) -> vec3f {
+        let ndcX = coord.x / f32(camera.viewportWidth) * 2.0 - 1.0;
+        let ndcY = (1.0 - coord.y / f32(camera.viewportHeight)) * 2.0 - 1.0;
+        let clipPos = vec4f(ndcX, ndcY, depth, 1.0);
+
+        let worldSpacePos = camera.inverseProjectionViewMatrix * clipPos;
+        return worldSpacePos.xyz / worldSpacePos.w;
+      }
+
+      @must_use
+      fn calcViewSpacePos(
+        camera: ptr<uniform, CameraUniform>,
+        coord: vec2f,
+        depth: f32
+      ) -> vec3f {
+        let ndcX = coord.x / f32(camera.viewportWidth) * 2.0 - 1.0;
+        let ndcY = (1.0 - coord.y / f32(camera.viewportHeight)) * 2.0 - 1.0;
+        let clipPos = vec4f(ndcX, ndcY, depth, 1.0);
+
+        let viewSpacePos = camera.inverseProjectionMatrix * clipPos;
+        return viewSpacePos.xyz / viewSpacePos.w;
+      }
 
     `;
 	},
@@ -176,20 +206,6 @@ export const SHADER_CHUNKS = Object.freeze({
     `;
 
 		return out;
-	},
-	get sRGBToLinear(): string {
-		return /* wgsl */ `
-
-      @must_use
-      fn srgbToLinear(srgb: vec3f) -> vec3f {
-        return select(
-            srgb / 12.92,
-            pow((srgb + vec3f(0.055)) / vec3f(1.055), vec3f(2.4)),
-            srgb > vec3f(0.04045)
-        );
-      }
-
-    `;
 	},
 	get MathHelpers(): string {
 		return /* wgsl */ `

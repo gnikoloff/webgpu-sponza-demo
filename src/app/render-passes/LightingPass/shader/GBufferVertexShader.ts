@@ -20,11 +20,12 @@ const GetGBufferVertexShader = (
   @group(0) @binding(0) var normalTexture: texture_2d<f32>;
   @group(0) @binding(1) var colorTexture: texture_2d<f32>;
   @group(0) @binding(2) var depthTexture: texture_depth_2d;
-  @group(0) @binding(3) var bayerDitherTexture: texture_2d<f32>;
-  @group(0) @binding(4) var bayerDitherSampler: sampler;
-  @group(0) @binding(5) var<uniform> camera: CameraUniform;
-  @group(0) @binding(6) var<storage, read> lightsBuffer: array<Light>;
-  @group(0) @binding(7) var<uniform> debugLights: f32;
+  @group(0) @binding(3) var aoTexture: texture_2d<f32>;
+  @group(0) @binding(4) var bayerDitherTexture: texture_2d<f32>;
+  @group(0) @binding(5) var bayerDitherSampler: sampler;
+  @group(0) @binding(6) var<uniform> camera: CameraUniform;
+  @group(0) @binding(7) var<storage, read> lightsBuffer: array<Light>;
+  @group(0) @binding(8) var<uniform> debugLights: f32;
   #endif
 
 

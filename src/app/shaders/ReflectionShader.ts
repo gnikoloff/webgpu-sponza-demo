@@ -10,6 +10,17 @@ export const getReflectionComputeShader = (
   override WORKGROUP_SIZE_X: u32;
   override WORKGROUP_SIZE_Y: u32;
 
+  @must_use
+  fn ACESFilm(x: vec3f) -> vec3f
+  {
+    let a = 2.51f;
+    let b = 0.03f;
+    let c = 2.43f;
+    let d = 0.59f;
+    let e = 0.14f;
+    return saturate((x*(a*x+b))/(x*(c*x+d)+e));
+  }
+
   @compute @workgroup_size(WORKGROUP_SIZE_X, WORKGROUP_SIZE_Y)
   fn ${REFLECTION_PASS_FRAGMENT_SHADER_ENTRY_NAME}(@builtin(global_invocation_id) globalInvocationId : vec3<u32>,) {
     let pos = globalInvocationId.xy;
@@ -17,12 +28,12 @@ export const getReflectionComputeShader = (
     if (all(pos > texSize)) {
       return;
     }
-    var color = textureLoad(sceneTexture, pos, 0);
+    var color = textureLoad(sceneTexture, pos, 0).rgb;
 
-    // color = color / (color + vec4f(vec3f(1.0), 0.0));
-    color = pow(color, vec4f(vec3f(1.0/2.2), 1.0)); 
+    color = ACESFilm(color.rgb);
+    color = pow(color, vec3f(1.0/2.2));
 
-    textureStore(outTexture, pos, color);
+    textureStore(outTexture, pos, vec4f(color.rgb, 1));
     
   }
 `;

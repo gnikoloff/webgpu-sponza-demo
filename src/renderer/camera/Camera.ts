@@ -40,8 +40,9 @@ export default class Camera extends Transform {
 	public far: number;
 
 	public projectionMatrix = mat4.create();
+	public inverseProjectionMatrix = mat4.create();
 	public viewMatrix = mat4.create();
-	public viewMatrixInverse = mat4.create();
+	public inverseViewMatrix = mat4.create();
 	public projectionViewMatrix = mat4.create();
 	public inverseProjectionViewMatrix = mat4.create();
 
@@ -185,8 +186,11 @@ export default class Camera extends Transform {
 
 	public updateViewMatrix(): this {
 		mat4.lookAt(this.position, this.lookAt, Camera.UP_VECTOR, this.viewMatrix);
+		mat4.inverse(this.viewMatrix, this.inverseViewMatrix);
+
 		this.bufferUniformValues.set({
 			viewMatrix: this.viewMatrix,
+			inverseViewMatrix: this.inverseViewMatrix,
 		});
 
 		this.updateProjectionViewMatrix();
@@ -195,8 +199,10 @@ export default class Camera extends Transform {
 
 	public updateViewMatrixWithMat(v: Mat4): this {
 		this.viewMatrix = v;
+		mat4.inverse(this.viewMatrix, this.inverseViewMatrix);
 		this.bufferUniformValues.set({
 			viewMatrix: this.viewMatrix,
+			inverseViewMatrix: this.inverseViewMatrix,
 		});
 
 		this.updateProjectionViewMatrix();
@@ -204,8 +210,10 @@ export default class Camera extends Transform {
 	}
 
 	public updateProjectionMatrix(): this {
+		mat4.inverse(this.projectionMatrix, this.inverseProjectionMatrix);
 		this.bufferUniformValues.set({
 			projectionMatrix: this.projectionMatrix,
+			inverseProjectionMatrix: this.inverseProjectionMatrix,
 		});
 		this.updateProjectionViewMatrix();
 

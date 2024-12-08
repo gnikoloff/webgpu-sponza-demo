@@ -39,6 +39,7 @@ import Scene from "../renderer/scene/Scene";
 import TransparentRenderPass from "./render-passes/TransparentRenderPass";
 import DebugBoundsPass from "./render-passes/DebugBoundsPass";
 import CameraFlyController from "../renderer/camera/CameraFlyController";
+import SSAORenderPass from "./render-passes/SSAORenderPass/SSAORenderPass";
 // import EnvironmentProbePass from "./render-passes/EnvironmentProbePass";
 
 const a = document.getElementById("a");
@@ -113,6 +114,7 @@ export default class Renderer {
 	private taaResolvePass: TAAResolvePass;
 	private shadowPass: DirectionalShadowPass;
 	private transparentPass: TransparentRenderPass;
+	private ssaoPass: SSAORenderPass;
 	private debugBBoxesPass: DebugBoundsPass;
 	// private environmentProbePass: EnvironmentProbePass;
 
@@ -347,12 +349,12 @@ export default class Renderer {
 			p.intensity = 2;
 			p.radius = 3;
 			p.setColor(1, 1, 1);
-			this.scene.addPointLight(p);
+			// this.scene.addPointLight(p);
 		}
 
-		this.sceneDirectionalLight.setPosition(0, 10, 1);
+		this.sceneDirectionalLight.setPosition(0, 100, 0);
 		this.sceneDirectionalLight.setColor(1, 1, 1);
-		this.sceneDirectionalLight.intensity = 2;
+		this.sceneDirectionalLight.intensity = 1;
 		this.scene.addDirectionalLight(this.sceneDirectionalLight);
 
 		this.scene.updateLightsBuffer();
@@ -401,12 +403,12 @@ export default class Renderer {
 			if (!this.debugBBoxesPass) {
 				this.debugBBoxesPass = new DebugBoundsPass(this.scene);
 			}
-			this.debugBBoxesPass.setCamera(this.debugCamera);
+			this.debugBBoxesPass.setCamera(this.mainCamera);
 			this.debugBBoxesPass.inPlaceTextureView =
 				this.transparentPass.inPlaceTextureView;
 			this.debugBBoxesPass.inPlaceDepthStencilTextureView =
 				this.transparentPass.inPlaceDepthStencilTextureView;
-			a.setIsReflective(false);
+			// a.setIsReflective(false);
 			a.setMaterial(MaterialCache.defaultTexturedDeferredMaterial);
 
 			a.setMaterial(
@@ -416,7 +418,7 @@ export default class Renderer {
 			a.setMaterial(MaterialCache.defaultShadowMaterial, RenderPassType.Shadow);
 		});
 
-		// const mipTex = TextureLoader.generateMipsFor2DTexture(
+		// const mipTex = TextureLoader.generateMipsFor2DTextureWithComputePSO(
 		// 	TextureLoader.dummyTexture,
 		// 	"dummy tex mipmapped",
 		// );
@@ -434,6 +436,17 @@ export default class Renderer {
 			this.gbufferRenderPass.setDebugCamera(this.debugCamera);
 		}
 		this.gbufferRenderPass.onResize(w, h);
+
+		if (!this.ssaoPass) {
+			this.ssaoPass = new SSAORenderPass(
+				this.scene,
+				this.gbufferRenderPass.normalMetallicRoughnessTextureView,
+				this.gbufferRenderPass.depthTextureView,
+			);
+		}
+		this.ssaoPass.setCamera(this.mainCamera);
+		this.ssaoPass.onResize(w, h);
+
 		if (!this.gbufferIntegratePass) {
 			this.gbufferIntegratePass = new GBufferIntegratePass(
 				this.scene,
@@ -441,6 +454,7 @@ export default class Renderer {
 				this.gbufferRenderPass.colorReflectanceTextureView,
 				this.gbufferRenderPass.depthTextureView,
 				this.gbufferRenderPass.depthStencilTextureView,
+				this.ssaoPass.outTextureView,
 				this.shadowPass.shadowTextureViewCascadesAll,
 				this.shadowPass.shadowCascadesBuffer,
 			);
@@ -493,6 +507,10 @@ export default class Renderer {
 		this.debugContainer.gbufferDebugSection.setTextureFor(
 			TextureDebugMeshType.Roughness,
 			this.gbufferRenderPass.normalMetallicRoughnessTexture,
+		);
+		this.debugContainer.gbufferDebugSection.setTextureFor(
+			TextureDebugMeshType.AO,
+			this.ssaoPass.outTexture,
 		);
 		this.debugContainer.gbufferDebugSection.setTextureFor(
 			TextureDebugMeshType.Reflectance,
@@ -565,6 +583,7 @@ export default class Renderer {
 		// this.environmentProbePass.render(commandEncoder, this.skybox);
 		this.shadowPass.render(commandEncoder);
 		this.gbufferRenderPass.render(commandEncoder);
+		this.ssaoPass.render(commandEncoder);
 		this.gbufferIntegratePass.render(commandEncoder);
 		this.transparentPass.render(commandEncoder);
 		if (this.enableTAA) {

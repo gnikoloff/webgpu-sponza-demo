@@ -183,6 +183,7 @@ const MaterialCache = Object.freeze({
 			debugLabel: "Default Shadow Material",
 			vertexShaderSrc: getVertexShader(),
 			vertexShaderEntryFn: DefaultVertexShaderEntryFn,
+			vertexBuffers: VertexDescriptor.defaultGLTFLayout,
 			// primitive: {
 			// 	cullMode: "back",
 			// },

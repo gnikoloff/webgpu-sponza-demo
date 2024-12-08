@@ -25,7 +25,7 @@ const HDRToCubeMapShaderUtils = /* wgsl */ `
     var out: VertexOutput;
     out.position = projViewMatrix * in.position;
     // hijack
-    out.normal = in.position.xyz;
+    out.viewNormal = in.position.xyz;
     return out;
   }
 

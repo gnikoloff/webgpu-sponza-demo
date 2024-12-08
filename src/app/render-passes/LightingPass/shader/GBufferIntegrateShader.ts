@@ -19,6 +19,7 @@ const GetGBufferIntegrateShader = (
   ${SHADER_CHUNKS.Material}
   ${SHADER_CHUNKS.ShadowCascade}
   ${SHADER_CHUNKS.CommonHelpers}
+  ${SHADER_CHUNKS.MathHelpers}
 
   ${GetPBRLightingShaderUtils({
 		isDeferred: true,
@@ -36,15 +37,6 @@ const GetGBufferIntegrateShader = (
 
   ${GBufferCommonShaderBindings}
 
-  @must_use
-  fn calcWorldPos(coord: vec4f, depth: f32) -> vec3f {
-    let ndcX = coord.x / f32(camera.viewportWidth) * 2.0 - 1.0;
-    let ndcY = (1.0 - coord.y / f32(camera.viewportHeight)) * 2.0 - 1.0;
-    let clipPos = vec4f(ndcX, ndcY, depth, 1.0);
-
-    let worldSpacePos = camera.inverseProjectionViewMatrix * clipPos;
-    return worldSpacePos.xyz / worldSpacePos.w;
-  }
 
   @fragment
   fn ${GBufferIntegrateShaderEntryFn}(
@@ -53,12 +45,15 @@ const GetGBufferIntegrateShader = (
     let coord = in.position;
     let pixelCoords = vec2i(floor(coord.xy));
     let encodedN = textureLoad(normalTexture, pixelCoords, 0).rg;
-    let metallic = 0.4;//textureLoad(normalTexture, pixelCoords, 0).b;
+    let metallic = textureLoad(normalTexture, pixelCoords, 0).b;
     let roughness = textureLoad(normalTexture, pixelCoords, 0).a;
-    let N = normalize(decodeNormal(encodedN));
+    let N = decodeNormal(encodedN);
     
     let albedo = textureLoad(colorTexture, pixelCoords, 0).xyz;
     let depth = textureLoad(depthTexture, pixelCoords, 0);
+
+    let ao = textureLoad(aoTexture, pixelCoords, 0).r;
+    // return vec4f(ao, ao, ao, 1);
 
     // return vec4f(N, 1.0);
 
@@ -67,14 +62,16 @@ const GetGBufferIntegrateShader = (
     material.roughness = roughness;
     // return vec4f(vec3f(1 - metallic), 1);
     material.metallic = metallic;
-    material.ambientOcclusion = 1.0;
+    // material.ambientOcclusion = select(1.0, ao, pixelCoords.x > i32(textureDimensions(normalTexture).x / 2));
+    material.ambientOcclusion = ao;
 
-    let worldPos = calcWorldPos(coord, depth);
+    let viewSpacePos = calcViewSpacePos(&camera, coord.xy, depth);
+    let worldSpacePos = calcWorldPos(&camera, coord, depth);
 
-    let V = normalize(camera.position - worldPos);
+    let V = normalize(camera.position - viewSpacePos);
 
     #if ${lightType === LightType.Directional}
-    let shadowLayerIdx = ShadowLayerIdxCalculate(worldPos, &camera, shadowCascades);
+    let shadowLayerIdx = ShadowLayerIdxCalculate(worldSpacePos, &camera, shadowCascades);
     let r = select(0.0, 1.0, shadowLayerIdx == 0);
     let g = select(0.0, 1.0, shadowLayerIdx == 1);
     let b = select(0.0, 1.0, shadowLayerIdx == 2);
@@ -83,19 +80,19 @@ const GetGBufferIntegrateShader = (
     }
     // TODO: Directional light is expected to be at index 0
     // Write a better mechanism for quering it
-    let lightPosition = lightsBuffer[0].position;
-    let shadow = 1.0;
-    // let shadow = ShadowCalculate(
-    //   worldPos,
-    //   N,
-    //   lightPosition,
-    //   &camera,
-    //   SHADOW_MAP_SIZE,
-    //   SHADOW_MAP_SIZE,
-    //   shadowCascades,
-    //   shadowDepthTexture,
-    //   shadowMapSampler
-    // );
+    let lightPosition = (camera.viewMatrix * vec4f(lightsBuffer[0].position, 1)).xyz;
+    // let shadow = 1.0;
+    let shadow = ShadowCalculate(
+      worldSpacePos,
+      N,
+      lightPosition,
+      &camera,
+      SHADOW_MAP_SIZE,
+      SHADOW_MAP_SIZE,
+      shadowCascades,
+      shadowDepthTexture,
+      shadowMapSampler
+    );
     #else
     let shadow = 1.0;
     #endif
@@ -105,7 +102,7 @@ const GetGBufferIntegrateShader = (
     var color = PBRLighting(
       &material,
       in.instanceId,
-      worldPos,
+      viewSpacePos,
       N,
       V,
       shadow,

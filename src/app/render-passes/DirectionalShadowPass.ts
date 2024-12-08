@@ -18,7 +18,7 @@ import Scene from "../../renderer/scene/Scene";
 export default class DirectionalShadowPass extends RenderPass {
 	public static readonly TEXTURE_SIZE = 2048;
 	public static readonly TEXTURE_CASCADES_COUNT = 2;
-	public static readonly TEXTURE_CASCADE_FAR_DISTANCES: number[] = [6, 15, 200];
+	public static readonly TEXTURE_CASCADE_FAR_DISTANCES: number[] = [6, 22, 200];
 
 	public shadowTexture: GPUTexture;
 	public shadowTextureViewCascade0: GPUTextureView;
@@ -250,6 +250,7 @@ export default class DirectionalShadowPass extends RenderPass {
 		renderPassEncoderCascade0.pushDebugGroup("Render Shadow Cascade #0");
 
 		this.scene.renderOpaqueNodes(renderPassEncoderCascade0);
+		this.scene.renderTransparentNodes(renderPassEncoderCascade0);
 
 		renderPassEncoderCascade0.popDebugGroup();
 		renderPassEncoderCascade0.end();
@@ -301,6 +302,7 @@ export default class DirectionalShadowPass extends RenderPass {
 		);
 
 		this.scene.renderOpaqueNodes(renderPassEncoderCascade1);
+		this.scene.renderTransparentNodes(renderPassEncoderCascade1);
 
 		renderPassEncoderCascade1.popDebugGroup();
 		renderPassEncoderCascade1.end();

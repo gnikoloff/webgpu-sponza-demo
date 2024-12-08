@@ -234,12 +234,20 @@ export default class TextureLoader extends BaseUtilObject {
 		);
 	};
 
-	public static loadTextureFromData = (
-		bitmap: ImageBitmap,
+	public static loadTextureFromData = async (
+		data: Uint8Array,
+		format: GPUTextureFormat = "rgba8unorm",
 		generateMips = true,
 		flipY = false,
+		showDebug = false,
 		debugLabel = "Bitmap Texture",
-	): GPUTexture => {
+	): Promise<GPUTexture> => {
+		const blob = new Blob([data], {
+			type: "image/png",
+		});
+		const bitmap = await createImageBitmap(blob, {
+			colorSpaceConversion: "none",
+		});
 		let usage =
 			GPUTextureUsage.TEXTURE_BINDING |
 			GPUTextureUsage.COPY_DST |
@@ -257,7 +265,7 @@ export default class TextureLoader extends BaseUtilObject {
 				height: bitmap.height,
 				depthOrArrayLayers: 1,
 			},
-			format: "rgba8unorm",
+			format,
 			usage,
 		};
 
@@ -281,7 +289,28 @@ export default class TextureLoader extends BaseUtilObject {
 		if (!generateMips) {
 			return texture;
 		}
-		TextureController.generateMipsFor2DTexture(texture);
+		TextureController.generateMipsFor2DTextureWithComputePSO(texture);
+
+		const debugCavas = document.createElement("canvas");
+		const ctx = debugCavas.getContext("2d");
+
+		debugCavas.width = texture.width / 2;
+		debugCavas.height = texture.height / 2;
+
+		ctx.drawImage(bitmap, 0, 0);
+
+		if (showDebug) {
+			debugCavas.style.setProperty("position", "fixed");
+			debugCavas.style.setProperty("z-index", "99");
+			debugCavas.style.setProperty("left", "2rem");
+			debugCavas.style.setProperty("bottom", "2rem");
+			debugCavas.style.setProperty("width", `${texture.width * 0.1}px`);
+			debugCavas.style.setProperty("height", `${texture.height * 0.1}px`);
+			debugCavas.dataset.debugLabel = `${debugLabel.toLowerCase()}`;
+			document.body.appendChild(debugCavas);
+		}
+
+		bitmap.close();
 
 		return texture;
 	};

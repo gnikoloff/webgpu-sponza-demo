@@ -23,6 +23,10 @@ export default class GBufferDebugSection extends DebugSection {
 		roughnessDebug.appendTo(this.$main);
 		this.canvases.set(TextureDebugMeshType.Roughness, roughnessDebug);
 
+		const aoDebug = new DebugTextureCanvas(TextureDebugMeshType.AO);
+		aoDebug.appendTo(this.$main);
+		this.canvases.set(TextureDebugMeshType.AO, aoDebug);
+
 		const reflectanceDebug = new DebugTextureCanvas(
 			TextureDebugMeshType.Reflectance,
 		);
