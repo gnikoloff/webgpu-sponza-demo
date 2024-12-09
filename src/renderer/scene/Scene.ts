@@ -7,6 +7,8 @@ import Drawable from "./Drawable";
 import Transform from "./Transform";
 
 export default class Scene extends Transform {
+	public skybox: Drawable;
+
 	public opaqueMeshes: Drawable[] = [];
 	public transparentMeshes: Drawable[] = [];
 
@@ -22,12 +24,18 @@ export default class Scene extends Transform {
 	private nonCulledTransparentCount = 0;
 	private nonCulledOpaqueCount = 0;
 
+	private onGraphChangedCallbacks: (() => void)[] = [];
+
 	public get nodesCount(): number {
 		return this.opaqueMeshes.length + this.transparentMeshes.length;
 	}
 
 	public get visibleNodesCount(): number {
 		return this.nonCulledOpaqueCount + this.nonCulledTransparentCount;
+	}
+
+	public addOnGraphChangedCallback(v: () => void) {
+		this.onGraphChangedCallbacks.push(v);
 	}
 
 	public getLights(): Light[] {
@@ -183,6 +191,9 @@ export default class Scene extends Transform {
 				// );
 			}
 		}
+		for (const callback of this.onGraphChangedCallbacks) {
+			callback();
+		}
 	}
 
 	protected override onChildRemove(child: Transform): void {
@@ -199,6 +210,10 @@ export default class Scene extends Transform {
 				this.culledTransparentMeshes =
 					this.culledTransparentMeshes.filter(filterOut);
 			}
+		}
+
+		for (const callback of this.onGraphChangedCallbacks) {
+			callback();
 		}
 	}
 }

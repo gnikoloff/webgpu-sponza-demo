@@ -11,9 +11,10 @@ import {
 	getVertexShader,
 } from "../shaders/VertexShader";
 import GeometryCache from "../utils/GeometryCache";
-import MaterialCache, { GBUFFER_OUTPUT_TARGETS } from "../utils/MaterialCache";
+import MaterialCache from "../utils/MaterialCache";
 import Renderer from "../Renderer";
 import { RenderPassType } from "../../renderer/types";
+import { GBUFFER_OUTPUT_TARGETS } from "../constants";
 
 export default class PBRSpheres extends InstancedDrawable {
 	private static readonly AXIS_COUNT = 7;

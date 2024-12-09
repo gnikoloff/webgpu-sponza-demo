@@ -5,22 +5,13 @@ import { BIND_GROUP_LOCATIONS } from "../../renderer/core/RendererBindings";
 import { RenderPassType } from "../../renderer/types";
 
 export default class GBufferRenderPass extends RenderPass {
-	public normalMetallicRoughnessTexture: GPUTexture;
-	public normalMetallicRoughnessTextureView: GPUTextureView;
+	private normalMetallicRoughnessTexture: GPUTexture;
+	private velocityTexture: GPUTexture;
+	private colorReflectanceTexture: GPUTexture;
+	private depthStencilTexture: GPUTexture;
 
-	public velocityTexture: GPUTexture;
-	public velocityTextureView: GPUTextureView;
-
-	public colorReflectanceTexture: GPUTexture;
-	public colorReflectanceTextureView: GPUTextureView;
-
-	public depthStencilTexture: GPUTexture;
-	public depthStencilTextureView: GPUTextureView;
-	public depthTextureView: GPUTextureView;
-	public stencilTextureView: GPUTextureView;
-
-	constructor(scene: Scene) {
-		super(RenderPassType.Deferred, scene);
+	constructor() {
+		super(RenderPassType.Deferred);
 	}
 
 	public override onResize(width: number, height: number): void {
@@ -38,8 +29,6 @@ export default class GBufferRenderPass extends RenderPass {
 				GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
 			label: "Color + Reflectance GBuffer Texture",
 		});
-		this.colorReflectanceTextureView =
-			this.colorReflectanceTexture.createView();
 
 		if (this.velocityTexture) {
 			this.velocityTexture.destroy();
@@ -54,7 +43,6 @@ export default class GBufferRenderPass extends RenderPass {
 				GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
 			label: "Velocity GBuffer Texture",
 		});
-		this.velocityTextureView = this.velocityTexture.createView();
 
 		if (this.normalMetallicRoughnessTexture) {
 			this.normalMetallicRoughnessTexture.destroy();
@@ -69,8 +57,6 @@ export default class GBufferRenderPass extends RenderPass {
 				GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
 			label: "Normal + Metallic + Roughness + GBuffer Texture",
 		});
-		this.normalMetallicRoughnessTextureView =
-			this.normalMetallicRoughnessTexture.createView();
 
 		if (this.depthStencilTexture) {
 			this.depthStencilTexture.destroy();
@@ -85,41 +71,34 @@ export default class GBufferRenderPass extends RenderPass {
 				GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
 			label: "Depth + Stencil GBuffer Texture",
 		});
-		this.depthStencilTextureView = this.depthStencilTexture.createView();
-		this.depthTextureView = this.depthStencilTexture.createView({
-			aspect: "depth-only",
-		});
-		this.stencilTextureView = this.depthStencilTexture.createView({
-			aspect: "stencil-only",
-		});
 	}
 
 	protected override createRenderPassDescriptor(): GPURenderPassDescriptor {
 		const mainRenderPassColorAttachments: GPURenderPassColorAttachment[] = [
 			{
-				view: this.normalMetallicRoughnessTextureView,
+				view: this.normalMetallicRoughnessTexture.createView(),
 				loadOp: "clear",
 				clearValue: [0, 0, 0, 0],
 				storeOp: "store",
 			},
 			{
-				view: this.colorReflectanceTextureView,
+				view: this.colorReflectanceTexture.createView(),
 				loadOp: "clear",
 				clearValue: [0, 0, 0, 0],
 				storeOp: "store",
 			},
 			{
-				view: this.velocityTextureView,
+				view: this.velocityTexture.createView(),
 				loadOp: "clear",
 				clearValue: [0, 0, 0, 0],
 				storeOp: "store",
 			},
 		];
 
-		return this.getTimestampedRenderPassDescriptor({
+		return this.augmentRenderPassDescriptorWithTimestampQuery({
 			colorAttachments: mainRenderPassColorAttachments,
 			depthStencilAttachment: {
-				view: this.depthStencilTextureView,
+				view: this.depthStencilTexture.createView(),
 				depthLoadOp: "clear",
 				depthStoreOp: "store",
 				depthClearValue: 1,
@@ -131,7 +110,11 @@ export default class GBufferRenderPass extends RenderPass {
 		});
 	}
 
-	public override render(commandEncoder: GPUCommandEncoder): void {
+	public override render(
+		commandEncoder: GPUCommandEncoder,
+		scene: Scene,
+		inputs: GPUTexture[],
+	): GPUTexture[] {
 		Renderer.activeRenderPass = this.type;
 
 		const renderPassDescriptor = this.createRenderPassDescriptor();
@@ -147,11 +130,18 @@ export default class GBufferRenderPass extends RenderPass {
 
 		renderPassEncoder.setStencilReference(128);
 
-		this.scene.renderOpaqueNodes(renderPassEncoder, this.camera);
+		scene.renderOpaqueNodes(renderPassEncoder, this.camera);
 
 		renderPassEncoder.popDebugGroup();
 		renderPassEncoder.end();
 
 		this.resolveTiming(commandEncoder);
+
+		return [
+			this.normalMetallicRoughnessTexture,
+			this.colorReflectanceTexture,
+			this.velocityTexture,
+			this.depthStencilTexture,
+		];
 	}
 }

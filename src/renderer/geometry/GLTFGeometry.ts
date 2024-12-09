@@ -48,8 +48,6 @@ export default class GLTFGeometry extends Geometry {
 		this.indexBufferOffsets[0] = primitive.indices.byteOffset;
 		this.indexBufferOffsets[1] =
 			primitive.indices.count * primitive.indices.bytesPerElement;
-		// this.indexOffset = indicesSlot.byteOffset;
-		// debugger;
 
 		this.indexCount = primitive.indices.count;
 		this.indexBuffer = indexBuffer;

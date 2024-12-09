@@ -82,7 +82,7 @@ export default class Geometry {
 			);
 			const b = vec3.normalize(vec3.cross(normal, tangent));
 			const handedness = vec3.dot(b, tan2[index]) < 0 ? -1 : 1;
-			const vertexTangent = vec4.create(t[0], t[1], t[2], handedness);
+			// const vertexTangent = vec4.create(t[0], t[1], t[2], handedness);
 
 			const startIndex = index * VertexDescriptor.itemsPerVertexDefaultLayout;
 			interleavedArray[startIndex + 0] = position[0];
@@ -96,9 +96,10 @@ export default class Geometry {
 			interleavedArray[startIndex + 6] = texCoord[0];
 			interleavedArray[startIndex + 7] = texCoord[1];
 
-			interleavedArray[startIndex + 8] = vertexTangent[0];
-			interleavedArray[startIndex + 9] = vertexTangent[1];
-			interleavedArray[startIndex + 10] = vertexTangent[2];
+			interleavedArray[startIndex + 8] = t[0];
+			interleavedArray[startIndex + 9] = t[1];
+			interleavedArray[startIndex + 10] = t[2];
+			interleavedArray[startIndex + 11] = handedness;
 		}
 
 		function handleFace(face: Face) {
@@ -141,6 +142,7 @@ export default class Geometry {
 		vertexBuffer.unmap();
 
 		this.vertexBuffers.push(vertexBuffer);
+		this.vertexBufferOffsets.set(vertexBuffer, [0, 0]);
 
 		this.indexBuffer = Renderer.device.createBuffer({
 			mappedAtCreation: true,
@@ -151,5 +153,6 @@ export default class Geometry {
 		const indexData = new Uint16Array(this.indexBuffer.getMappedRange());
 		indexData.set(indices);
 		this.indexBuffer.unmap();
+		this.indexBufferOffsets = [0, 0];
 	}
 }

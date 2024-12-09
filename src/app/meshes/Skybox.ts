@@ -104,7 +104,7 @@ export default class Skybox extends Drawable {
 			},
 		});
 
-		this.setMaterial(material, RenderPassType.Deferred);
+		this.setMaterial(material, RenderPassType.Skybox);
 	}
 
 	override preRender(renderEncoder: GPURenderPassEncoder): void {
@@ -115,10 +115,10 @@ export default class Skybox extends Drawable {
 		}
 	}
 
-	override render(renderEncoder: GPURenderPassEncoder, camera: Camera): void {
+	override render(renderEncoder: GPURenderPassEncoder): void {
 		if (!this._texture) {
 			return;
 		}
-		super.render(renderEncoder, camera);
+		super.render(renderEncoder);
 	}
 }

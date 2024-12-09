@@ -1,6 +1,8 @@
 import Camera from "../../renderer/camera/Camera";
 import PipelineStates from "../../renderer/core/PipelineStates";
 import RenderPass from "../../renderer/core/RenderPass";
+import Scene from "../../renderer/scene/Scene";
+import { RenderPassType } from "../../renderer/types";
 import Renderer from "../Renderer";
 import {
 	BLIT_FRAGMENT_SHADER_ENTRY_NAME,
@@ -11,12 +13,14 @@ import {
 	FULLSCREEN_TRIANGLE_VERTEX_SHADER_SRC,
 } from "../shaders/VertexShader";
 
-export default class BlitPass extends RenderPass {
+export default class BlitRenderPass extends RenderPass {
 	private renderPSO: GPURenderPipeline;
+	private texturesBindGroupLayout: GPUBindGroupLayout;
+
 	private textureBindGroup: GPUBindGroup;
 
-	constructor(public textureToBlit: GPUTexture) {
-		super();
+	constructor() {
+		super(RenderPassType.Blit);
 		const vertexShaderModule = PipelineStates.createShaderModule(
 			FULLSCREEN_TRIANGLE_VERTEX_SHADER_SRC,
 		);
@@ -38,21 +42,14 @@ export default class BlitPass extends RenderPass {
 			},
 		];
 
-		const texturesBindGroupLayout = Renderer.device.createBindGroupLayout({
+		this.texturesBindGroupLayout = Renderer.device.createBindGroupLayout({
 			label: "GBuffer Textures Bind Group",
 			entries: texturesBindGroupLayoutEntries,
 		});
 
-		const texturesBindGroupEntries: GPUBindGroupEntry[] = [
-			{
-				binding: 0,
-				resource: textureToBlit.createView(),
-			},
-		];
-
 		const renderPSODescriptor: GPURenderPipelineDescriptor = {
 			layout: Renderer.device.createPipelineLayout({
-				bindGroupLayouts: [texturesBindGroupLayout],
+				bindGroupLayouts: [this.texturesBindGroupLayout],
 			}),
 			vertex: {
 				module: vertexShaderModule,
@@ -70,28 +67,40 @@ export default class BlitPass extends RenderPass {
 		};
 
 		this.renderPSO = PipelineStates.createRenderPipeline(renderPSODescriptor);
-
-		this.textureBindGroup = Renderer.device.createBindGroup({
-			layout: texturesBindGroupLayout,
-			entries: texturesBindGroupEntries,
-		});
 	}
 
-	public renderFrame(
+	public override render(
 		commandEncoder: GPUCommandEncoder,
-		outView: GPUTextureView,
-	): void {
+		scene: Scene,
+		inputs: GPUTexture[],
+	): GPUTexture[] {
+		if (!this.inputTextureViews.length) {
+			this.inputTextureViews.push(inputs[0].createView());
+
+			const texturesBindGroupEntries: GPUBindGroupEntry[] = [
+				{
+					binding: 0,
+					resource: this.inputTextureViews[0],
+				},
+			];
+			this.textureBindGroup = Renderer.device.createBindGroup({
+				layout: this.texturesBindGroupLayout,
+				entries: texturesBindGroupEntries,
+			});
+		}
+
 		const renderPassColorAttachments: GPURenderPassColorAttachment[] = [
 			{
-				view: outView,
+				view: Renderer.canvasContext.getCurrentTexture().createView(),
 				loadOp: "load",
 				storeOp: "store",
 			},
 		];
-		const renderPassDescriptor: GPURenderPassDescriptor = {
-			colorAttachments: renderPassColorAttachments,
-			label: "Blit Pass",
-		};
+		const renderPassDescriptor: GPURenderPassDescriptor =
+			this.augmentRenderPassDescriptorWithTimestampQuery({
+				colorAttachments: renderPassColorAttachments,
+				label: "Blit Pass",
+			});
 		const renderPassEncoder =
 			commandEncoder.beginRenderPass(renderPassDescriptor);
 
@@ -100,5 +109,9 @@ export default class BlitPass extends RenderPass {
 		renderPassEncoder.draw(6);
 
 		renderPassEncoder.end();
+
+		this.resolveTiming(commandEncoder);
+
+		return [];
 	}
 }

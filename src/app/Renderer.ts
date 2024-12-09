@@ -2,28 +2,28 @@ import PerspectiveCamera from "../renderer/camera/PerspectiveCamera";
 import {
 	MAIN_CAMERA_FAR,
 	MAIN_CAMERA_NEAR,
-	ORTHO_CAMERA_FAR,
-	ORTHO_CAMERA_NEAR,
+	RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
+	RENDER_PASS_DEPTH_STENCIL_TEXTURE,
+	RENDER_PASS_DIRECTIONAL_LIGHT_DEPTH_TEXTURE,
+	RENDER_PASS_LIGHTING_RESULT_TEXTURE,
+	RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
+	RENDER_PASS_SSAO_TEXTURE,
+	RENDER_PASS_TAA_RESOLVE_TEXTURE,
+	RENDER_PASS_VELOCITY_TEXTURE,
 } from "./constants";
 import Drawable from "../renderer/scene/Drawable";
-import PipelineStates from "../renderer/core/PipelineStates";
-import OrthographicCamera from "../renderer/camera/OrthographicCamera";
 
 import GBufferRenderPass from "./render-passes/GBufferRenderPass";
-import GBufferIntegratePass from "./render-passes/LightingPass/GBufferIntegratePass";
 import GroundContainer from "./meshes/ground/GroundContainer";
 import CubeGeometry from "../renderer/geometry/CubeGeometry";
 import MaterialCache from "./utils/MaterialCache";
-import Transform from "../renderer/scene/Transform";
 import ReflectionComputePass from "./render-passes/ReflectionComputePass";
 import SphereGeometry from "../renderer/geometry/SphereGeometry";
-import TAAResolvePass from "./render-passes/TAAResolvePass";
+import TAAResolveRenderPass from "./render-passes/TAAResolveRenderPass";
 import PointLight from "../renderer/lighting/PointLight";
-import Light from "../renderer/lighting/Light";
 import DirectionalLight from "../renderer/lighting/DirectionalLight";
-import DirectionalShadowPass from "./render-passes/DirectionalShadowPass";
+import DirectionalShadowRenderPass from "./render-passes/DirectionalShadowRenderPass";
 import GLTFModel from "../renderer/scene/GLTFModel";
-import { BIND_GROUP_LOCATIONS } from "../renderer/core/RendererBindings";
 import TextureLoader from "../renderer/texture/TextureLoader";
 import Skybox from "./meshes/Skybox";
 import DiffuseIBLGenerator from "../renderer/texture/DiffuseIBLGenerator";
@@ -35,12 +35,18 @@ import TexturesDebugContainer from "./debug/textures-debug/TexturesDebugContaine
 import { TextureDebugMeshType } from "./debug/textures-debug/DebugTextureCanvas";
 import Scene from "../renderer/scene/Scene";
 import TransparentRenderPass from "./render-passes/TransparentRenderPass";
-import DebugBoundsPass from "./render-passes/DebugBoundsPass";
 import CameraFlyController from "../renderer/camera/CameraFlyController";
-import SSAORenderPass from "./render-passes/SSAORenderPass/SSAORenderPass";
-import RollingAverage from "../renderer/debug/RollingAverage";
-import TimingDebugContainer from "./debug/timings-debug/TimingDebugContainer";
-import { RenderPassType } from "../renderer/types";
+import SSAORenderPass from "./render-passes/SSAORenderPass";
+import RollingAverage from "../renderer/math/RollingAverage";
+import DebugTimingContainer from "./debug/timings-debug/DebugTimingContainer";
+import { DebugTimingType, RenderPassType } from "../renderer/types";
+import RenderPassComposer from "../renderer/core/RenderPassComposer";
+import BlitRenderPass from "./render-passes/BlitRenderPass";
+import DirectionalAmbientLightRenderPass from "./render-passes/DirectionalAmbientLightRenderPass";
+import GeometryCache from "./utils/GeometryCache";
+import PointLightsMaskPass from "./render-passes/PointLightsMaskPass";
+import PointLightsRenderPass from "./render-passes/PointLightsRenderPass";
+import SkyboxRenderPass from "./render-passes/SkyboxRenderPass";
 // import EnvironmentProbePass from "./render-passes/EnvironmentProbePass";
 
 const a = document.getElementById("a");
@@ -103,7 +109,6 @@ export default class Renderer {
 		return new Renderer();
 	};
 
-	public orthoCamera: OrthographicCamera;
 	public mainCamera: PerspectiveCamera;
 	public debugCamera: PerspectiveCamera;
 	// public mainCameraCtrl: CameraOrbitController;
@@ -122,24 +127,17 @@ export default class Renderer {
 	private sceneDirectionalLight = new DirectionalLight();
 
 	// private bdrfLUTDebugTex?: TextureDebugMesh
+	private renderPassComposer: RenderPassComposer;
 
-	private gbufferRenderPass: GBufferRenderPass;
-	private gbufferIntegratePass?: GBufferIntegratePass;
 	private reflectionComputePass: ReflectionComputePass;
-	private taaResolvePass: TAAResolvePass;
-	private shadowPass: DirectionalShadowPass;
-	private transparentPass: TransparentRenderPass;
-	private ssaoPass: SSAORenderPass;
-	private debugBBoxesPass: DebugBoundsPass;
 	// private environmentProbePass: EnvironmentProbePass;
 
-	private jsAverage = new RollingAverage();
+	private cpuAverage = new RollingAverage();
+	private gpuAverage = new RollingAverage();
 	private fpsAverage = new RollingAverage();
 
 	private texturesDebugContainer: TexturesDebugContainer;
-	private timingDebugContainer: TimingDebugContainer;
-
-	private orthoCameraBindGroup: GPUBindGroup;
+	private timingDebugContainer: DebugTimingContainer;
 
 	public autoRotateSun = false;
 	public rotateAngle = Math.PI * 0.2;
@@ -205,34 +203,6 @@ export default class Renderer {
 	}
 
 	constructor() {
-		// OBJLoader.loadObjFileContents("/Buda_b.obj").then((buda) => {
-		// 	const model1 = new OBJDrawable(buda.models[0]);
-		// 	const drawable1 = new Drawable(model1);
-		// 	drawable1.setMaterial(MaterialCache.defaultDeferredPBRMaterial);
-		// 	drawable1.setPositionX(3).updateWorldMatrix();
-		// 	drawable1.materialProps.isReflective = false;
-		// 	drawable1.setMaterial(
-		// 		MaterialCache.defaultShadowMaterial,
-		// 		RenderPassType.Shadow,
-		// 	);
-		// 	drawable1.materialProps.setColor(1, 1, 1);
-		// 	this.scene.addChild(drawable1);
-		// });
-
-		// OBJLoader.loadObjFileContents("/Buda_2.obj").then((buda) => {
-		// 	// debugger;
-		// 	const model0 = new OBJDrawable(buda.models[0]);
-		// 	const drawable = new Drawable(model0);
-		// 	drawable.setMaterial(MaterialCache.defaultDeferredPBRMaterial);
-		// 	drawable.setMaterial(
-		// 		MaterialCache.defaultShadowMaterial,
-		// 		RenderPassType.Shadow,
-		// 	);
-		// 	drawable.setPositionX(3).updateWorldMatrix();
-		// 	drawable.materialProps.setColor(1, 1, 1);
-		// 	this.scene.addChild(drawable);
-		// });
-
 		this.mainCamera = new PerspectiveCamera(
 			70,
 			1,
@@ -243,14 +213,6 @@ export default class Renderer {
 		this.mainCamera.setPosition(4, 3, 0);
 		this.mainCamera.setLookAt(0, 2, 0);
 		this.mainCamera.updateViewMatrix();
-
-		// this.mainCameraCtrl = new CameraOrbitController(
-		// 	this.mainCamera,
-		// 	Renderer.$canvas,
-		// 	true,
-		// );
-		// this.mainCameraCtrl.setLookAt(0, 2, 0);
-		// this.mainCameraCtrl.startTick();
 
 		this.mainCameraCtrl = new CameraFlyController(
 			this.mainCamera,
@@ -268,42 +230,166 @@ export default class Renderer {
 		this.debugCamera.setLookAt(0, 7, 0);
 		this.debugCamera.updateViewMatrix();
 
-		this.orthoCamera = new OrthographicCamera(
-			0,
-			1,
-			1,
-			0,
-			ORTHO_CAMERA_NEAR,
-			ORTHO_CAMERA_FAR,
-		);
-		this.orthoCamera.setPosition(0, 0, 1);
-		this.orthoCamera.setLookAt(0, 0, 0);
-		this.orthoCamera.updateViewMatrix();
+		const pointLightsCount = 20;
+		const pointLightsCircleStep = (Math.PI * 2) / pointLightsCount;
+		const radiusStep = pointLightsCount / 4;
+		for (let i = 0; i < pointLightsCount; i++) {
+			const p = new PointLight();
+			const r = i * radiusStep;
+			p.setPosition(
+				Math.cos(i * pointLightsCircleStep) * 2,
+				3,
+				Math.sin(i * pointLightsCircleStep) * 2,
+			);
+			p.intensity = 20;
+			p.radius = 1;
+			p.setColor(1, 1, 0);
+			this.scene.addPointLight(p);
+		}
 
-		this.orthoCameraBindGroup = Renderer.device.createBindGroup({
-			label: "Ortho Camera Bind Group",
-			layout: PipelineStates.defaultCameraBindGroupLayout,
-			entries: [
-				{
-					binding: 0,
-					resource: {
-						buffer: this.orthoCamera.gpuBuffer,
-					},
-				},
-			],
-		});
+		this.sceneDirectionalLight.setPosition(0, 100, 1);
+		this.sceneDirectionalLight.setColor(1, 1, 1);
+		this.sceneDirectionalLight.intensity = 1;
+		this.scene.addDirectionalLight(this.sceneDirectionalLight);
+
+		this.scene.updateLightsBuffer();
+
+		this.renderPassComposer = new RenderPassComposer();
+		this.renderPassComposer.setScene(this.scene);
+
+		const shadowRenderPass = new DirectionalShadowRenderPass(
+			this.sceneDirectionalLight,
+		)
+			.addOutputTexture(RENDER_PASS_DIRECTIONAL_LIGHT_DEPTH_TEXTURE)
+			.setCamera(this.mainCamera);
+
+		const gbufferRenderPass = new GBufferRenderPass()
+			.setCamera(this.mainCamera)
+			.addOutputTextures([
+				RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
+				RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
+				RENDER_PASS_VELOCITY_TEXTURE,
+				RENDER_PASS_DEPTH_STENCIL_TEXTURE,
+			]);
+
+		const ssaoRenderPass = new SSAORenderPass()
+			.setCamera(this.mainCamera)
+			.addInputTextures([
+				RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
+				RENDER_PASS_DEPTH_STENCIL_TEXTURE,
+			])
+			.addOutputTexture(RENDER_PASS_SSAO_TEXTURE);
+
+		const directionalAmbientLightRenderPass =
+			new DirectionalAmbientLightRenderPass(
+				shadowRenderPass.shadowCascadesBuffer,
+			)
+				.setCamera(this.mainCamera)
+				.addInputTextures([
+					RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
+					RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
+					RENDER_PASS_DEPTH_STENCIL_TEXTURE,
+					RENDER_PASS_SSAO_TEXTURE,
+					RENDER_PASS_DIRECTIONAL_LIGHT_DEPTH_TEXTURE,
+				])
+				.addOutputTexture(RENDER_PASS_LIGHTING_RESULT_TEXTURE);
+
+		const pointLightsStencilMaskPass = new PointLightsMaskPass()
+			.setCamera(this.mainCamera)
+			.addInputTextures([RENDER_PASS_DEPTH_STENCIL_TEXTURE])
+			.addOutputTexture(RENDER_PASS_DEPTH_STENCIL_TEXTURE)
+			.setLightsBuffer(this.scene.lightsBuffer)
+			.updateLightsMaskBindGroup();
+
+		const pointLightsRenderPass = new PointLightsRenderPass()
+			.setCamera(this.mainCamera)
+			.addInputTextures([
+				RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
+				RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
+				RENDER_PASS_DEPTH_STENCIL_TEXTURE,
+				RENDER_PASS_SSAO_TEXTURE,
+				RENDER_PASS_LIGHTING_RESULT_TEXTURE,
+			])
+			.addOutputTexture(RENDER_PASS_LIGHTING_RESULT_TEXTURE);
+
+		const transparentRenderPass = new TransparentRenderPass()
+			.setCamera(this.mainCamera)
+			.addInputTextures([
+				RENDER_PASS_LIGHTING_RESULT_TEXTURE,
+				RENDER_PASS_DEPTH_STENCIL_TEXTURE,
+			])
+			.addOutputTextures([
+				RENDER_PASS_LIGHTING_RESULT_TEXTURE,
+				RENDER_PASS_DEPTH_STENCIL_TEXTURE,
+			]);
+
+		const skyboxRenderPass = new SkyboxRenderPass()
+			.setCamera(this.mainCamera)
+			.addInputTextures([
+				RENDER_PASS_LIGHTING_RESULT_TEXTURE,
+				RENDER_PASS_DEPTH_STENCIL_TEXTURE,
+			])
+			.addOutputTextures([
+				RENDER_PASS_LIGHTING_RESULT_TEXTURE,
+				RENDER_PASS_DEPTH_STENCIL_TEXTURE,
+			]);
+
+		const taaResolveRenderPass = new TAAResolveRenderPass()
+			.addInputTextures([
+				RENDER_PASS_LIGHTING_RESULT_TEXTURE,
+				RENDER_PASS_VELOCITY_TEXTURE,
+			])
+			.addOutputTexture(RENDER_PASS_TAA_RESOLVE_TEXTURE);
+
+		// const debugBBoxesPass = new DebugBoundsPass()
+		// 	.addInputTextures([
+		// 		RENDER_PASS_TAA_RESOLVE_TEXTURE,
+		// 		RENDER_PASS_DEPTH_STENCIL_TEXTURE,
+		// 	])
+		// 	.addOutputTexture(RENDER_PASS_TAA_RESOLVE_TEXTURE)
+		// 	.setScene(this.scene)
+		// 	.setCamera(this.mainCamera);
+
+		const blitRenderPass = new BlitRenderPass().addInputTexture(
+			RENDER_PASS_TAA_RESOLVE_TEXTURE,
+		);
+
+		const ssrRenderPass = new ReflectionComputePass().addInputTexture(
+			RENDER_PASS_TAA_RESOLVE_TEXTURE,
+		);
+
+		this.renderPassComposer
+			.addPass(shadowRenderPass)
+			.addPass(gbufferRenderPass)
+			.addPass(ssaoRenderPass)
+			.addPass(directionalAmbientLightRenderPass)
+			.addPass(pointLightsStencilMaskPass)
+			.addPass(pointLightsRenderPass)
+			.addPass(transparentRenderPass)
+			.addPass(skyboxRenderPass)
+			.addPass(taaResolveRenderPass)
+			.addPass(blitRenderPass);
+
+		// this.renderPassComposer.addPass(debugBBoxesPass);
+
+		// this.mainCameraCtrl = new CameraOrbitController(
+		// 	this.mainCamera,
+		// 	Renderer.$canvas,
+		// 	true,
+		// );
+		// this.mainCameraCtrl.setLookAt(0, 2, 0);
+		// this.mainCameraCtrl.startTick();
 
 		this.texturesDebugContainer = new TexturesDebugContainer();
-		this.timingDebugContainer = new TimingDebugContainer();
+		this.timingDebugContainer = new DebugTimingContainer();
 
 		// this.ground = new GroundContainer();
 		// this.scene.addChild(this.ground);
 
-		this.cube = new Drawable(new CubeGeometry(1, 1, 1));
+		this.cube = new Drawable(GeometryCache.unitCubeGeometry);
 		this.cube.label = "Cube 1";
 
-		this.cube.setPosition(3, 3, 3);
-		this.cube.setScale(0.3, 0.3, 0.3);
+		this.cube.setPosition(0, 3, 0);
 		this.cube.updateWorldMatrix();
 		this.cube.setMaterial(
 			MaterialCache.defaultDeferredPBRMaterial,
@@ -314,18 +400,19 @@ export default class Renderer {
 			RenderPassType.Shadow,
 		);
 		this.cube.materialProps.isReflective = false;
-		this.cube.materialProps.metallic = 0.9;
-		this.cube.materialProps.roughness = 0.2;
+		this.cube.materialProps.metallic = 0.2;
+		this.cube.materialProps.roughness = 0.7;
 		this.cube.materialProps.setColor(0.6, 0.6, 0.6);
+		this.scene.addChild(this.cube);
 
 		this.cube1 = new Drawable(new CubeGeometry(1, 1, 1));
 		this.cube1.label = "Cube 2";
 		this.cube1.setMaterial(
-			MaterialCache.defaultDeferredPBRMaterial,
+			MaterialCache.defaultGLTFDeferredPBRMaterial,
 			RenderPassType.Deferred,
 		);
 		this.cube1.setMaterial(
-			MaterialCache.defaultShadowMaterial,
+			MaterialCache.defaultGLTFShadowMaterial,
 			RenderPassType.Shadow,
 		);
 		this.cube1.materialProps.isReflective = false;
@@ -346,11 +433,8 @@ export default class Renderer {
 		this.sphere.materialProps.setColor(0.8, 0.3, 0.3);
 		this.sphere.materialProps.metallic = 1;
 		this.sphere.materialProps.roughness = 0.96;
-		this.sphere
-			.setScale(0.5, 0.5, 0.5)
-			.setPositionX(2)
-			.setPositionZ(1.2)
-			.updateWorldMatrix();
+
+		this.scene.addChild(this.sphere);
 
 		// this.pbrSpheres = new PBRSpheres();
 		// this.scene.addChild(this.pbrSpheres);
@@ -359,39 +443,15 @@ export default class Renderer {
 		// this.scene.addChild(this.cube1);
 		// this.scene.addChild(this.sphere);
 
-		const pointLightsCount = 20;
-		const pointLightsCircleStep = (Math.PI * 2) / pointLightsCount;
-		const radiusStep = pointLightsCount / 4;
-		for (let i = 0; i < pointLightsCount; i++) {
-			const p = new PointLight();
-			const r = i * radiusStep;
-			p.setPosition(
-				Math.cos(i * pointLightsCircleStep) * 2,
-				0,
-				Math.sin(i * pointLightsCircleStep) * 2,
-			);
-			p.intensity = 2;
-			p.radius = 3;
-			p.setColor(1, 1, 1);
-			// this.scene.addPointLight(p);
-		}
-
-		this.sceneDirectionalLight.setPosition(0, 100, 0);
-		this.sceneDirectionalLight.setColor(1, 1, 1);
-		this.sceneDirectionalLight.intensity = 1;
-		this.scene.addDirectionalLight(this.sceneDirectionalLight);
-
-		this.scene.updateLightsBuffer();
-
-		this.shadowPass = new DirectionalShadowPass(
-			this.scene,
-			this.sceneDirectionalLight,
-		);
-		this.shadowPass.setCamera(this.mainCamera);
+		// this.shadowPass = new DirectionalShadowRenderPass(
+		// 	this.scene,
+		// 	this.sceneDirectionalLight,
+		// );
+		// this.shadowPass.setCamera(this.mainCamera);
 
 		// this.environmentProbePass = new EnvironmentProbePass();
 
-		this.skybox = new Skybox();
+		this.scene.skybox = new Skybox();
 
 		// TextureLoader.loadHDRImage("/cobblestone_street_night_2k.hdr").then();
 		// TextureLoader.loadHDREnvironmentAsCubeMapTexture(
@@ -411,9 +471,13 @@ export default class Renderer {
 			const bdrfLutTexture = BDRFLutGenerator.encode();
 
 			TextureController.generateMipsForCubeTexture(diffuseTexture);
-			this.skybox.setTexture(diffuseTexture);
+			this.scene.skybox.setTexture(diffuseTexture);
 
-			this.gbufferIntegratePass
+			const dirAmbientLightPass = this.renderPassComposer.getPass(
+				RenderPassType.DirectionalAmbientLighting,
+			) as DirectionalAmbientLightRenderPass;
+
+			dirAmbientLightPass
 				.setDiffuseIBLTexture(diffuseTexture)
 				.setSpecularIBLTexture(specularTexture)
 				.setBDRFLutTexture(bdrfLutTexture);
@@ -424,22 +488,17 @@ export default class Renderer {
 		a.setPositionY(2) //.setRotationY(Math.PI * 0.5)
 			.updateWorldMatrix();
 		a.load().then(() => {
-			if (!this.debugBBoxesPass) {
-				this.debugBBoxesPass = new DebugBoundsPass(this.scene);
-			}
-			this.debugBBoxesPass.setCamera(this.mainCamera);
-			this.debugBBoxesPass.inPlaceTextureView =
-				this.transparentPass.inPlaceTextureView;
-			this.debugBBoxesPass.inPlaceDepthStencilTextureView =
-				this.transparentPass.inPlaceDepthStencilTextureView;
 			// a.setIsReflective(false);
-			a.setMaterial(MaterialCache.defaultTexturedDeferredMaterial);
+			a.setMaterial(MaterialCache.defaultGLTFTexturedDeferredMaterial);
 
 			a.setMaterial(
-				MaterialCache.defaultTransparentPBRMaterial,
+				MaterialCache.defaultGLTFTransparentPBRMaterial,
 				RenderPassType.Transparent,
 			);
-			a.setMaterial(MaterialCache.defaultShadowMaterial, RenderPassType.Shadow);
+			a.setMaterial(
+				MaterialCache.defaultGLTFShadowMaterial,
+				RenderPassType.Shadow,
+			);
 		});
 
 		// const mipTex = TextureLoader.generateMipsFor2DTextureWithComputePSO(
@@ -452,110 +511,13 @@ export default class Renderer {
 	public resize(w: number, h: number) {
 		this.debugCamera.onResize(w, h);
 		this.mainCamera.onResize(w, h);
-		this.orthoCamera.onResize(w, h);
 
-		if (!this.gbufferRenderPass) {
-			this.gbufferRenderPass = new GBufferRenderPass(this.scene);
-			this.gbufferRenderPass.setCamera(this.mainCamera);
-			this.gbufferRenderPass.setDebugCamera(this.debugCamera);
-		}
-		this.gbufferRenderPass.onResize(w, h);
-
-		if (!this.ssaoPass) {
-			this.ssaoPass = new SSAORenderPass(
-				this.scene,
-				this.gbufferRenderPass.normalMetallicRoughnessTextureView,
-				this.gbufferRenderPass.depthTextureView,
-			);
-		}
-		this.ssaoPass.setCamera(this.mainCamera);
-		this.ssaoPass.onResize(w, h);
-
-		if (!this.gbufferIntegratePass) {
-			this.gbufferIntegratePass = new GBufferIntegratePass(
-				this.scene,
-				this.gbufferRenderPass.normalMetallicRoughnessTextureView,
-				this.gbufferRenderPass.colorReflectanceTextureView,
-				this.gbufferRenderPass.depthTextureView,
-				this.gbufferRenderPass.depthStencilTextureView,
-				this.ssaoPass.outTextureView,
-				this.shadowPass.shadowTextureViewCascadesAll,
-				this.shadowPass.shadowCascadesBuffer,
-			);
-			this.gbufferIntegratePass.setCamera(this.mainCamera);
-			this.gbufferIntegratePass.setDebugCamera(this.debugCamera);
-			this.gbufferIntegratePass.skybox = this.skybox;
-		}
-		// this.gbufferIntegratePass.setLights(this.lights);
-		this.gbufferIntegratePass.setCamera(this.mainCamera);
-		this.gbufferIntegratePass.setDebugCamera(this.debugCamera);
-		this.gbufferIntegratePass.onResize(w, h);
-
-		if (!this.transparentPass) {
-			this.transparentPass = new TransparentRenderPass(this.scene);
-		}
-		this.transparentPass.setCamera(this.mainCamera);
-		this.transparentPass.setDebugCamera(this.debugCamera);
-		this.transparentPass.inPlaceDepthStencilTextureView =
-			this.gbufferRenderPass.depthStencilTextureView;
-		this.transparentPass.inPlaceTextureView =
-			this.gbufferIntegratePass.outTextureView;
-
-		if (!this.taaResolvePass) {
-			this.taaResolvePass = new TAAResolvePass(
-				this.scene,
-				this.transparentPass.inPlaceTextureView,
-				this.gbufferRenderPass.velocityTextureView,
-			);
-		}
-		this.taaResolvePass.onResize(w, h);
-		this.taaResolvePass.setDebugCamera(this.debugCamera);
+		this.renderPassComposer.onResize(w, h);
 
 		if (!this.reflectionComputePass) {
 			this.reflectionComputePass = new ReflectionComputePass(this.scene);
 		}
 		this.reflectionComputePass.onResize(w, h);
-
-		this.texturesDebugContainer.gbufferDebugSection.setTextureFor(
-			TextureDebugMeshType.Albedo,
-			this.gbufferRenderPass.colorReflectanceTexture,
-		);
-		this.texturesDebugContainer.gbufferDebugSection.setTextureFor(
-			TextureDebugMeshType.Normal,
-			this.gbufferRenderPass.normalMetallicRoughnessTexture,
-		);
-		this.texturesDebugContainer.gbufferDebugSection.setTextureFor(
-			TextureDebugMeshType.Metallic,
-			this.gbufferRenderPass.normalMetallicRoughnessTexture,
-		);
-		this.texturesDebugContainer.gbufferDebugSection.setTextureFor(
-			TextureDebugMeshType.Roughness,
-			this.gbufferRenderPass.normalMetallicRoughnessTexture,
-		);
-		this.texturesDebugContainer.gbufferDebugSection.setTextureFor(
-			TextureDebugMeshType.AO,
-			this.ssaoPass.outTexture,
-		);
-		this.texturesDebugContainer.gbufferDebugSection.setTextureFor(
-			TextureDebugMeshType.Reflectance,
-			this.gbufferRenderPass.colorReflectanceTexture,
-		);
-		this.texturesDebugContainer.gbufferDebugSection.setTextureFor(
-			TextureDebugMeshType.Depth,
-			this.gbufferRenderPass.depthStencilTexture,
-		);
-		this.texturesDebugContainer.gbufferDebugSection.setTextureFor(
-			TextureDebugMeshType.Velocity,
-			this.gbufferRenderPass.velocityTexture,
-		);
-		this.texturesDebugContainer.shadowDebugSection.setTextureFor(
-			TextureDebugMeshType.ShadowDepthCascade0,
-			this.shadowPass.shadowTexture,
-		);
-		this.texturesDebugContainer.shadowDebugSection.setTextureFor(
-			TextureDebugMeshType.ShadowDepthCascade1,
-			this.shadowPass.shadowTexture,
-		);
 	}
 
 	public async renderFrame(elapsedTime: number) {
@@ -570,7 +532,7 @@ export default class Renderer {
 
 		const device = Renderer.device;
 
-		this.gbufferIntegratePass.debugPointLights = this.debugPointLights;
+		// this.gbufferIntegratePass.debugPointLights = this.debugPointLights;
 
 		if (this.autoRotateSun) {
 			this.rotateAngle += deltaDiff * 0.1;
@@ -583,18 +545,18 @@ export default class Renderer {
 
 		this.debugCamera.onFrameStart();
 		this.mainCamera.onFrameStart();
-		this.orthoCamera.onFrameStart();
 
 		if (this.enableAnimation) {
 			this.cube
-				.setScale(1, 1, 1)
+				.setScale(0.5, 0.5, 0.5)
 				.setRotationY(Renderer.elapsedTimeMs)
 				.updateWorldMatrix();
 
 			this.sphere
-				.setScale(1, 1, 1)
-				.setPositionX(Math.cos(Renderer.elapsedTimeMs) * 2.75)
-				.setPositionZ(Math.sin(Renderer.elapsedTimeMs) * 2.75)
+				.setScale(0.2, 0.2, 0.2)
+				.setPositionX(Math.cos(Renderer.elapsedTimeMs) * 1)
+				.setPositionZ(Math.sin(Renderer.elapsedTimeMs) * 1)
+				.setPositionY(4)
 				.updateWorldMatrix();
 		}
 
@@ -602,91 +564,162 @@ export default class Renderer {
 			this.scene.sortTransparentNodesFrom(this.mainCamera);
 		}
 
-		const commandEncoder = device.createCommandEncoder({
-			label: "Render Loop Command Encoder",
+		const commandEncoder = Renderer.device.createCommandEncoder({
+			label: "Render Pass Composer Command Encoder",
 		});
 
-		// this.environmentProbePass.render(commandEncoder, this.skybox);
-		this.shadowPass.render(commandEncoder);
-		this.gbufferRenderPass.render(commandEncoder);
-		this.ssaoPass.render(commandEncoder);
-		this.gbufferIntegratePass.render(commandEncoder);
-		this.transparentPass.render(commandEncoder);
-		if (this.enableTAA) {
-			this.taaResolvePass.render(commandEncoder);
-		}
-		if (this.debugBBoxesPass) {
-			this.debugBBoxesPass.inPlaceTextureView =
-				this.taaResolvePass.outTextureView;
-			if (this.debugBoundingBoxes) {
-				this.debugBBoxesPass.render(commandEncoder);
-			}
-		}
-		this.reflectionComputePass.computeReflections(
-			commandEncoder,
-			Renderer.canvasContext.getCurrentTexture(),
-			this.enableTAA
-				? this.debugBBoxesPass?.inPlaceTextureView ||
-						this.taaResolvePass.outTextureView
-				: this.gbufferIntegratePass.outTextureView,
+		this.renderPassComposer.render(commandEncoder);
+
+		this.texturesDebugContainer.gbufferDebugSection.setTextureFor(
+			TextureDebugMeshType.Albedo,
+			this.renderPassComposer.getTexture(
+				RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
+			),
 		);
-
-		const hudRenderPassColorAttachments: GPURenderPassColorAttachment[] = [
-			{
-				view: Renderer.canvasContext.getCurrentTexture().createView(),
-				loadOp: "load",
-				storeOp: "store",
-			},
-		];
-
+		this.texturesDebugContainer.gbufferDebugSection.setTextureFor(
+			TextureDebugMeshType.Normal,
+			this.renderPassComposer.getTexture(
+				RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
+			),
+		);
+		this.texturesDebugContainer.gbufferDebugSection.setTextureFor(
+			TextureDebugMeshType.Metallic,
+			this.renderPassComposer.getTexture(
+				RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
+			),
+		);
+		this.texturesDebugContainer.gbufferDebugSection.setTextureFor(
+			TextureDebugMeshType.Roughness,
+			this.renderPassComposer.getTexture(
+				RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
+			),
+		);
+		this.texturesDebugContainer.gbufferDebugSection.setTextureFor(
+			TextureDebugMeshType.AO,
+			this.renderPassComposer.getTexture(RENDER_PASS_SSAO_TEXTURE),
+		);
+		this.texturesDebugContainer.gbufferDebugSection.setTextureFor(
+			TextureDebugMeshType.Reflectance,
+			this.renderPassComposer.getTexture(
+				RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
+			),
+		);
+		this.texturesDebugContainer.gbufferDebugSection.setTextureFor(
+			TextureDebugMeshType.Depth,
+			this.renderPassComposer.getTexture(RENDER_PASS_DEPTH_STENCIL_TEXTURE),
+		);
+		this.texturesDebugContainer.gbufferDebugSection.setTextureFor(
+			TextureDebugMeshType.Velocity,
+			this.renderPassComposer.getTexture(RENDER_PASS_VELOCITY_TEXTURE),
+		);
+		this.texturesDebugContainer.shadowDebugSection.setTextureFor(
+			TextureDebugMeshType.ShadowDepthCascade0,
+			this.renderPassComposer.getTexture(
+				RENDER_PASS_DIRECTIONAL_LIGHT_DEPTH_TEXTURE,
+			),
+		);
+		this.texturesDebugContainer.shadowDebugSection.setTextureFor(
+			TextureDebugMeshType.ShadowDepthCascade1,
+			this.renderPassComposer.getTexture(
+				RENDER_PASS_DIRECTIONAL_LIGHT_DEPTH_TEXTURE,
+			),
+		);
 		this.texturesDebugContainer.render(commandEncoder);
 
-		const hudRenderPassDescriptor: GPURenderPassDescriptor = {
-			colorAttachments: hudRenderPassColorAttachments,
-			depthStencilAttachment: undefined,
-			label: "HUD Render Pass",
-		};
-		const hudRenderEncoder = commandEncoder.beginRenderPass(
-			hudRenderPassDescriptor,
-		);
-		hudRenderEncoder.pushDebugGroup("Render HUD");
+		Renderer.device.queue.submit([commandEncoder.finish()]);
 
-		hudRenderEncoder.setBindGroup(
-			BIND_GROUP_LOCATIONS.CameraPlusOptionalLights,
-			this.orthoCameraBindGroup,
-		);
-
-		// this.bdrfLUTDebugTex?.render(hudRenderEncoder);
-
-		hudRenderEncoder.popDebugGroup();
-		hudRenderEncoder.end();
-
-		device.queue.submit([commandEncoder.finish()]);
-
-		this.debugCamera.onFrameEnd();
 		this.mainCamera.onFrameEnd();
-		this.orthoCamera.onFrameEnd();
+		this.debugCamera.onFrameEnd();
+
+		// const [gbufferRenderPassTimeOffsets, blitRenderPassTimeOffsets] =
+		// 	await Promise.all([
+		// 		this.renderPassComposer
+		// 			.getPass(RenderPassType.Deferred)
+		// 			.getStartAndEndTimings(),
+		// 		this.renderPassComposer
+		// 			.getPass(RenderPassType.Blit)
+		// 			.getStartAndEndTimings(),
+		// 	]);
 
 		const jsPerfTime = performance.now() - jsPerfStartTime;
-		this.jsAverage.addSample(jsPerfTime);
-		this.fpsAverage.addSample(1 / deltaDiff);
 
-		if (Renderer.supportsGPUTimestampQuery) {
-			const [gBufferRenderPassTimeResult, ssaoRenderPassTimeResult] =
-				await Promise.all([
-					this.gbufferRenderPass.getResult(),
-					this.ssaoPass.getResult(),
-				]);
-			this.timingDebugContainer.$root.innerHTML = `
-        FPS: ${this.fpsAverage.get().toFixed(1)}ms<br/>
-        JS: ${this.jsAverage.get().toFixed(1)}ms<br/>
-        G-Buffer Render Pass: ${gBufferRenderPassTimeResult.toFixed(1)}ms<br/>
-        SSAO Render Pass: ${ssaoRenderPassTimeResult.toFixed(1)}ms<br/>
-        Total GPU Time: ${(
-					(gBufferRenderPassTimeResult + ssaoRenderPassTimeResult) /
-					1
-				).toFixed(1)}
-      `;
-		}
+		const [
+			gbufferRenderPassTimingResult,
+			directionalAmbientLightRenderPassTimingResult,
+			pointLightsStencilMaskPassTimingResult,
+			pointLightsLightingTimingResult,
+			ssaoRenderPassTimingResult,
+			transparentRenderPassTimingResult,
+			taaResolveRenderPassTimingResult,
+			blitRenderPassTimingResult,
+		] = await Promise.all([
+			this.renderPassComposer
+				.getPass(RenderPassType.Deferred)
+				.getTimingResult(),
+			this.renderPassComposer
+				.getPass(RenderPassType.DirectionalAmbientLighting)
+				.getTimingResult(),
+			this.renderPassComposer
+				.getPass(RenderPassType.PointLightsStencilMask)
+				.getTimingResult(),
+			this.renderPassComposer
+				.getPass(RenderPassType.PointLightsLighting)
+				.getTimingResult(),
+			this.renderPassComposer.getPass(RenderPassType.SSAO).getTimingResult(),
+			this.renderPassComposer
+				.getPass(RenderPassType.Transparent)
+				.getTimingResult(),
+			this.renderPassComposer
+				.getPass(RenderPassType.TAAResolve)
+				.getTimingResult(),
+			this.renderPassComposer.getPass(RenderPassType.Blit).getTimingResult(),
+		]);
+
+		const gbufferRenderPassTimings = gbufferRenderPassTimingResult.timings;
+		const blitRenderPassTimings = blitRenderPassTimingResult.timings;
+		const totalGPUTime =
+			Math.abs(blitRenderPassTimings[1] - gbufferRenderPassTimings[0]) /
+			1_000_000;
+
+		this.cpuAverage.addSample(jsPerfTime);
+		this.fpsAverage.addSample(1 / deltaDiff);
+		this.gpuAverage.addSample(totalGPUTime);
+
+		this.timingDebugContainer
+			.setDisplayValue(DebugTimingType.CPUTotal, this.cpuAverage.get())
+			.setDisplayValue(DebugTimingType.GPUTotal, this.gpuAverage.get())
+			.setDisplayValue(DebugTimingType.FPS, this.fpsAverage.get())
+			.setDisplayValue(
+				DebugTimingType.DeferredRenderPass,
+				gbufferRenderPassTimingResult.avgValue,
+			)
+			.setDisplayValue(
+				DebugTimingType.DirectionalAmbientLightingRenderPass,
+				directionalAmbientLightRenderPassTimingResult.avgValue,
+			)
+			.setDisplayValue(
+				DebugTimingType.PointLightsStencilMask,
+				pointLightsStencilMaskPassTimingResult.avgValue,
+			)
+			.setDisplayValue(
+				DebugTimingType.PointLightsLighting,
+				pointLightsLightingTimingResult.avgValue,
+			)
+			.setDisplayValue(
+				DebugTimingType.SSAORenderPass,
+				ssaoRenderPassTimingResult.avgValue,
+			)
+			.setDisplayValue(
+				DebugTimingType.TransparentRenderPass,
+				transparentRenderPassTimingResult.avgValue,
+			)
+			.setDisplayValue(
+				DebugTimingType.BlitRenderPass,
+				blitRenderPassTimingResult.avgValue,
+			)
+			.setDisplayValue(
+				DebugTimingType.TAAResolveRenderPass,
+				taaResolveRenderPassTimingResult.avgValue,
+			);
 	}
 }

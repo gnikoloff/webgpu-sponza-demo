@@ -1,23 +1,13 @@
-import Camera from "../../renderer/camera/Camera";
-import PipelineStates from "../../renderer/core/PipelineStates";
 import RenderPass from "../../renderer/core/RenderPass";
 import { BIND_GROUP_LOCATIONS } from "../../renderer/core/RendererBindings";
 import Scene from "../../renderer/scene/Scene";
+import Transform from "../../renderer/scene/Transform";
 import { RenderPassType } from "../../renderer/types";
 import Renderer from "../Renderer";
 
-export default class TransparentRenderPass extends RenderPass {
+export default class SkyboxRenderPass extends RenderPass {
 	constructor() {
-		super(RenderPassType.Transparent);
-	}
-
-	public override toggleDebugCamera(v: boolean) {
-		// ...
-	}
-
-	public setCamera(camera: Camera): this {
-		this.camera = camera;
-		return this;
+		super(RenderPassType.Skybox);
 	}
 
 	protected override createRenderPassDescriptor(): GPURenderPassDescriptor {
@@ -29,13 +19,13 @@ export default class TransparentRenderPass extends RenderPass {
 			},
 		];
 		return this.augmentRenderPassDescriptorWithTimestampQuery({
-			label: `Transparent Render Pass`,
+			label: "Skybox render Pass",
 			colorAttachments: renderPassColorAttachments,
 			depthStencilAttachment: {
+				depthReadOnly: true,
 				view: this.inputTextureViews[1],
-				depthLoadOp: "load",
-				depthStoreOp: "store",
-				stencilReadOnly: true,
+				stencilLoadOp: "load",
+				stencilStoreOp: "store",
 			},
 		});
 	}
@@ -45,46 +35,27 @@ export default class TransparentRenderPass extends RenderPass {
 		scene: Scene,
 		inputs: GPUTexture[],
 	): GPUTexture[] {
+		Renderer.activeRenderPass = this.type;
+
 		if (!this.inputTextureViews.length) {
 			this.inputTextureViews.push(inputs[0].createView());
 			this.inputTextureViews.push(inputs[1].createView());
 		}
 
-		Renderer.activeRenderPass = this.type;
-
-		const renderPassEncoder = commandEncoder.beginRenderPass(
+		const renderEncoder = commandEncoder.beginRenderPass(
 			this.createRenderPassDescriptor(),
 		);
-		renderPassEncoder.pushDebugGroup("Render Transparent Nodes");
+		renderEncoder.pushDebugGroup("Begin Skybox");
 
-		this.cameraBindGroup = Renderer.device.createBindGroup({
-			label: `Camera Bind Group for: Transparent Pass`,
-			layout: PipelineStates.defaultCameraPlusLightsBindGroupLayout,
-			entries: [
-				{
-					binding: 0,
-					resource: {
-						buffer: this.camera.gpuBuffer,
-					},
-				},
-				{
-					binding: 1,
-					resource: {
-						buffer: scene.lightsBuffer,
-					},
-				},
-			],
-		});
-
-		renderPassEncoder.setBindGroup(
+		renderEncoder.setBindGroup(
 			BIND_GROUP_LOCATIONS.CameraPlusOptionalLights,
 			this.cameraBindGroup,
 		);
 
-		scene.renderTransparentNodes(renderPassEncoder, this.camera);
+		scene.skybox?.render(renderEncoder);
 
-		renderPassEncoder.popDebugGroup();
-		renderPassEncoder.end();
+		renderEncoder.popDebugGroup();
+		renderEncoder.end();
 
 		this.resolveTiming(commandEncoder);
 

@@ -1,12 +1,11 @@
 import PipelineStates from "../../../renderer/core/PipelineStates";
-import FullScreenVertexShaderUtils, {
-	FullScreenVertexShaderEntryFn,
-} from "../../../renderer/shader/FullScreenVertexShaderUtils";
+import { LightType } from "../../../renderer/lighting/Light";
 import SamplerController from "../../../renderer/texture/SamplerController";
 import TextureLoader from "../../../renderer/texture/TextureLoader";
-import { LightType } from "../../../renderer/types";
 import Renderer from "../../Renderer";
-
+import FullscreenTriangleShader, {
+	FullscreenTriangleShaderEntryFn,
+} from "../../shaders/FullscreenTriangleShader";
 import DirectionalShadowPass from "../DirectionalShadowPass";
 import LightSubPass from "./LightSubPass";
 import GetGBufferIntegrateShader, {
@@ -160,10 +159,10 @@ export default class DirectionalLightSubPass extends LightSubPass {
 			layout: dirLightRenderPSOLayout,
 			vertex: {
 				module: PipelineStates.createShaderModule(
-					FullScreenVertexShaderUtils,
+					FullscreenTriangleShader,
 					"Fullscreen Vertex Shader Module",
 				),
-				entryPoint: FullScreenVertexShaderEntryFn,
+				entryPoint: FullscreenTriangleShaderEntryFn,
 			},
 			fragment: {
 				module: PipelineStates.createShaderModule(

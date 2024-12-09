@@ -129,15 +129,16 @@ export default class DebugTextureCanvas {
 			}),
 		});
 
+		const colorAttachments: GPURenderPassColorAttachment[] = [
+			{
+				loadOp: "load",
+				storeOp: "store",
+				view: null,
+			},
+		];
 		this.renderPassDescriptor = {
 			label: `Debug Canvas ${type} Render Pass Descriptor`,
-			colorAttachments: [
-				{
-					loadOp: "load",
-					storeOp: "store",
-					view: null,
-				},
-			],
+			colorAttachments,
 		};
 	}
 

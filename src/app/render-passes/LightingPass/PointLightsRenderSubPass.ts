@@ -5,7 +5,7 @@ import Drawable from "../../../renderer/scene/Drawable";
 import { LightType } from "../../../renderer/types";
 import Renderer from "../../Renderer";
 import GeometryCache from "../../utils/GeometryCache";
-import DirectionalShadowPass from "../DirectionalShadowPass";
+import DirectionalShadowRenderPass from "../DirectionalShadowRenderPass";
 import LightSubPass from "./LightSubPass";
 import GetGBufferIntegrateShader, {
 	GBufferIntegrateShaderEntryFn,
@@ -55,7 +55,7 @@ export default class PointLightsRenderSubPass extends LightSubPass {
 				module: PipelineStates.createShaderModule(
 					GetGBufferIntegrateShader(
 						LightType.Point,
-						DirectionalShadowPass.TEXTURE_SIZE,
+						DirectionalShadowRenderPass.TEXTURE_SIZE,
 						1,
 					),
 				),

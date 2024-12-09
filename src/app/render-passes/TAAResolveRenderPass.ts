@@ -13,9 +13,9 @@ import {
 	FULLSCREEN_TRIANGLE_VERTEX_SHADER_SRC,
 } from "../shaders/VertexShader";
 
-export default class TAAResolvePass extends RenderPass {
-	public outTexture: GPUTexture;
-	public outTextureView: GPUTextureView;
+export default class TAAResolveRenderPass extends RenderPass {
+	private outTexture: GPUTexture;
+	private outTextureView: GPUTextureView;
 
 	private historyTexture: GPUTexture;
 	private historyTextureView: GPUTextureView;
@@ -26,14 +26,11 @@ export default class TAAResolvePass extends RenderPass {
 
 	private renderPSO: GPURenderPipeline;
 	private texturesBindGroupLayout: GPUBindGroupLayout;
+
 	private textureBindGroup: GPUBindGroup;
 
-	constructor(
-		scene: Scene,
-		private colorTextureView: GPUTextureView,
-		private velocityTextureView: GPUTextureView,
-	) {
-		super(RenderPassType.TAAResolve, scene);
+	constructor() {
+		super(RenderPassType.TAAResolve);
 
 		const vertexShaderModule = PipelineStates.createShaderModule(
 			FULLSCREEN_TRIANGLE_VERTEX_SHADER_SRC,
@@ -67,7 +64,7 @@ export default class TAAResolvePass extends RenderPass {
 		];
 
 		this.texturesBindGroupLayout = Renderer.device.createBindGroupLayout({
-			label: "GBuffer Textures Bind Group",
+			label: "TAA Resolve Input Textures Bind Group",
 			entries: texturesBindGroupLayoutEntries,
 		});
 
@@ -148,26 +145,6 @@ export default class TAAResolvePass extends RenderPass {
 			height,
 			depthOrArrayLayers: 1,
 		};
-
-		const texturesBindGroupEntries: GPUBindGroupEntry[] = [
-			{
-				binding: 0,
-				resource: this.colorTextureView,
-			},
-			{
-				binding: 1,
-				resource: this.velocityTextureView,
-			},
-			{
-				binding: 2,
-				resource: this.historyTextureView,
-			},
-		];
-
-		this.textureBindGroup = Renderer.device.createBindGroup({
-			layout: this.texturesBindGroupLayout,
-			entries: texturesBindGroupEntries,
-		});
 	}
 
 	protected override createRenderPassDescriptor(): GPURenderPassDescriptor {
@@ -178,13 +155,41 @@ export default class TAAResolvePass extends RenderPass {
 				storeOp: "store",
 			},
 		];
-		return {
-			colorAttachments: renderPassColorAttachments,
+		return this.augmentRenderPassDescriptorWithTimestampQuery({
 			label: "TAA Resolve Pass",
-		};
+			colorAttachments: renderPassColorAttachments,
+		});
 	}
 
-	public render(commandEncoder: GPUCommandEncoder): void {
+	public override render(
+		commandEncoder: GPUCommandEncoder,
+		_scene: Scene,
+		inputs: GPUTexture[],
+	): GPUTexture[] {
+		if (!this.inputTextureViews.length) {
+			this.inputTextureViews.push(inputs[0].createView());
+			this.inputTextureViews.push(inputs[1].createView());
+
+			const texturesBindGroupEntries: GPUBindGroupEntry[] = [
+				{
+					binding: 0,
+					resource: this.inputTextureViews[0],
+				},
+				{
+					binding: 1,
+					resource: this.inputTextureViews[1],
+				},
+				{
+					binding: 2,
+					resource: this.historyTextureView,
+				},
+			];
+
+			this.textureBindGroup = Renderer.device.createBindGroup({
+				layout: this.texturesBindGroupLayout,
+				entries: texturesBindGroupEntries,
+			});
+		}
 		const renderPassdescriptor = this.createRenderPassDescriptor();
 		const renderPassEncoder =
 			commandEncoder.beginRenderPass(renderPassdescriptor);
@@ -199,5 +204,9 @@ export default class TAAResolvePass extends RenderPass {
 			this.destCopyTextureInfo,
 			this.copyTextureExtend,
 		);
+
+		this.resolveTiming(commandEncoder);
+
+		return [this.outTexture];
 	}
 }

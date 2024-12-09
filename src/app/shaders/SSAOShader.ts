@@ -37,7 +37,7 @@ const SSAOShaderSrc = /* wgsl */ `
   fn ${SSAOShaderName}(
     in: VertexOutput
   ) -> @location(0) vec4f {
-    
+    // return vec4f(1, 0, 0, 1);
     let coord = in.position;
     let pixelCoords = vec2i(floor(coord.xy));
     let encodedN = textureLoad(normalMetallicRoughnessTex, pixelCoords, 0).rg;

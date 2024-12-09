@@ -13,51 +13,21 @@ import { RenderPassType } from "../../renderer/types";
 import Renderer from "../Renderer";
 
 export default class DebugBoundsPass extends RenderPass {
-	public inPlaceTextureView: GPUTextureView;
-	public inPlaceDepthStencilTextureView: GPUTextureView;
-
 	private renderPSO: GPURenderPipeline;
 
 	private linesDebugBindGroupLayout: GPUBindGroupLayout;
 	private linesDebugBindGroup: GPUBindGroup;
 
-	constructor(scene: Scene) {
-		super(RenderPassType.DebugBounds, scene);
+	private scene!: Scene;
+	private worldBBoxesBuffer!: GPUBuffer;
+	private worldBBoxes: Map<string, BoundingBox> = new Map();
+
+	constructor() {
+		super(RenderPassType.DebugBounds);
 
 		const shaderModule = PipelineStates.createShaderModule(
 			DebugBoundingBoxesShaderUtils,
 		);
-
-		const worldBBoxes: BoundingBox[] = [];
-		console.log("----");
-		scene.traverse((node) => {
-			if (node instanceof Drawable) {
-				if (node.worldBoundingBox.getArea() > 0) {
-					worldBBoxes.push(node.worldBoundingBox);
-				}
-			}
-		});
-
-		const worldBBoxesBuffer = Renderer.device.createBuffer({
-			label: "Debug World Bounding Boxes GPUBuffer",
-			size: Float32Array.BYTES_PER_ELEMENT * 8 * worldBBoxes.length,
-			mappedAtCreation: true,
-			usage: GPUBufferUsage.STORAGE,
-		});
-		const worldBBoxesBuffContents = new Float32Array(
-			worldBBoxesBuffer.getMappedRange(),
-		);
-		for (let i = 0; i < worldBBoxes.length; i++) {
-			const bbox = worldBBoxes[i];
-			worldBBoxesBuffContents[i * 8 + 0] = bbox.min[0];
-			worldBBoxesBuffContents[i * 8 + 1] = bbox.min[1];
-			worldBBoxesBuffContents[i * 8 + 2] = bbox.min[2];
-
-			worldBBoxesBuffContents[i * 8 + 4] = bbox.max[0];
-			worldBBoxesBuffContents[i * 8 + 5] = bbox.max[1];
-			worldBBoxesBuffContents[i * 8 + 6] = bbox.max[2];
-		}
-		worldBBoxesBuffer.unmap();
 
 		const targets: GPUColorTargetState[] = [
 			{
@@ -74,23 +44,10 @@ export default class DebugBoundsPass extends RenderPass {
 				},
 			},
 		];
-		const linesBindGroupEntries: GPUBindGroupEntry[] = [
-			{
-				binding: 0,
-				resource: {
-					buffer: worldBBoxesBuffer,
-				},
-			},
-		];
 
 		this.linesDebugBindGroupLayout = Renderer.device.createBindGroupLayout({
 			label: "Debug Bounding Boxes Bind Group Layout",
 			entries: linesBindGroupLayoutEntries,
-		});
-		this.linesDebugBindGroup = Renderer.device.createBindGroup({
-			label: "Debug Bounding Boxes Bind Group",
-			entries: linesBindGroupEntries,
-			layout: this.linesDebugBindGroupLayout,
 		});
 
 		this.renderPSO = PipelineStates.createRenderPipeline({
@@ -122,10 +79,75 @@ export default class DebugBoundsPass extends RenderPass {
 		});
 	}
 
+	public setScene(scene: Scene): this {
+		if (this.scene) {
+			return;
+		}
+		this.scene = scene;
+
+		this.scene.addOnGraphChangedCallback(() => {
+			let newNodesAdded = false;
+			this.scene.traverse((node) => {
+				if (this.worldBBoxes.has(node.id)) {
+					return;
+				}
+				newNodesAdded = true;
+
+				if (node instanceof Drawable) {
+					if (node.worldBoundingBox.getArea() > 0) {
+						this.worldBBoxes.set(node.id, node.worldBoundingBox);
+					}
+				}
+			});
+
+			if (newNodesAdded && this.worldBBoxesBuffer) {
+				this.worldBBoxesBuffer.destroy();
+			}
+
+			this.worldBBoxesBuffer = Renderer.device.createBuffer({
+				label: "Debug World Bounding Boxes GPUBuffer",
+				size: Float32Array.BYTES_PER_ELEMENT * 8 * this.worldBBoxes.size,
+				mappedAtCreation: true,
+				usage: GPUBufferUsage.STORAGE,
+			});
+			const worldBBoxesBuffContents = new Float32Array(
+				this.worldBBoxesBuffer.getMappedRange(),
+			);
+			let i = 0;
+			for (const bbox of this.worldBBoxes.values()) {
+				worldBBoxesBuffContents[i * 8 + 0] = bbox.min[0];
+				worldBBoxesBuffContents[i * 8 + 1] = bbox.min[1];
+				worldBBoxesBuffContents[i * 8 + 2] = bbox.min[2];
+
+				worldBBoxesBuffContents[i * 8 + 4] = bbox.max[0];
+				worldBBoxesBuffContents[i * 8 + 5] = bbox.max[1];
+				worldBBoxesBuffContents[i * 8 + 6] = bbox.max[2];
+				i++;
+			}
+			this.worldBBoxesBuffer.unmap();
+
+			const linesBindGroupEntries: GPUBindGroupEntry[] = [
+				{
+					binding: 0,
+					resource: {
+						buffer: this.worldBBoxesBuffer,
+					},
+				},
+			];
+			this.linesDebugBindGroup = Renderer.device.createBindGroup({
+				label: "Debug Bounding Boxes Bind Group",
+				entries: linesBindGroupEntries,
+				layout: this.linesDebugBindGroupLayout,
+			});
+		});
+
+		return this;
+	}
+
 	protected override createRenderPassDescriptor(): GPURenderPassDescriptor {
 		const renderPassColorAttachments: GPURenderPassColorAttachment[] = [
 			{
-				view: this.inPlaceTextureView,
+				view: this.inputTextureViews[0],
 				loadOp: "load",
 				storeOp: "store",
 			},
@@ -134,14 +156,22 @@ export default class DebugBoundsPass extends RenderPass {
 			label: `Debug Bounding Boxes Render Pass`,
 			colorAttachments: renderPassColorAttachments,
 			depthStencilAttachment: {
-				view: this.inPlaceDepthStencilTextureView,
+				view: this.inputTextureViews[1],
 				depthReadOnly: true,
 				stencilReadOnly: true,
 			},
 		};
 	}
 
-	public override render(commandEncoder: GPUCommandEncoder): void {
+	public override render(
+		commandEncoder: GPUCommandEncoder,
+		_scene: Scene,
+		inputs: GPUTexture[],
+	): GPUTexture[] {
+		if (!this.inputTextureViews.length) {
+			this.inputTextureViews.push(inputs[0].createView());
+			this.inputTextureViews.push(inputs[1].createView());
+		}
 		Renderer.activeRenderPass = this.type;
 
 		const renderPassEncoder = commandEncoder.beginRenderPass(
@@ -160,5 +190,7 @@ export default class DebugBoundsPass extends RenderPass {
 
 		renderPassEncoder.popDebugGroup();
 		renderPassEncoder.end();
+
+		return [inputs[0]];
 	}
 }

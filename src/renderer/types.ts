@@ -1,13 +1,40 @@
 export enum RenderPassType {
 	Deferred,
-	DeferredLighting,
+	DirectionalAmbientLighting,
+	PointLightsStencilMask,
+	PointLightsLighting,
 	SSAO,
+	Skybox,
 	Transparent,
 	Shadow,
 	EnvironmentCube,
 	TAAResolve,
 	Reflection,
 	DebugBounds,
+	Blit,
+}
+
+export enum DebugTimingType {
+	CPUTotal,
+	GPUTotal,
+	FPS,
+	DeferredRenderPass,
+	DirectionalAmbientLightingRenderPass,
+	PointLightsStencilMask,
+	PointLightsLighting,
+	SSAORenderPass,
+	TransparentRenderPass,
+	ShadowRenderPass,
+	TAAResolveRenderPass,
+	ReflectionRenderPass,
+	BlitRenderPass,
+}
+
+export type RenderPassTimingRange = [number, number];
+
+export interface RenderPassTiming {
+	avgValue: number;
+	timings: RenderPassTimingRange;
 }
 
 export enum LightType {
@@ -40,3 +67,8 @@ export interface HDRImageResult {
 	height: number;
 	rgbaHalfFloat: Uint16Array;
 }
+
+export type RenderPassTimingResolveBufferState =
+	| "free"
+	| "need resolve"
+	| "wait for result";

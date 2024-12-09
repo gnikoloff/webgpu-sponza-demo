@@ -6,8 +6,9 @@ import Skybox from "../../meshes/Skybox";
 import DirectionalLightSubPass from "./DirectionalLightSubPass";
 import PointLightsRenderSubPass from "./PointLightsRenderSubPass";
 import PointLightsMaskSubPass from "./PointLightsMaskSubPass";
-import Scene from "../../../renderer/scene/Scene";
 import { RenderPassType } from "../../../renderer/types";
+import SamplerController from "../../../renderer/texture/SamplerController";
+import Scene from "../../../renderer/scene/Scene";
 
 export default class GBufferIntegratePass extends RenderPass {
 	public outTexture: GPUTexture;
@@ -17,11 +18,12 @@ export default class GBufferIntegratePass extends RenderPass {
 
 	private gbufferTexturesBindGroup: GPUBindGroup;
 	private gbufferCommonBindGroupLayout: GPUBindGroupLayout;
-	private lightsMaskBindGroupLayout: GPUBindGroupLayout;
 
 	private dirLightPass?: DirectionalLightSubPass;
 	private pointsLightRenderPass?: PointLightsRenderSubPass;
 	private pointsLightMasPass?: PointLightsMaskSubPass;
+
+	private bayerDitherSampler: GPUSampler;
 
 	private pointLights: PointLight[] = [];
 
@@ -72,19 +74,10 @@ export default class GBufferIntegratePass extends RenderPass {
 		return this;
 	}
 
-	constructor(
-		scene: Scene,
-		private normalMetallicRoughnessTextureView: GPUTextureView,
-		private colorReflectanceTextureView: GPUTextureView,
-		private depthTextureView: GPUTextureView,
-		private depthStencilTextureView: GPUTextureView,
-		private ssaoTextureView: GPUTextureView,
-		private shadowDepthTextureView: GPUTextureView,
-		private shadowCascadesBuffer: GPUBuffer,
-	) {
-		super(RenderPassType.DeferredLighting, scene);
+	constructor() {
+		super(RenderPassType.DeferredLighting);
 
-		this.pointLights = scene.getPointLights();
+		// this.pointLights = scene.getPointLights();
 
 		const gbufferCommonBindGroupLayoutEntries: GPUBindGroupLayoutEntry[] = [
 			{
@@ -207,61 +200,11 @@ export default class GBufferIntegratePass extends RenderPass {
 		});
 		this.outTextureView = this.outTexture.createView();
 
-		const bayerDitherSampler = Renderer.device.createSampler({
+		this.bayerDitherSampler = SamplerController.createSampler({
 			addressModeU: "repeat",
 			addressModeV: "repeat",
 			minFilter: "nearest",
 			magFilter: "nearest",
-		});
-
-		const gbufferTexturesBindGroupEntries: GPUBindGroupEntry[] = [
-			{
-				binding: 0,
-				resource: this.normalMetallicRoughnessTextureView,
-			},
-			{
-				binding: 1,
-				resource: this.colorReflectanceTextureView,
-			},
-			{
-				binding: 2,
-				resource: this.depthTextureView,
-			},
-			{
-				binding: 3,
-				resource: this.ssaoTextureView,
-			},
-			{
-				binding: 4,
-				resource: TextureLoader.bayerDitherPatternTexture.createView(),
-			},
-			{
-				binding: 5,
-				resource: bayerDitherSampler,
-			},
-			{
-				binding: 6,
-				resource: {
-					buffer: this.camera.gpuBuffer,
-				},
-			},
-			{
-				binding: 7,
-				resource: {
-					buffer: this.scene.lightsBuffer,
-				},
-			},
-			{
-				binding: 8,
-				resource: {
-					buffer: this.debugLightsBuffer,
-				},
-			},
-		];
-
-		this.gbufferTexturesBindGroup = Renderer.device.createBindGroup({
-			layout: this.gbufferCommonBindGroupLayout,
-			entries: gbufferTexturesBindGroupEntries,
 		});
 
 		this.dirLightPass = new DirectionalLightSubPass(
@@ -271,37 +214,37 @@ export default class GBufferIntegratePass extends RenderPass {
 			this.shadowDepthTextureView,
 		);
 
-		this.pointsLightRenderPass = new PointLightsRenderSubPass(
-			this.gbufferCommonBindGroupLayout,
-			this.gbufferTexturesBindGroup,
-		);
-		this.pointsLightRenderPass?.setPointLights(this.pointLights);
+		// this.pointsLightRenderPass = new PointLightsRenderSubPass(
+		// 	this.gbufferCommonBindGroupLayout,
+		// 	this.gbufferTexturesBindGroup,
+		// );
+		// this.pointsLightRenderPass?.setPointLights(this.pointLights);
 
-		const lightsMaskBindGroupEntries: GPUBindGroupEntry[] = [
-			{
-				binding: 0,
-				resource: {
-					buffer: this.camera.gpuBuffer,
-				},
-			},
-			{
-				binding: 1,
-				resource: {
-					buffer: this.scene.lightsBuffer,
-				},
-			},
-		];
+		// const lightsMaskBindGroupEntries: GPUBindGroupEntry[] = [
+		// 	{
+		// 		binding: 0,
+		// 		resource: {
+		// 			buffer: this.camera.gpuBuffer,
+		// 		},
+		// 	},
+		// 	{
+		// 		binding: 1,
+		// 		resource: {
+		// 			buffer: this.scene.lightsBuffer,
+		// 		},
+		// 	},
+		// ];
 
-		const lightMaskBindGroup = Renderer.device.createBindGroup({
-			layout: this.lightsMaskBindGroupLayout,
-			entries: lightsMaskBindGroupEntries,
-		});
+		// const lightMaskBindGroup = Renderer.device.createBindGroup({
+		// 	layout: this.lightsMaskBindGroupLayout,
+		// 	entries: lightsMaskBindGroupEntries,
+		// });
 
-		this.pointsLightMasPass = new PointLightsMaskSubPass(
-			this.lightsMaskBindGroupLayout,
-			lightMaskBindGroup,
-		);
-		this.pointsLightMasPass.setPointLights(this.pointLights);
+		// this.pointsLightMasPass = new PointLightsMaskSubPass(
+		// 	this.lightsMaskBindGroupLayout,
+		// 	lightMaskBindGroup,
+		// );
+		// this.pointsLightMasPass.setPointLights(this.pointLights);
 	}
 
 	protected override createRenderPassDescriptor(): GPURenderPassDescriptor {
@@ -319,7 +262,7 @@ export default class GBufferIntegratePass extends RenderPass {
 			depthStencilAttachment: {
 				depthReadOnly: true,
 				stencilReadOnly: false,
-				view: this.depthStencilTextureView,
+				view: this.inputTextures[2].createView(),
 				// depthLoadOp: "load",
 				// depthStoreOp: "store",
 				stencilLoadOp: "load",
@@ -341,7 +284,7 @@ export default class GBufferIntegratePass extends RenderPass {
 			colorAttachments: renderPassColorAttachments,
 			depthStencilAttachment: {
 				depthReadOnly: true,
-				view: this.depthStencilTextureView,
+				view: this.inputTextures[2].createView(),
 				stencilLoadOp: "load",
 				stencilStoreOp: "store",
 			},
@@ -353,7 +296,7 @@ export default class GBufferIntegratePass extends RenderPass {
 			label: "Mask Lights Render Pass",
 			colorAttachments: [],
 			depthStencilAttachment: {
-				view: this.depthStencilTextureView,
+				view: this.inputTextures[2].createView(),
 				// depthReadOnly: true,
 				// stencilReadOnly: false,
 				depthLoadOp: "load",
@@ -365,7 +308,15 @@ export default class GBufferIntegratePass extends RenderPass {
 		};
 	}
 
-	public override render(commandEncoder: GPUCommandEncoder): void {
+	public override render(
+		commandEncoder: GPUCommandEncoder,
+		scene: Scene,
+		inputs: GPUTexture[],
+	): GPUTexture[] {
+		if (!this.inputTextureViews.length) {
+			this.inputTextures = inputs;
+		}
+
 		// Mask Point Lights
 		const lightMaskPassDescriptor = this.createLightMaskPassDescriptor();
 		const lightMaskEncoder = commandEncoder.beginRenderPass(
@@ -397,5 +348,7 @@ export default class GBufferIntegratePass extends RenderPass {
 			// this.skybox.render(skyboxRenderPassEncoder);
 			// skyboxRenderPassEncoder.end();
 		}
+
+		return [this.outTexture];
 	}
 }

@@ -16,8 +16,9 @@ export default class ReflectionComputePass extends RenderPass {
 	private settingsGpuBuffer: GPUBuffer;
 	private computePSOBindGroupLayout: GPUBindGroupLayout;
 
-	constructor(scene: Scene) {
-		super(RenderPassType.Reflection, scene);
+	constructor() {
+		super(RenderPassType.Reflection);
+
 		this.settingsGpuBuffer = Renderer.device.createBuffer({
 			label: "Reflection Pass Settings GPUBuffer",
 			size: 4 * Uint32Array.BYTES_PER_ELEMENT,

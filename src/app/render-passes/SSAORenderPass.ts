@@ -1,26 +1,30 @@
-import PipelineStates from "../../../renderer/core/PipelineStates";
-import RenderPass from "../../../renderer/core/RenderPass";
-import Scene from "../../../renderer/scene/Scene";
-import Renderer from "../../Renderer";
+import PipelineStates from "../../renderer/core/PipelineStates";
+import RenderPass from "../../renderer/core/RenderPass";
+import Scene from "../../renderer/scene/Scene";
+import Renderer from "../Renderer";
 import FullScreenVertexShaderUtils, {
 	FullScreenVertexShaderEntryFn,
-} from "../../../renderer/shader/FullScreenVertexShaderUtils";
+} from "../../renderer/shader/FullScreenVertexShaderUtils";
 import SSAOShaderSrc, {
 	SSAOShaderName,
 	SSSAOBlurShaderName,
-} from "../../shaders/SSAOShader";
+} from "../shaders/SSAOShader";
 import { vec4 } from "wgpu-matrix";
-import { lerp } from "../../../renderer/math/math";
-import { RenderPassType } from "../../../renderer/types";
+import { lerp } from "../../renderer/math/math";
+import { RenderPassType } from "../../renderer/types";
+import TextureLoader from "../../renderer/texture/TextureLoader";
 
 export default class SSAORenderPass extends RenderPass {
-	public outTexture: GPUTexture;
-	public outTextureView: GPUTextureView;
+	private outTexture: GPUTexture;
+	private outTextureView: GPUTextureView;
 
-	public ssaoTexture: GPUTexture;
-	public ssaoTextureView: GPUTextureView;
+	private ssaoTexture: GPUTexture;
+	private ssaoTextureView: GPUTextureView;
+
+	private blueNoiseTexture: GPUTexture;
 
 	private gbufferCommonBindGroupLayout: GPUBindGroupLayout;
+	private gbufferTexturesBindGroupEntries: GPUBindGroupEntry[] = [];
 	private gbufferTexturesBindGroup: GPUBindGroup;
 	private blurBindGroupLayout: GPUBindGroupLayout;
 	private blurBindGroup: GPUBindGroup;
@@ -29,14 +33,9 @@ export default class SSAORenderPass extends RenderPass {
 	private blurPSO: GPURenderPipeline;
 
 	private kernelBuffer: GPUBuffer;
-	private noiseTexture: GPUTexture;
 
-	constructor(
-		scene: Scene,
-		private normalMetallicRoughnessTextureView: GPUTextureView,
-		private depthTextureView: GPUTextureView,
-	) {
-		super(RenderPassType.SSAO, scene);
+	constructor() {
+		super(RenderPassType.SSAO);
 
 		const kernelSize = 64;
 		const kernel = new Float32Array(kernelSize * 4);
@@ -204,7 +203,7 @@ export default class SSAORenderPass extends RenderPass {
 		const responce = await fetch(url);
 		const blob = await responce.blob();
 		const imageBitmap = await createImageBitmap(blob);
-		const noiseTexture = Renderer.device.createTexture({
+		this.blueNoiseTexture = Renderer.device.createTexture({
 			label: "SSAO Noise Texture",
 			format: "rgba32float",
 			size: { width: 32, height: 32, depthOrArrayLayers: 1 },
@@ -216,40 +215,11 @@ export default class SSAORenderPass extends RenderPass {
 
 		Renderer.device.queue.copyExternalImageToTexture(
 			{ source: imageBitmap },
-			{ texture: noiseTexture },
+			{ texture: this.blueNoiseTexture },
 			{ width: 32, height: 32 },
 		);
 
 		imageBitmap.close();
-
-		const gbufferTexturesBindGroupEntries: GPUBindGroupEntry[] = [
-			{
-				binding: 0,
-				resource: this.normalMetallicRoughnessTextureView,
-			},
-			{
-				binding: 1,
-				resource: this.depthTextureView,
-			},
-			{ binding: 2, resource: noiseTexture.createView() },
-			{
-				binding: 3,
-				resource: {
-					buffer: this.kernelBuffer,
-				},
-			},
-			{
-				binding: 4,
-				resource: {
-					buffer: this.camera.gpuBuffer,
-				},
-			},
-		];
-
-		this.gbufferTexturesBindGroup = Renderer.device.createBindGroup({
-			layout: this.gbufferCommonBindGroupLayout,
-			entries: gbufferTexturesBindGroupEntries,
-		});
 
 		const blurInputBindGroupEntries: GPUBindGroupEntry[] = [
 			{
@@ -262,8 +232,6 @@ export default class SSAORenderPass extends RenderPass {
 			entries: blurInputBindGroupEntries,
 			layout: this.blurBindGroupLayout,
 		});
-
-		this.noiseTexture = noiseTexture;
 	}
 
 	protected override createRenderPassDescriptor(): GPURenderPassDescriptor {
@@ -274,7 +242,7 @@ export default class SSAORenderPass extends RenderPass {
 				view: this.ssaoTextureView,
 			},
 		];
-		return this.getTimestampedRenderPassDescriptor({
+		return this.augmentRenderPassDescriptorWithTimestampQuery({
 			label: "SSAO Render Pass Descriptor",
 			colorAttachments,
 		});
@@ -294,12 +262,51 @@ export default class SSAORenderPass extends RenderPass {
 		};
 	}
 
-	public override async render(
+	public override render(
 		commandEncoder: GPUCommandEncoder,
-	): Promise<void> {
-		// if (!this.noiseTexture) {
-		// 	return;
-		// }
+		scene: Scene,
+		inputs: GPUTexture[],
+	): GPUTexture[] {
+		if (!this.inputTextureViews.length) {
+			this.inputTextureViews.push(inputs[0].createView());
+			this.inputTextureViews.push(
+				inputs[1].createView({ aspect: "depth-only" }),
+			);
+
+			this.gbufferTexturesBindGroupEntries = [
+				{
+					binding: 0,
+					resource: this.inputTextureViews[0],
+				},
+				{
+					binding: 1,
+					resource: this.inputTextureViews[1],
+				},
+				{
+					binding: 2,
+					resource: (
+						this.blueNoiseTexture || TextureLoader.dummyTexture
+					).createView(),
+				},
+				{
+					binding: 3,
+					resource: {
+						buffer: this.kernelBuffer,
+					},
+				},
+				{
+					binding: 4,
+					resource: {
+						buffer: this.camera.gpuBuffer,
+					},
+				},
+			];
+
+			this.gbufferTexturesBindGroup = Renderer.device.createBindGroup({
+				layout: this.gbufferCommonBindGroupLayout,
+				entries: this.gbufferTexturesBindGroupEntries,
+			});
+		}
 
 		const renderPassDesc = this.createRenderPassDescriptor();
 		const renderPass = commandEncoder.beginRenderPass(renderPassDesc);
@@ -325,5 +332,7 @@ export default class SSAORenderPass extends RenderPass {
 
 		blurPass.popDebugGroup();
 		blurPass.end();
+
+		return [this.ssaoTexture];
 	}
 }

@@ -16,15 +16,12 @@ import { BIND_GROUP_LOCATIONS } from "../../renderer/core/RendererBindings";
 import Scene from "../../renderer/scene/Scene";
 import { RenderPassType } from "../../renderer/types";
 
-export default class DirectionalShadowPass extends RenderPass {
+export default class DirectionalShadowRenderPass extends RenderPass {
 	public static readonly TEXTURE_SIZE = 2048;
 	public static readonly TEXTURE_CASCADES_COUNT = 2;
 	public static readonly TEXTURE_CASCADE_FAR_DISTANCES: number[] = [6, 22, 200];
 
-	public shadowTexture: GPUTexture;
-	public shadowTextureViewCascade0: GPUTextureView;
-	public shadowTextureViewCascade1: GPUTextureView;
-	public shadowTextureViewCascadesAll: GPUTextureView;
+	private shadowTexture: GPUTexture;
 
 	public shadowCascadesBuffer: GPUBuffer;
 	private shadowCascadeView: StructuredView;
@@ -38,17 +35,17 @@ export default class DirectionalShadowPass extends RenderPass {
 	private shadowCameraCascade0BufferUniformValues: StructuredView;
 	private shadowCameraCascade1BufferUniformValues: StructuredView;
 
-	constructor(scene: Scene, private sceneDirectionalLight: DirectionalLight) {
-		super(RenderPassType.Shadow, scene);
+	constructor(private sceneDirectionalLight: DirectionalLight) {
+		super(RenderPassType.Shadow);
 		this.type = RenderPassType.Shadow;
 
 		this.shadowTexture = Renderer.device.createTexture({
 			dimension: "2d",
 			format: "depth32float",
 			size: {
-				width: DirectionalShadowPass.TEXTURE_SIZE,
-				height: DirectionalShadowPass.TEXTURE_SIZE,
-				depthOrArrayLayers: DirectionalShadowPass.TEXTURE_CASCADES_COUNT,
+				width: DirectionalShadowRenderPass.TEXTURE_SIZE,
+				height: DirectionalShadowRenderPass.TEXTURE_SIZE,
+				depthOrArrayLayers: DirectionalShadowRenderPass.TEXTURE_CASCADES_COUNT,
 			},
 			usage:
 				GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
@@ -57,17 +54,6 @@ export default class DirectionalShadowPass extends RenderPass {
 			sampleCount: 1,
 			label: "Shadow Map Texture",
 		});
-		this.shadowTextureViewCascade0 = this.shadowTexture.createView({
-			baseArrayLayer: 0,
-			arrayLayerCount: 1,
-			dimension: "2d",
-		});
-		this.shadowTextureViewCascade1 = this.shadowTexture.createView({
-			baseArrayLayer: 1,
-			arrayLayerCount: 1,
-			dimension: "2d",
-		});
-		this.shadowTextureViewCascadesAll = this.shadowTexture.createView();
 
 		const cameraShaderDefs = makeShaderDataDefinitions(
 			SHADER_CHUNKS.CameraUniform,
@@ -127,14 +113,15 @@ export default class DirectionalShadowPass extends RenderPass {
 		this.shadowCascadesBuffer = Renderer.device.createBuffer({
 			label: "Directional Shadow Cascade ProjView Matrices",
 			size:
-				(DirectionalShadowPass.TEXTURE_CASCADES_COUNT + 1) *
+				(DirectionalShadowRenderPass.TEXTURE_CASCADES_COUNT + 1) *
 				this.shadowCascadeView.arrayBuffer.byteLength,
 			usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
 		});
 	}
 
-	public override setCamera(camera: Camera): void {
+	public override setCamera(camera: Camera): this {
 		this.camera = camera;
+		return this;
 	}
 
 	private getLightSpaceMatrix(): Mat4 {
@@ -200,7 +187,11 @@ export default class DirectionalShadowPass extends RenderPass {
 		return outMatrix;
 	}
 
-	public render(commandEncoder: GPUCommandEncoder): void {
+	public render(
+		commandEncoder: GPUCommandEncoder,
+		scene: Scene,
+		inputs: GPUTexture[],
+	): GPUTexture[] {
 		Renderer.activeRenderPass = this.type;
 
 		const oldCameraNear = this.camera.near;
@@ -208,9 +199,12 @@ export default class DirectionalShadowPass extends RenderPass {
 
 		// Render Cascade #0
 		this.camera.near = 0.1;
-		this.camera.far = DirectionalShadowPass.TEXTURE_CASCADE_FAR_DISTANCES[0];
+		this.camera.far =
+			DirectionalShadowRenderPass.TEXTURE_CASCADE_FAR_DISTANCES[0];
 		this.camera.updateProjectionMatrix();
+
 		const lightSpaceMatCascade0 = this.getLightSpaceMatrix();
+
 		this.shadowCascadeView.set({
 			projViewMatrix: lightSpaceMatCascade0,
 			distance: this.camera.far,
@@ -233,7 +227,11 @@ export default class DirectionalShadowPass extends RenderPass {
 		const renderPassDescriptorCascade0: GPURenderPassDescriptor = {
 			colorAttachments: [],
 			depthStencilAttachment: {
-				view: this.shadowTextureViewCascade0,
+				view: this.shadowTexture.createView({
+					baseArrayLayer: 0,
+					arrayLayerCount: 1,
+					dimension: "2d",
+				}),
 				depthClearValue: 1,
 				depthLoadOp: "clear",
 				depthStoreOp: "store",
@@ -250,16 +248,18 @@ export default class DirectionalShadowPass extends RenderPass {
 		);
 		renderPassEncoderCascade0.pushDebugGroup("Render Shadow Cascade #0");
 
-		this.scene.renderOpaqueNodes(renderPassEncoderCascade0);
-		this.scene.renderTransparentNodes(renderPassEncoderCascade0);
+		scene.renderOpaqueNodes(renderPassEncoderCascade0);
+		scene.renderTransparentNodes(renderPassEncoderCascade0);
 
 		renderPassEncoderCascade0.popDebugGroup();
 		renderPassEncoderCascade0.end();
 
 		// Render Cascade #1
 
-		this.camera.near = DirectionalShadowPass.TEXTURE_CASCADE_FAR_DISTANCES[0];
-		this.camera.far = DirectionalShadowPass.TEXTURE_CASCADE_FAR_DISTANCES[1];
+		this.camera.near =
+			DirectionalShadowRenderPass.TEXTURE_CASCADE_FAR_DISTANCES[0];
+		this.camera.far =
+			DirectionalShadowRenderPass.TEXTURE_CASCADE_FAR_DISTANCES[1];
 		this.camera.updateProjectionMatrix();
 
 		const lightSpaceMatCascade1 = this.getLightSpaceMatrix();
@@ -285,7 +285,11 @@ export default class DirectionalShadowPass extends RenderPass {
 		const renderPassDescriptorCascade1: GPURenderPassDescriptor = {
 			colorAttachments: [],
 			depthStencilAttachment: {
-				view: this.shadowTextureViewCascade1,
+				view: this.shadowTexture.createView({
+					baseArrayLayer: 1,
+					arrayLayerCount: 1,
+					dimension: "2d",
+				}),
 				depthClearValue: 1,
 				depthLoadOp: "clear",
 				depthStoreOp: "store",
@@ -302,14 +306,16 @@ export default class DirectionalShadowPass extends RenderPass {
 			this.shadowCameraCascade1BindGroup,
 		);
 
-		this.scene.renderOpaqueNodes(renderPassEncoderCascade1);
-		this.scene.renderTransparentNodes(renderPassEncoderCascade1);
+		scene.renderOpaqueNodes(renderPassEncoderCascade1);
+		scene.renderTransparentNodes(renderPassEncoderCascade1);
 
 		renderPassEncoderCascade1.popDebugGroup();
 		renderPassEncoderCascade1.end();
 
-		this.camera.near = DirectionalShadowPass.TEXTURE_CASCADE_FAR_DISTANCES[1];
-		this.camera.far = DirectionalShadowPass.TEXTURE_CASCADE_FAR_DISTANCES[2];
+		this.camera.near =
+			DirectionalShadowRenderPass.TEXTURE_CASCADE_FAR_DISTANCES[1];
+		this.camera.far =
+			DirectionalShadowRenderPass.TEXTURE_CASCADE_FAR_DISTANCES[2];
 		this.camera.updateProjectionMatrix();
 		const lightSpaceMatCascade2 = this.getLightSpaceMatrix();
 
@@ -327,5 +333,7 @@ export default class DirectionalShadowPass extends RenderPass {
 		this.camera.near = oldCameraNear;
 		this.camera.far = oldCameraFar;
 		this.camera.updateProjectionMatrix();
+
+		return [this.shadowTexture];
 	}
 }

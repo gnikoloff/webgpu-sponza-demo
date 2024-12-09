@@ -125,7 +125,8 @@ const GetGBufferIntegrateShader = (
 
     #if ${ligthSampleOffset !== 0}
     let debugColor = vec4f(1.0, 0.0, 0.0, 1.0);
-    return mix(color, debugColor, debugLightsInfo.debugLights);
+    // return mix(color, debugColor, debugLightsInfo.debugLights);
+    return color;
     #else
     return color;
     #endif

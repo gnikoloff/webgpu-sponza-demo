@@ -76,7 +76,6 @@ export default class CameraFlyController {
 			// Move the camera in the direction we are facing
 			vec3.transformMat4(DIR, this.rotMat, DIR);
 			vec3.add(this.position, DIR, this.position);
-			// debugger;
 		}
 
 		// if (this.isDirty) {
