@@ -14,7 +14,7 @@ const SSAOShaderSrc = /* wgsl */ `
   @group(0) @binding(0) var normalMetallicRoughnessTex: texture_2d<f32>;
   @group(0) @binding(1) var depthTexture: texture_depth_2d;
   @group(0) @binding(2) var noiseTexture: texture_2d<f32>;
-  @group(0) @binding(3) var<storage> kernelBuffer: array<vec3f>;
+  @group(0) @binding(3) var<storage, read> kernelBuffer: array<vec4f>;
   @group(0) @binding(4) var<uniform> camera: CameraUniform;
 
   @group(1) @binding(0) var ssaoTexture: texture_2d<f32>;
@@ -37,22 +37,28 @@ const SSAOShaderSrc = /* wgsl */ `
   fn ${SSAOShaderName}(
     in: VertexOutput
   ) -> @location(0) vec4f {
-    // return vec4f(1, 0, 0, 1);
     let coord = in.position;
     let pixelCoords = vec2i(floor(coord.xy));
     let encodedN = textureLoad(normalMetallicRoughnessTex, pixelCoords, 0).rg;
     let viewNormal = decodeNormal(encodedN); 
     let centerDepth = textureLoad(depthTexture, pixelCoords, 0);
-    let viewSpacePos = calcViewSpacePos(&camera, coord.xy, centerDepth);
+    let viewSpacePos = calcViewSpacePos(camera, coord.xy, centerDepth);
+
+
+    
 
     let noiseScale = vec2i(textureDimensions(noiseTexture).xy);
     let sampleCoords = pixelCoords % noiseScale;
     var randomVec = textureLoad(noiseTexture, sampleCoords, 0).rgb * 2 - 1;
     randomVec = (camera.viewMatrix * vec4f(randomVec, 0)).xyz;
 
+    
+
     let tangent = normalize(randomVec - viewNormal * dot(randomVec, viewNormal));
     let bitangent = cross(viewNormal, tangent);
     let TBN = mat3x3f(tangent, bitangent, viewNormal);
+
+    
 
     const kernelSize = 32u;
     const radius = 0.35f;
@@ -60,6 +66,8 @@ const SSAOShaderSrc = /* wgsl */ `
     var occlusion = 0.0;
 
     let screenSize = vec2i(textureDimensions(depthTexture).xy);
+
+    
 
     for (var i = 0u; i < kernelSize; i++) {
       var samplePos = TBN * kernelBuffer[i].xyz;
@@ -80,7 +88,7 @@ const SSAOShaderSrc = /* wgsl */ `
 
       let sampleDepth = textureLoad(depthTexture, screenCoord, 0);
 
-      let sampleOffsetViewPos = calcViewSpacePos(&camera, vec2f(screenCoord.xy), sampleDepth);
+      let sampleOffsetViewPos = calcViewSpacePos(camera, vec2f(screenCoord.xy), sampleDepth);
       let rangeCheck = smoothstep(0.0, 1.0, radius / abs(viewSpacePos.z - sampleOffsetViewPos.z));
 
       let bias = 0.015;
@@ -90,9 +98,10 @@ const SSAOShaderSrc = /* wgsl */ `
         sampleOffsetViewPos.z >= samplePos.z + bias
       ) * rangeCheck;
     }
+    // return vec4f(1, 0, 0, 1);
 
     occlusion = 1 - (occlusion / f32(kernelSize));
-    // occlusion = pow(occlusion, 1);
+    // // occlusion = pow(occlusion, 1);
 
     return vec4f(vec3f(occlusion), 1);
 

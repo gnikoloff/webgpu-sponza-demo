@@ -1,12 +1,10 @@
 import Camera from "../../renderer/camera/Camera";
 import PipelineStates from "../../renderer/core/PipelineStates";
-import RenderPass from "../../renderer/core/RenderPass";
+import RenderingContext from "../../renderer/core/RenderingContext";
 import VertexDescriptor from "../../renderer/core/VertexDescriptor";
-import PointLight from "../../renderer/lighting/PointLight";
 import Drawable from "../../renderer/scene/Drawable";
 import Transform from "../../renderer/scene/Transform";
 import { RenderPassType } from "../../renderer/types";
-import Renderer from "../Renderer";
 import GeometryCache from "../utils/GeometryCache";
 import LightRenderPass from "./LightRenderPass";
 import GetGBufferVertexShader, {
@@ -36,7 +34,7 @@ export default class PointLightsMaskPass extends LightRenderPass {
 	}
 
 	public updateLightsMaskBindGroup(): this {
-		this.lightsMaskBindGroup = Renderer.device.createBindGroup({
+		this.lightsMaskBindGroup = RenderingContext.device.createBindGroup({
 			layout: this.lightsMaskBindGroupLayout,
 			entries: this.lightsMaskBindGroupEntries,
 		});
@@ -74,12 +72,13 @@ export default class PointLightsMaskPass extends LightRenderPass {
 			},
 		];
 
-		this.lightsMaskBindGroupLayout = Renderer.device.createBindGroupLayout({
-			label: "Light Masking Bind Group",
-			entries: lightsMaskBindGroupLayoutEntries,
-		});
+		this.lightsMaskBindGroupLayout =
+			RenderingContext.device.createBindGroupLayout({
+				label: "Light Masking Bind Group",
+				entries: lightsMaskBindGroupLayoutEntries,
+			});
 
-		const renderPSOLayout = Renderer.device.createPipelineLayout({
+		const renderPSOLayout = RenderingContext.device.createPipelineLayout({
 			label: "Point Lights Mask Render PSO Layout",
 			bindGroupLayouts: [this.lightsMaskBindGroupLayout],
 		});
@@ -96,7 +95,7 @@ export default class PointLightsMaskPass extends LightRenderPass {
 				buffers: VertexDescriptor.defaultLayout,
 			},
 			depthStencil: {
-				format: Renderer.depthStencilFormat,
+				format: RenderingContext.depthStencilFormat,
 				depthWriteEnabled: false,
 				depthCompare: "less-equal",
 				stencilReadMask: 0x0,
@@ -148,9 +147,12 @@ export default class PointLightsMaskPass extends LightRenderPass {
 		const renderPass = commandEncoder.beginRenderPass(
 			this.createRenderPassDescriptor(),
 		);
+
+		RenderingContext.setActiveRenderPass(this.type, renderPass);
+
 		renderPass.pushDebugGroup("Point Lights Stencil Mask");
 
-		renderPass.setPipeline(this.renderPSO);
+		RenderingContext.bindRenderPSO(this.renderPSO);
 		renderPass.setStencilReference(128);
 		renderPass.setBindGroup(0, this.lightsMaskBindGroup);
 		renderPass.setVertexBuffer(

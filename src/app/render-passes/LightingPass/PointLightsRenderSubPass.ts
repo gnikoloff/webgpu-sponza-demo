@@ -1,9 +1,9 @@
 import PipelineStates from "../../../renderer/core/PipelineStates";
+import RenderingContext from "../../../renderer/core/RenderingContext";
 import VertexDescriptor from "../../../renderer/core/VertexDescriptor";
 import PointLight from "../../../renderer/lighting/PointLight";
 import Drawable from "../../../renderer/scene/Drawable";
 import { LightType } from "../../../renderer/types";
-import Renderer from "../../Renderer";
 import GeometryCache from "../../utils/GeometryCache";
 import DirectionalShadowRenderPass from "../DirectionalShadowRenderPass";
 import LightSubPass from "./LightSubPass";
@@ -28,10 +28,11 @@ export default class PointLightsRenderSubPass extends LightSubPass {
 	) {
 		super(gbufferCommonBindGroupLayout);
 
-		const pointLightRenderPSOLayout = Renderer.device.createPipelineLayout({
-			label: "Render Lights PSO Layout",
-			bindGroupLayouts: [this.gbufferCommonBindGroupLayout],
-		});
+		const pointLightRenderPSOLayout =
+			RenderingContext.device.createPipelineLayout({
+				label: "Render Lights PSO Layout",
+				bindGroupLayouts: [this.gbufferCommonBindGroupLayout],
+			});
 
 		const lightRenderStencilState: GPUStencilFaceState = {
 			compare: "less",
@@ -63,7 +64,7 @@ export default class PointLightsRenderSubPass extends LightSubPass {
 				targets: PointLightsRenderSubPass.RENDER_TARGETS,
 			},
 			depthStencil: {
-				format: Renderer.depthStencilFormat,
+				format: RenderingContext.depthStencilFormat,
 				depthWriteEnabled: false,
 				depthCompare: "less-equal",
 				stencilReadMask: 0xff,

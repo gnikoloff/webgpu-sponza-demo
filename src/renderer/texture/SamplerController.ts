@@ -1,6 +1,6 @@
 import { GLTFSamplerPostprocessed } from "@loaders.gl/gltf/dist/lib/types/gltf-postprocessed-schema";
-import Renderer from "../../app/Renderer";
 import BaseUtilObject from "../core/BaseUtilObject";
+import RenderingContext from "../core/RenderingContext";
 
 let _defaultNearestSampler: GPUSampler;
 let _defaultSampler: GPUSampler;
@@ -40,7 +40,7 @@ export default class SamplerController extends BaseUtilObject {
 		if ((sampler = _cachedSamplers.get(key))) {
 			return sampler;
 		}
-		sampler = Renderer.device.createSampler(samplerInfo);
+		sampler = RenderingContext.device.createSampler(samplerInfo);
 		_cachedSamplers.set(key, sampler);
 		return sampler;
 	}

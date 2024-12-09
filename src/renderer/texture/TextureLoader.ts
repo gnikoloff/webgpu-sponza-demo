@@ -1,10 +1,10 @@
 import HDRjs from "hdr.js";
-import Renderer from "../../app/Renderer";
 import CubeTextureController from "./CubeTextureController";
 import TextureController from "./TextureController";
 import { numMipLevelsForSize } from "../math/math";
 import BaseUtilObject from "../core/BaseUtilObject";
 import { HDRImageResult } from "../types";
+import RenderingContext from "../core/RenderingContext";
 
 // prettier-ignore
 const BAYERN_PATTERN = new Uint8Array([
@@ -83,14 +83,14 @@ export default class TextureLoader extends BaseUtilObject {
 		if (_dummyTexture) {
 			return _dummyTexture;
 		}
-		_dummyTexture = Renderer.device.createTexture({
+		_dummyTexture = RenderingContext.device.createTexture({
 			label: "Default Dummy 8x8 Texture",
 			dimension: "2d",
 			size: { width: 8, height: 8, depthOrArrayLayers: 1 },
 			format: "r8unorm",
 			usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
 		});
-		Renderer.device.queue.writeTexture(
+		RenderingContext.device.queue.writeTexture(
 			{ texture: _dummyTexture, mipLevel: 0 },
 			DEBUG_PATTERN,
 			{ offset: 0, bytesPerRow: 8 },
@@ -108,7 +108,7 @@ export default class TextureLoader extends BaseUtilObject {
 		if (_dummyCubeTexture) {
 			return _dummyCubeTexture;
 		}
-		_dummyCubeTexture = Renderer.device.createTexture({
+		_dummyCubeTexture = RenderingContext.device.createTexture({
 			label: "Default Dummy 8x8 Cube Texture",
 			dimension: "2d",
 			size: { width: 8, height: 8, depthOrArrayLayers: 6 },
@@ -116,7 +116,7 @@ export default class TextureLoader extends BaseUtilObject {
 			usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
 		});
 		for (let face = 0; face < 6; face++) {
-			Renderer.device.queue.writeTexture(
+			RenderingContext.device.queue.writeTexture(
 				{
 					texture: _dummyCubeTexture,
 					mipLevel: 0,
@@ -141,14 +141,14 @@ export default class TextureLoader extends BaseUtilObject {
 		if (_bayerDitherPattern) {
 			return _bayerDitherPattern;
 		}
-		_bayerDitherPattern = Renderer.device.createTexture({
+		_bayerDitherPattern = RenderingContext.device.createTexture({
 			label: "Bayer ordered dithered GPUTexture",
 			dimension: "2d",
 			size: { width: 8, height: 8, depthOrArrayLayers: 1 },
 			format: "r8unorm",
 			usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
 		});
-		Renderer.device.queue.writeTexture(
+		RenderingContext.device.queue.writeTexture(
 			{ texture: _bayerDitherPattern, mipLevel: 0 },
 			BAYERN_PATTERN,
 			{ offset: 0, bytesPerRow: 8 },
@@ -271,8 +271,8 @@ export default class TextureLoader extends BaseUtilObject {
 			);
 		}
 
-		const texture = Renderer.device.createTexture(texDescriptor);
-		Renderer.device.queue.copyExternalImageToTexture(
+		const texture = RenderingContext.device.createTexture(texDescriptor);
+		RenderingContext.device.queue.copyExternalImageToTexture(
 			{
 				source: bitmap,
 				flipY,

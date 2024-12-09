@@ -3,10 +3,10 @@ const CSMShadowShaderUtils = /* wgsl */ `
   @must_use
   fn ShadowLayerIdxCalculate(
     worldPos: vec3f,
-    camera: ptr<uniform, CameraUniform>,
+    camera: CameraUniform,
     shadowCascades: array<ShadowCascade, 3>
   ) -> i32 {
-  let fragPosViewSpace = (*camera).viewMatrix * vec4f(worldPos, 1.0);
+  let fragPosViewSpace = camera.viewMatrix * vec4f(worldPos, 1.0);
   let depthValue = abs(fragPosViewSpace.z);
 
   var layer: i32 = -1;
@@ -28,7 +28,7 @@ const CSMShadowShaderUtils = /* wgsl */ `
     worldPos: vec3f,
     N: vec3f,
     lightPosition: vec3f,
-    camera: ptr<uniform, CameraUniform>,
+    camera: CameraUniform,
     shadowTextureWidth: f32,
     shadowTextureHeight: f32,
     shadowCascades: array<ShadowCascade, 3>,

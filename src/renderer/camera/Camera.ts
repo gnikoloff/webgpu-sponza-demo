@@ -4,11 +4,11 @@ import {
 	makeShaderDataDefinitions,
 	makeStructuredView,
 } from "webgpu-utils";
-import Renderer from "../../app/Renderer";
 import { SHADER_CHUNKS } from "../shader/chunks";
 import Drawable from "../scene/Drawable";
 import Plane from "../math/Plane";
 import Transform from "../scene/Transform";
+import RenderingContext from "../core/RenderingContext";
 
 const HAMILTON_SEQUENCE = [
 	[0.5, 0.333333],
@@ -83,7 +83,7 @@ export default class Camera extends Transform {
 			projectionViewMatrix: this.projectionViewMatrix,
 		});
 
-		this.gpuBuffer = Renderer.device.createBuffer({
+		this.gpuBuffer = RenderingContext.device.createBuffer({
 			size: this.bufferUniformValues.arrayBuffer.byteLength,
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 			label: "Camera GPUBuffer",
@@ -267,7 +267,7 @@ export default class Camera extends Transform {
 				jitterOffset: hamiltonOffset,
 			});
 		}
-		Renderer.device.queue.writeBuffer(
+		RenderingContext.device.queue.writeBuffer(
 			this.gpuBuffer,
 			0,
 			this.bufferUniformValues.arrayBuffer,

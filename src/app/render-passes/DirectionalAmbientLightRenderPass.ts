@@ -1,4 +1,5 @@
 import PipelineStates from "../../renderer/core/PipelineStates";
+import RenderingContext from "../../renderer/core/RenderingContext";
 import Scene from "../../renderer/scene/Scene";
 import FullScreenVertexShaderUtils, {
 	FullScreenVertexShaderEntryFn,
@@ -6,7 +7,6 @@ import FullScreenVertexShaderUtils, {
 import SamplerController from "../../renderer/texture/SamplerController";
 import TextureLoader from "../../renderer/texture/TextureLoader";
 import { LightType, RenderPassType } from "../../renderer/types";
-import Renderer from "../Renderer";
 import DirectionalShadowRenderPass from "./DirectionalShadowRenderPass";
 import LightRenderPass from "./LightRenderPass";
 import GetGBufferIntegrateShader, {
@@ -117,18 +117,20 @@ export default class DirectionalAmbientLightRenderPass extends LightRenderPass {
 				},
 			},
 		];
-		this.dirLightShadowBindGroupLayout = Renderer.device.createBindGroupLayout({
-			label: "Direcional Light Shadow Bind Group Layout",
-			entries: dirLightShadowBindGroupLayoutEntries,
-		});
+		this.dirLightShadowBindGroupLayout =
+			RenderingContext.device.createBindGroupLayout({
+				label: "Direcional Light Shadow Bind Group Layout",
+				entries: dirLightShadowBindGroupLayoutEntries,
+			});
 
-		const dirLightRenderPSOLayout = Renderer.device.createPipelineLayout({
-			label: "Dir Light PSO Layout",
-			bindGroupLayouts: [
-				this.gbufferCommonBindGroupLayout,
-				this.dirLightShadowBindGroupLayout,
-			],
-		});
+		const dirLightRenderPSOLayout =
+			RenderingContext.device.createPipelineLayout({
+				label: "Dir Light PSO Layout",
+				bindGroupLayouts: [
+					this.gbufferCommonBindGroupLayout,
+					this.dirLightShadowBindGroupLayout,
+				],
+			});
 
 		this.dirLightShadowBindGroupEntries = [
 			{
@@ -192,7 +194,7 @@ export default class DirectionalAmbientLightRenderPass extends LightRenderPass {
 				targets: DirectionalAmbientLightRenderPass.RENDER_TARGETS,
 			},
 			depthStencil: {
-				format: Renderer.depthStencilFormat,
+				format: RenderingContext.depthStencilFormat,
 				depthWriteEnabled: false,
 			},
 		};
@@ -203,7 +205,7 @@ export default class DirectionalAmbientLightRenderPass extends LightRenderPass {
 		if (this.outTexture) {
 			this.outTexture.destroy();
 		}
-		this.outTexture = Renderer.device.createTexture({
+		this.outTexture = RenderingContext.device.createTexture({
 			dimension: "2d",
 			format: "rgba16float",
 			mipLevelCount: 1,
@@ -243,7 +245,7 @@ export default class DirectionalAmbientLightRenderPass extends LightRenderPass {
 	}
 
 	private recreateDirLightShadowBindGroup() {
-		this.dirLightShadowBindGroup = Renderer.device.createBindGroup({
+		this.dirLightShadowBindGroup = RenderingContext.device.createBindGroup({
 			label:
 				"Directional Ambient Lighting G-Buffer Directional Shadow Input Bind Group",
 			layout: this.dirLightShadowBindGroupLayout,
@@ -295,8 +297,11 @@ export default class DirectionalAmbientLightRenderPass extends LightRenderPass {
 		const renderPass = commandEncoder.beginRenderPass(
 			this.createRenderPassDescriptor(),
 		);
+
+		RenderingContext.setActiveRenderPass(this.type, renderPass);
+
 		renderPass.pushDebugGroup("Begin Directional + Ambient Lighting");
-		renderPass.setPipeline(this.renderPSO);
+		RenderingContext.bindRenderPSO(this.renderPSO);
 		renderPass.setBindGroup(0, this.gbufferTexturesBindGroup);
 		renderPass.setBindGroup(1, this.dirLightShadowBindGroup);
 		renderPass.draw(3);

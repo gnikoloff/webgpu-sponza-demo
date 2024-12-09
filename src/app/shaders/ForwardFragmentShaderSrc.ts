@@ -89,7 +89,7 @@ export const getDefaultForwardPBRFragmentShader = ({
     let V = normalize(camera.position - in.worldPosition);
 
     return PBRLighting(
-      &material,
+      material,
       0,
       in.worldPosition,
       N,

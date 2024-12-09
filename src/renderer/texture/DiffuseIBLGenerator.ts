@@ -1,6 +1,6 @@
-import Renderer from "../../app/Renderer";
 import BaseUtilObject from "../core/BaseUtilObject";
 import PipelineStates from "../core/PipelineStates";
+import RenderingContext from "../core/RenderingContext";
 import DiffuseIBLShaderUtils, {
 	DiffuseIBLShaderEntryFn,
 } from "../shader/DiffuseIBLShaderUtils";
@@ -45,10 +45,11 @@ export default class DiffuseIBLGenerator extends BaseUtilObject {
 			return _computePSO;
 		}
 
-		const computePSOBindGroupLayout = Renderer.device.createBindGroupLayout({
-			label: "Diffuse IBL Compute PSO Bind Group Layout",
-			entries: _computePSOBindGroupLayoutEntries,
-		});
+		const computePSOBindGroupLayout =
+			RenderingContext.device.createBindGroupLayout({
+				label: "Diffuse IBL Compute PSO Bind Group Layout",
+				entries: _computePSOBindGroupLayoutEntries,
+			});
 
 		_computePSO = PipelineStates.createComputePipeline({
 			label: "Diffuse IBL Compute PSO",
@@ -56,7 +57,7 @@ export default class DiffuseIBLGenerator extends BaseUtilObject {
 				module: PipelineStates.createShaderModule(DiffuseIBLShaderUtils),
 				entryPoint: DiffuseIBLShaderEntryFn,
 			},
-			layout: Renderer.device.createPipelineLayout({
+			layout: RenderingContext.device.createPipelineLayout({
 				label: "Diffuse IBL Compute PSO Layout",
 				bindGroupLayouts: [computePSOBindGroupLayout],
 			}),
@@ -84,10 +85,11 @@ export default class DiffuseIBLGenerator extends BaseUtilObject {
 			true,
 		);
 
-		const computePSOBindGroupLayout = Renderer.device.createBindGroupLayout({
-			label: "Diffuse IBL Compute PSO Bind Group Layout",
-			entries: _computePSOBindGroupLayoutEntries,
-		});
+		const computePSOBindGroupLayout =
+			RenderingContext.device.createBindGroupLayout({
+				label: "Diffuse IBL Compute PSO Bind Group Layout",
+				entries: _computePSOBindGroupLayoutEntries,
+			});
 
 		const inputBindGroupEntries: GPUBindGroupEntry[] = [
 			{
@@ -115,7 +117,7 @@ export default class DiffuseIBLGenerator extends BaseUtilObject {
 			},
 		];
 
-		const commandEncoder = Renderer.device.createCommandEncoder({
+		const commandEncoder = RenderingContext.device.createCommandEncoder({
 			label: `Diffuse IBL Command Encoder`,
 		});
 
@@ -131,7 +133,7 @@ export default class DiffuseIBLGenerator extends BaseUtilObject {
 		});
 
 		for (let i = 0; i < 6; i++) {
-			let faceBuffer = Renderer.device.createBuffer({
+			let faceBuffer = RenderingContext.device.createBuffer({
 				label: "Diffuse IBL Face GPUBuffer",
 				size: Uint32Array.BYTES_PER_ELEMENT,
 				usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -155,7 +157,7 @@ export default class DiffuseIBLGenerator extends BaseUtilObject {
 				buffer: faceBuffer,
 			};
 
-			const inputBindGroup = Renderer.device.createBindGroup({
+			const inputBindGroup = RenderingContext.device.createBindGroup({
 				layout: computePSOBindGroupLayout,
 				entries: inputBindGroupEntries,
 			});
@@ -177,7 +179,7 @@ export default class DiffuseIBLGenerator extends BaseUtilObject {
 
 		diffuseIBLComputePass.popDebugGroup();
 		diffuseIBLComputePass.end();
-		Renderer.device.queue.submit([commandEncoder.finish()]);
+		RenderingContext.device.queue.submit([commandEncoder.finish()]);
 
 		return outTex;
 	};

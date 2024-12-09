@@ -2,7 +2,6 @@ import { Mat4, mat4, vec3 } from "wgpu-matrix";
 import PerspectiveCamera from "../../renderer/camera/PerspectiveCamera";
 import RenderPass from "../../renderer/core/RenderPass";
 import Transform from "../../renderer/scene/Transform";
-import Renderer from "../Renderer";
 
 import { BIND_GROUP_LOCATIONS } from "../../renderer/core/RendererBindings";
 import {
@@ -10,6 +9,7 @@ import {
 	SKYBOX_CUBEMAP_CAMERA_UPS,
 } from "../../renderer/math/math";
 import { RenderPassType } from "../../renderer/types";
+import RenderingContext from "../../renderer/core/RenderingContext";
 
 export default class EnvironmentProbePass extends RenderPass {
 	private static readonly ENVIRONMENT_TEXTURE_SIZE = 512;
@@ -35,7 +35,7 @@ export default class EnvironmentProbePass extends RenderPass {
 			const projViewMatrix = mat4.mul(this.camera.projectionMatrix, viewMatrix);
 			mat4.copy(projViewMatrix, this.cameraViewProjectionMatrix[i]);
 
-			Renderer.device.queue.writeBuffer(
+			RenderingContext.device.queue.writeBuffer(
 				this.cameraViewProjMatrixBuffer,
 				i * 16 * Float32Array.BYTES_PER_ELEMENT,
 				this.cameraViewProjectionMatrix[i],
@@ -47,7 +47,7 @@ export default class EnvironmentProbePass extends RenderPass {
 		super();
 		this.type = RenderPassType.EnvironmentCube;
 
-		this.cubeTexture = Renderer.device.createTexture({
+		this.cubeTexture = RenderingContext.device.createTexture({
 			label: "Environment Cube Texture",
 			dimension: "2d",
 			size: {
@@ -68,13 +68,13 @@ export default class EnvironmentProbePass extends RenderPass {
 			this.cameraViewProjectionMatrix.push(mat4.identity());
 		}
 
-		this.cameraViewProjMatrixBuffer = Renderer.device.createBuffer({
+		this.cameraViewProjMatrixBuffer = RenderingContext.device.createBuffer({
 			label: "Environment Probe Camera ProjView Matrix Buffer",
 			size: 16 * 6 * Float32Array.BYTES_PER_ELEMENT,
 			usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
 		});
 
-		this.cameraCurrentFaceRenderBuffer = Renderer.device.createBuffer({
+		this.cameraCurrentFaceRenderBuffer = RenderingContext.device.createBuffer({
 			label: "Environment Probe Camera Current Face Index Buffer",
 			size: Uint32Array.BYTES_PER_ELEMENT,
 			usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM,
@@ -96,10 +96,12 @@ export default class EnvironmentProbePass extends RenderPass {
 				visibility: GPUShaderStage.VERTEX,
 			},
 		];
-		const cameraBindGroupLayout = Renderer.device.createBindGroupLayout({
-			label: "Environment Probe Camera Bind Group Layout",
-			entries: cameraBindGroupLayoutEntries,
-		});
+		const cameraBindGroupLayout = RenderingContext.device.createBindGroupLayout(
+			{
+				label: "Environment Probe Camera Bind Group Layout",
+				entries: cameraBindGroupLayoutEntries,
+			},
+		);
 
 		const cameraBindGroupEntries: GPUBindGroupEntry[] = [
 			{
@@ -115,7 +117,7 @@ export default class EnvironmentProbePass extends RenderPass {
 				},
 			},
 		];
-		this.cameraBindGroup = Renderer.device.createBindGroup({
+		this.cameraBindGroup = RenderingContext.device.createBindGroup({
 			label: "Environment Probe Camera Bind Group",
 			layout: cameraBindGroupLayout,
 			entries: cameraBindGroupEntries,
@@ -123,7 +125,7 @@ export default class EnvironmentProbePass extends RenderPass {
 	}
 
 	public override render(commandEncoder: GPUCommandEncoder, scene: Transform) {
-		Renderer.activeRenderPass = this.type;
+		// RenderingContext.activeRenderPass = this.type;
 
 		const colorAttachments: GPURenderPassColorAttachment[] = [
 			{
@@ -145,7 +147,7 @@ export default class EnvironmentProbePass extends RenderPass {
 				colorAttachments,
 			};
 
-			Renderer.device.queue.writeBuffer(
+			RenderingContext.device.queue.writeBuffer(
 				this.cameraCurrentFaceRenderBuffer,
 				0,
 				new Uint32Array([i]),

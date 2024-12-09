@@ -1,4 +1,3 @@
-import Renderer from "../../app/Renderer";
 import BaseUtilObject from "../core/BaseUtilObject";
 import PipelineStates from "../core/PipelineStates";
 import SpecularIBLShaderUtils, {
@@ -7,6 +6,7 @@ import SpecularIBLShaderUtils, {
 import { numMipLevelsForSize } from "../math/math";
 import CubeTextureController from "./CubeTextureController";
 import SamplerController from "./SamplerController";
+import RenderingContext from "../core/RenderingContext";
 
 let _computePSO: GPUComputePipeline;
 
@@ -51,10 +51,11 @@ export default class SpecularIBLGenerator extends BaseUtilObject {
 			return _computePSO;
 		}
 
-		const computePSOBindGroupLayout = Renderer.device.createBindGroupLayout({
-			label: "Specular IBL Compute PSO Bind Group Layout",
-			entries: _computePSOBindGroupLayoutEntries,
-		});
+		const computePSOBindGroupLayout =
+			RenderingContext.device.createBindGroupLayout({
+				label: "Specular IBL Compute PSO Bind Group Layout",
+				entries: _computePSOBindGroupLayoutEntries,
+			});
 
 		_computePSO = PipelineStates.createComputePipeline({
 			label: "Specular IBL Compute PSO",
@@ -62,7 +63,7 @@ export default class SpecularIBLGenerator extends BaseUtilObject {
 				module: PipelineStates.createShaderModule(SpecularIBLShaderUtils),
 				entryPoint: SpecularIBLShaderUtilsEntryFn,
 			},
-			layout: Renderer.device.createPipelineLayout({
+			layout: RenderingContext.device.createPipelineLayout({
 				label: "Specular IBL Compute PSO",
 				bindGroupLayouts: [computePSOBindGroupLayout],
 			}),
@@ -126,7 +127,7 @@ export default class SpecularIBLGenerator extends BaseUtilObject {
 			},
 		];
 
-		let commandEncoder = Renderer.device.createCommandEncoder({
+		let commandEncoder = RenderingContext.device.createCommandEncoder({
 			label: "Specular IBL Command Encoder",
 		});
 		commandEncoder.pushDebugGroup("Begin Specular IBL Generation");
@@ -137,17 +138,18 @@ export default class SpecularIBLGenerator extends BaseUtilObject {
 
 		computePass.setPipeline(SpecularIBLGenerator.computePSO);
 
-		const computePSOBindGroupLayout = Renderer.device.createBindGroupLayout({
-			label: "Specular IBL Compute PSO Bind Group Layout",
-			entries: _computePSOBindGroupLayoutEntries,
-		});
+		const computePSOBindGroupLayout =
+			RenderingContext.device.createBindGroupLayout({
+				label: "Specular IBL Compute PSO Bind Group Layout",
+				entries: _computePSOBindGroupLayoutEntries,
+			});
 
 		let size = outSize;
 
 		for (let level = 0; level < levels; level++) {
 			const roughness = level / (levels - 1);
 
-			const roughnessBuffer = Renderer.device.createBuffer({
+			const roughnessBuffer = RenderingContext.device.createBuffer({
 				label: "Roughness Buffer",
 				mappedAtCreation: true,
 				size: Float32Array.BYTES_PER_ELEMENT,
@@ -163,7 +165,7 @@ export default class SpecularIBLGenerator extends BaseUtilObject {
 			};
 
 			for (let face = 0; face < 6; face++) {
-				const faceBuffer = Renderer.device.createBuffer({
+				const faceBuffer = RenderingContext.device.createBuffer({
 					label: "Face Buffer",
 					mappedAtCreation: true,
 					size: Uint32Array.BYTES_PER_ELEMENT,
@@ -187,7 +189,7 @@ export default class SpecularIBLGenerator extends BaseUtilObject {
 					buffer: faceBuffer,
 				};
 
-				const inputBindGroup = Renderer.device.createBindGroup({
+				const inputBindGroup = RenderingContext.device.createBindGroup({
 					layout: computePSOBindGroupLayout,
 					entries: inputBindGroupEntries,
 				});
@@ -208,7 +210,7 @@ export default class SpecularIBLGenerator extends BaseUtilObject {
 
 		computePass.end();
 		commandEncoder.popDebugGroup();
-		Renderer.device.queue.submit([commandEncoder.finish()]);
+		RenderingContext.device.queue.submit([commandEncoder.finish()]);
 
 		return outTex;
 	};

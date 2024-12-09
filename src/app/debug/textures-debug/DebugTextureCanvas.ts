@@ -1,9 +1,9 @@
 import PipelineStates from "../../../renderer/core/PipelineStates";
+import RenderingContext from "../../../renderer/core/RenderingContext";
 import FullScreenVertexShaderUtils, {
 	FullScreenVertexShaderEntryFn,
 } from "../../../renderer/shader/FullScreenVertexShaderUtils";
 import SamplerController from "../../../renderer/texture/SamplerController";
-import Renderer from "../../Renderer";
 import {
 	DebugFragmentShaderEntryFn,
 	getDebugFragmentShader,
@@ -77,14 +77,14 @@ export default class DebugTextureCanvas {
 		this.ctx = this.$canvas.getContext("webgpu");
 
 		this.ctx.configure({
-			device: Renderer.device,
-			format: Renderer.pixelFormat,
+			device: RenderingContext.device,
+			format: RenderingContext.pixelFormat,
 			usage: GPUTextureUsage.RENDER_ATTACHMENT,
 		});
 
 		const targets: GPUColorTargetState[] = [
 			{
-				format: Renderer.pixelFormat,
+				format: RenderingContext.pixelFormat,
 			},
 		];
 
@@ -105,10 +105,11 @@ export default class DebugTextureCanvas {
 			},
 		];
 
-		this.samplerTextureBindGroupLayout = Renderer.device.createBindGroupLayout({
-			label: "TextureDebugMesh Sampler + Texture GPUBindGroupLayout",
-			entries: this.samplerTextureBindGroupLayoutEntries,
-		});
+		this.samplerTextureBindGroupLayout =
+			RenderingContext.device.createBindGroupLayout({
+				label: "TextureDebugMesh Sampler + Texture GPUBindGroupLayout",
+				entries: this.samplerTextureBindGroupLayoutEntries,
+			});
 
 		this.renderPSO = PipelineStates.createRenderPipeline({
 			label: `Debug Canvas ${type} Render PSO`,
@@ -123,7 +124,7 @@ export default class DebugTextureCanvas {
 				entryPoint: DebugFragmentShaderEntryFn,
 				targets,
 			},
-			layout: Renderer.device.createPipelineLayout({
+			layout: RenderingContext.device.createPipelineLayout({
 				label: `Debug Canvas ${type} Render PSO Layout`,
 				bindGroupLayouts: [this.samplerTextureBindGroupLayout],
 			}),
@@ -182,7 +183,7 @@ export default class DebugTextureCanvas {
 			},
 		];
 
-		this.samplerTextureBindGroup = Renderer.device.createBindGroup({
+		this.samplerTextureBindGroup = RenderingContext.device.createBindGroup({
 			layout: this.samplerTextureBindGroupLayout,
 			entries: samplerTextureBindGroupEntries,
 		});

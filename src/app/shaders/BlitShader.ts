@@ -17,7 +17,7 @@ export const BLIT_FRAGMENT_SHADER_SRC = /* wgsl */ `
   fn ${BLIT_FRAGMENT_SHADER_ENTRY_NAME}(@builtin(position) coord : vec4f) -> @location(0) vec4f {
     var color = textureLoad(sceneTexture, vec2i(floor(coord.xy)), 0).xyz;
     color = ACESFilm(color.rgb);
-    color = pow(color, vec3f(1.0/2.2));
+    color = pow(color, vec3f(1.0 / 2.2));
     return vec4f(color, 1.0);
   }
 `;

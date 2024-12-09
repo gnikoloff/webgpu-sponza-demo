@@ -1,6 +1,6 @@
-import Renderer from "../../app/Renderer";
 import BaseUtilObject from "../core/BaseUtilObject";
 import PipelineStates from "../core/PipelineStates";
+import RenderingContext from "../core/RenderingContext";
 import BDRFLutShaderUtils, {
 	BDRFLutShaderEntryFn,
 } from "../shader/BDRFLutShaderUtils";
@@ -25,18 +25,19 @@ export default class BDRFLutGenerator extends BaseUtilObject {
 			return _computePSO;
 		}
 
-		const computePSOBindGroupLayout = Renderer.device.createBindGroupLayout({
-			label: "BDRF Lut Compute PSO Bind Group Layout",
-			entries: _computePSOBindGroupLayoutEntries,
-		});
+		const computePSOBindGroupLayout =
+			RenderingContext.device.createBindGroupLayout({
+				label: "BDRF Lut Compute PSO Bind Group Layout",
+				entries: _computePSOBindGroupLayoutEntries,
+			});
 
-		_computePSO = Renderer.device.createComputePipeline({
+		_computePSO = RenderingContext.device.createComputePipeline({
 			label: "BDRF LUT Generate Compute PSO",
 			compute: {
 				module: PipelineStates.createShaderModule(BDRFLutShaderUtils),
 				entryPoint: BDRFLutShaderEntryFn,
 			},
-			layout: Renderer.device.createPipelineLayout({
+			layout: RenderingContext.device.createPipelineLayout({
 				label: "BDRF LUT Generation Compute PSO Layout",
 				bindGroupLayouts: [computePSOBindGroupLayout],
 			}),
@@ -46,7 +47,7 @@ export default class BDRFLutGenerator extends BaseUtilObject {
 	}
 
 	public static encode = (outSize = 512): GPUTexture => {
-		const outTexture = Renderer.device.createTexture({
+		const outTexture = RenderingContext.device.createTexture({
 			label: "BDRF LUT Texture",
 			size: { width: outSize, height: outSize, depthOrArrayLayers: 1 },
 			// webgpu does not support rg16float as storage textures
@@ -59,7 +60,7 @@ export default class BDRFLutGenerator extends BaseUtilObject {
 			mipLevelCount: 1,
 		});
 
-		const commandBuffer = Renderer.device.createCommandEncoder({
+		const commandBuffer = RenderingContext.device.createCommandEncoder({
 			label: "BDRF LUT Generate Command Encoder",
 		});
 		commandBuffer.pushDebugGroup("BDRF LUT Generation");
@@ -67,10 +68,11 @@ export default class BDRFLutGenerator extends BaseUtilObject {
 		const computePass = commandBuffer.beginComputePass({
 			label: "BDRF LUT Generate Compute Pass",
 		});
-		const computePSOBindGroupLayout = Renderer.device.createBindGroupLayout({
-			label: "BDRF Lut Compute PSO Bind Group Layout",
-			entries: _computePSOBindGroupLayoutEntries,
-		});
+		const computePSOBindGroupLayout =
+			RenderingContext.device.createBindGroupLayout({
+				label: "BDRF Lut Compute PSO Bind Group Layout",
+				entries: _computePSOBindGroupLayoutEntries,
+			});
 
 		const entries: GPUBindGroupEntry[] = [
 			{
@@ -79,7 +81,7 @@ export default class BDRFLutGenerator extends BaseUtilObject {
 			},
 		];
 
-		const inputBindGroup = Renderer.device.createBindGroup({
+		const inputBindGroup = RenderingContext.device.createBindGroup({
 			label: "BDRF LUT Generate Input Bind Group",
 			layout: computePSOBindGroupLayout,
 			entries,
@@ -98,7 +100,7 @@ export default class BDRFLutGenerator extends BaseUtilObject {
 
 		computePass.end();
 		commandBuffer.popDebugGroup();
-		Renderer.device.queue.submit([commandBuffer.finish()]);
+		RenderingContext.device.queue.submit([commandBuffer.finish()]);
 
 		return outTexture;
 	};

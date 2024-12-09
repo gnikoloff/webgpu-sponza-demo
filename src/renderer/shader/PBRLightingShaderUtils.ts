@@ -55,7 +55,7 @@ const GetPBRLightingShaderUtils = ({
 
   @must_use
   fn PBRLighting(
-    material: ptr<function, Material>,
+    material: Material,
     instanceId: u32,
     viewSpacePos: vec3f,
     N: vec3f,

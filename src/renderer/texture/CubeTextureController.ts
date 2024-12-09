@@ -9,7 +9,6 @@ import HDRToCubeMapShaderUtils, {
 	HDRToCubeMapShaderUtilsEntryVertexFn,
 } from "../shader/HDRToCubeMapShaderUtils";
 
-import Renderer from "../../app/Renderer";
 import Drawable from "../scene/Drawable";
 import PipelineStates from "../core/PipelineStates";
 import CubeGeometry from "../geometry/CubeGeometry";
@@ -18,6 +17,7 @@ import PerspectiveCamera from "../camera/PerspectiveCamera";
 import TextureController from "./TextureController";
 import BaseUtilObject from "../core/BaseUtilObject";
 import VertexDescriptor from "../core/VertexDescriptor";
+import RenderingContext from "../core/RenderingContext";
 
 let _emptyCubeTexCounters = 0;
 
@@ -48,7 +48,7 @@ export default class CubeTextureController extends BaseUtilObject {
 			texDesc.mipLevelCount = numMipLevelsForSize(faceSize, faceSize);
 		}
 
-		return Renderer.device.createTexture(texDesc);
+		return RenderingContext.device.createTexture(texDesc);
 	}
 
 	public static cubeTextureFromIndividualHDRTextures = (
@@ -63,7 +63,7 @@ export default class CubeTextureController extends BaseUtilObject {
 			hasMips,
 		);
 
-		const commandEncoder = Renderer.device.createCommandEncoder();
+		const commandEncoder = RenderingContext.device.createCommandEncoder();
 		commandEncoder.pushDebugGroup("Texture View Copy");
 		const computeCopyPass = commandEncoder.beginComputePass();
 
@@ -89,7 +89,7 @@ export default class CubeTextureController extends BaseUtilObject {
 		computeCopyPass.end();
 
 		commandEncoder.popDebugGroup();
-		Renderer.device.queue.submit([commandEncoder.finish()]);
+		RenderingContext.device.queue.submit([commandEncoder.finish()]);
 
 		if (hasMips) {
 			TextureController.generateMipsForCubeTexture(cubeTexture);
@@ -102,7 +102,7 @@ export default class CubeTextureController extends BaseUtilObject {
 		hdrTexture: GPUTexture,
 		outTextureSize = 512,
 	): GPUTexture => {
-		const cubeTexture = Renderer.device.createTexture({
+		const cubeTexture = RenderingContext.device.createTexture({
 			label: "Environment Cube Texture",
 			dimension: "2d",
 			size: {
@@ -120,7 +120,7 @@ export default class CubeTextureController extends BaseUtilObject {
 		const camera = new PerspectiveCamera(Math.PI * 0.5, 1, 0.1, 10);
 		camera.updateProjectionMatrix();
 
-		const cameraViewProjMatrixBuffer = Renderer.device.createBuffer({
+		const cameraViewProjMatrixBuffer = RenderingContext.device.createBuffer({
 			label: "HDR -> CubeMap Camera ProjView Matrix Buffer",
 			size: 16 * Float32Array.BYTES_PER_ELEMENT,
 			usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM,
@@ -149,10 +149,12 @@ export default class CubeTextureController extends BaseUtilObject {
 				visibility: GPUShaderStage.FRAGMENT,
 			},
 		];
-		const cameraBindGroupLayout = Renderer.device.createBindGroupLayout({
-			label: "Environment Probe Camera Bind Group Layout",
-			entries: cameraBindGroupLayoutEntries,
-		});
+		const cameraBindGroupLayout = RenderingContext.device.createBindGroupLayout(
+			{
+				label: "Environment Probe Camera Bind Group Layout",
+				entries: cameraBindGroupLayoutEntries,
+			},
+		);
 
 		const cameraBindGroupEntries: GPUBindGroupEntry[] = [
 			{
@@ -170,13 +172,13 @@ export default class CubeTextureController extends BaseUtilObject {
 				resource: SamplerController.createSampler({}),
 			},
 		];
-		const cameraBindGroup = Renderer.device.createBindGroup({
+		const cameraBindGroup = RenderingContext.device.createBindGroup({
 			label: "Environment Probe Camera Bind Group",
 			layout: cameraBindGroupLayout,
 			entries: cameraBindGroupEntries,
 		});
 
-		const commandEncoder = Renderer.device.createCommandEncoder({
+		const commandEncoder = RenderingContext.device.createCommandEncoder({
 			label: "HDR Environment to Cube Map Command Encoder",
 		});
 
@@ -195,7 +197,7 @@ export default class CubeTextureController extends BaseUtilObject {
 		];
 		const renderPSO = PipelineStates.createRenderPipeline({
 			label: "HDR To CubeMap Render PSO",
-			layout: Renderer.device.createPipelineLayout({
+			layout: RenderingContext.device.createPipelineLayout({
 				bindGroupLayouts: [cameraBindGroupLayout],
 			}),
 			vertex: {
@@ -233,7 +235,7 @@ export default class CubeTextureController extends BaseUtilObject {
 			);
 			const projViewMatrix = mat4.mul(camera.projectionMatrix, viewMatrix);
 
-			Renderer.device.queue.writeBuffer(
+			RenderingContext.device.queue.writeBuffer(
 				cameraViewProjMatrixBuffer,
 				0,
 				projViewMatrix,
@@ -258,7 +260,7 @@ export default class CubeTextureController extends BaseUtilObject {
 			renderPass.end();
 		}
 
-		Renderer.device.queue.submit([commandEncoder.finish()]);
+		RenderingContext.device.queue.submit([commandEncoder.finish()]);
 
 		return cubeTexture;
 	};

@@ -1,8 +1,8 @@
 import PipelineStates from "../../renderer/core/PipelineStates";
 import RenderPass from "../../renderer/core/RenderPass";
+import RenderingContext from "../../renderer/core/RenderingContext";
 import Scene from "../../renderer/scene/Scene";
 import { RenderPassType } from "../../renderer/types";
-import Renderer from "../Renderer";
 
 import {
 	TAA_RESOLVE_FRAGMENT_SHADER_ENTRY_NAME,
@@ -63,13 +63,14 @@ export default class TAAResolveRenderPass extends RenderPass {
 			},
 		];
 
-		this.texturesBindGroupLayout = Renderer.device.createBindGroupLayout({
-			label: "TAA Resolve Input Textures Bind Group",
-			entries: texturesBindGroupLayoutEntries,
-		});
+		this.texturesBindGroupLayout =
+			RenderingContext.device.createBindGroupLayout({
+				label: "TAA Resolve Input Textures Bind Group",
+				entries: texturesBindGroupLayoutEntries,
+			});
 
 		const renderPSODescriptor: GPURenderPipelineDescriptor = {
-			layout: Renderer.device.createPipelineLayout({
+			layout: RenderingContext.device.createPipelineLayout({
 				bindGroupLayouts: [this.texturesBindGroupLayout],
 			}),
 			vertex: {
@@ -95,7 +96,7 @@ export default class TAAResolveRenderPass extends RenderPass {
 			this.outTexture.destroy();
 		}
 
-		this.outTexture = Renderer.device.createTexture({
+		this.outTexture = RenderingContext.device.createTexture({
 			dimension: "2d",
 			format: "rgba16float",
 			mipLevelCount: 1,
@@ -120,7 +121,7 @@ export default class TAAResolveRenderPass extends RenderPass {
 			this.historyTexture.destroy();
 		}
 
-		this.historyTexture = Renderer.device.createTexture({
+		this.historyTexture = RenderingContext.device.createTexture({
 			dimension: "2d",
 			format: "rgba16float",
 			mipLevelCount: 1,
@@ -185,7 +186,7 @@ export default class TAAResolveRenderPass extends RenderPass {
 				},
 			];
 
-			this.textureBindGroup = Renderer.device.createBindGroup({
+			this.textureBindGroup = RenderingContext.device.createBindGroup({
 				layout: this.texturesBindGroupLayout,
 				entries: texturesBindGroupEntries,
 			});
@@ -194,7 +195,9 @@ export default class TAAResolveRenderPass extends RenderPass {
 		const renderPassEncoder =
 			commandEncoder.beginRenderPass(renderPassdescriptor);
 
-		renderPassEncoder.setPipeline(this.renderPSO);
+		RenderingContext.setActiveRenderPass(this.type, renderPassEncoder);
+
+		RenderingContext.bindRenderPSO(this.renderPSO);
 		renderPassEncoder.setBindGroup(0, this.textureBindGroup);
 		renderPassEncoder.draw(3);
 		renderPassEncoder.end();

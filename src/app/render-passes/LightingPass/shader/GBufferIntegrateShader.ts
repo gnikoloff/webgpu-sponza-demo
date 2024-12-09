@@ -48,14 +48,17 @@ const GetGBufferIntegrateShader = (
     let metallic = textureLoad(normalTexture, pixelCoords, 0).b;
     let roughness = textureLoad(normalTexture, pixelCoords, 0).a;
     let N = decodeNormal(encodedN);
+
+    
     
     let albedo = textureLoad(colorTexture, pixelCoords, 0).xyz;
     let depth = textureLoad(depthTexture, pixelCoords, 0);
-
+    
     let ao = textureLoad(aoTexture, pixelCoords, 0).r;
     // return vec4f(ao, ao, ao, 1);
 
     // return vec4f(N, 1.0);
+    
 
     var material = Material();
     material.albedo = albedo;
@@ -63,15 +66,16 @@ const GetGBufferIntegrateShader = (
     // return vec4f(vec3f(1 - metallic), 1);
     material.metallic = metallic;
     // material.ambientOcclusion = select(1.0, ao, pixelCoords.x > i32(textureDimensions(normalTexture).x / 2));
-    material.ambientOcclusion = ao;
-
-    let viewSpacePos = calcViewSpacePos(&camera, coord.xy, depth);
-    let worldSpacePos = calcWorldPos(&camera, coord, depth);
+    material.ambientOcclusion = ao; //1;
+    
+    let viewSpacePos = calcViewSpacePos(camera, coord.xy, depth);
+    let worldSpacePos = calcWorldPos(camera, coord, depth);
+    
 
     let V = normalize(camera.position - viewSpacePos);
 
     #if ${lightType === LightType.Directional}
-    let shadowLayerIdx = ShadowLayerIdxCalculate(worldSpacePos, &camera, shadowCascades);
+    let shadowLayerIdx = ShadowLayerIdxCalculate(worldSpacePos, camera, shadowCascades);
     let r = select(0.0, 1.0, shadowLayerIdx == 0);
     let g = select(0.0, 1.0, shadowLayerIdx == 1);
     let b = select(0.0, 1.0, shadowLayerIdx == 2);
@@ -86,7 +90,7 @@ const GetGBufferIntegrateShader = (
       worldSpacePos,
       N,
       lightPosition,
-      &camera,
+      camera,
       SHADOW_MAP_SIZE,
       SHADOW_MAP_SIZE,
       shadowCascades,
@@ -100,7 +104,7 @@ const GetGBufferIntegrateShader = (
     let opacity = 1.0;
 
     var color = PBRLighting(
-      &material,
+      material,
       in.instanceId,
       viewSpacePos,
       N,
@@ -115,7 +119,7 @@ const GetGBufferIntegrateShader = (
       #endif
     );
 
-    let bayerDitherOffset = textureSample(bayerDitherTexture, bayerDitherSampler, vec2f(coord.xy) / 8).r / 32.0 - (1.0 / 128.0);
+    // let bayerDitherOffset = textureSample(bayerDitherTexture, bayerDitherSampler, vec2f(coord.xy) / 8).r / 32.0 - (1.0 / 128.0);
 
     // color += vec4f(bayerDitherOffset);
 

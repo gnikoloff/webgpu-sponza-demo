@@ -1,5 +1,5 @@
-import Renderer from "../../app/Renderer";
 import PipelineStates from "../core/PipelineStates";
+import RenderingContext from "../core/RenderingContext";
 import VertexDescriptor from "../core/VertexDescriptor";
 import { IMaterial } from "../types";
 
@@ -32,7 +32,7 @@ export default class Material {
 	}: IMaterial) {
 		const descriptor: GPURenderPipelineDescriptor = {
 			label: debugLabel,
-			layout: Renderer.device.createPipelineLayout({
+			layout: RenderingContext.device.createPipelineLayout({
 				bindGroupLayouts: bindGroupLayouts,
 			}),
 			vertex: {
@@ -70,7 +70,7 @@ export default class Material {
 		this.renderPSO = PipelineStates.createRenderPipeline(descriptor);
 	}
 
-	public bind(renderEncoder: GPURenderPassEncoder) {
-		renderEncoder.setPipeline(this.renderPSO);
+	public bind() {
+		RenderingContext.bindRenderPSO(this.renderPSO);
 	}
 }

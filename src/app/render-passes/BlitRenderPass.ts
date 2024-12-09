@@ -1,9 +1,8 @@
-import Camera from "../../renderer/camera/Camera";
 import PipelineStates from "../../renderer/core/PipelineStates";
 import RenderPass from "../../renderer/core/RenderPass";
+import RenderingContext from "../../renderer/core/RenderingContext";
 import Scene from "../../renderer/scene/Scene";
 import { RenderPassType } from "../../renderer/types";
-import Renderer from "../Renderer";
 import {
 	BLIT_FRAGMENT_SHADER_ENTRY_NAME,
 	BLIT_FRAGMENT_SHADER_SRC,
@@ -42,13 +41,14 @@ export default class BlitRenderPass extends RenderPass {
 			},
 		];
 
-		this.texturesBindGroupLayout = Renderer.device.createBindGroupLayout({
-			label: "GBuffer Textures Bind Group",
-			entries: texturesBindGroupLayoutEntries,
-		});
+		this.texturesBindGroupLayout =
+			RenderingContext.device.createBindGroupLayout({
+				label: "GBuffer Textures Bind Group",
+				entries: texturesBindGroupLayoutEntries,
+			});
 
 		const renderPSODescriptor: GPURenderPipelineDescriptor = {
-			layout: Renderer.device.createPipelineLayout({
+			layout: RenderingContext.device.createPipelineLayout({
 				bindGroupLayouts: [this.texturesBindGroupLayout],
 			}),
 			vertex: {
@@ -83,7 +83,7 @@ export default class BlitRenderPass extends RenderPass {
 					resource: this.inputTextureViews[0],
 				},
 			];
-			this.textureBindGroup = Renderer.device.createBindGroup({
+			this.textureBindGroup = RenderingContext.device.createBindGroup({
 				layout: this.texturesBindGroupLayout,
 				entries: texturesBindGroupEntries,
 			});
@@ -91,7 +91,7 @@ export default class BlitRenderPass extends RenderPass {
 
 		const renderPassColorAttachments: GPURenderPassColorAttachment[] = [
 			{
-				view: Renderer.canvasContext.getCurrentTexture().createView(),
+				view: RenderingContext.canvasContext.getCurrentTexture().createView(),
 				loadOp: "load",
 				storeOp: "store",
 			},
@@ -104,7 +104,9 @@ export default class BlitRenderPass extends RenderPass {
 		const renderPassEncoder =
 			commandEncoder.beginRenderPass(renderPassDescriptor);
 
-		renderPassEncoder.setPipeline(this.renderPSO);
+		RenderingContext.setActiveRenderPass(this.type, renderPassEncoder);
+
+		RenderingContext.bindRenderPSO(this.renderPSO);
 		renderPassEncoder.setBindGroup(0, this.textureBindGroup);
 		renderPassEncoder.draw(6);
 

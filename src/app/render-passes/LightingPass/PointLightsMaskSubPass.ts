@@ -1,8 +1,9 @@
 import PipelineStates from "../../../renderer/core/PipelineStates";
+import RenderingContext from "../../../renderer/core/RenderingContext";
 import VertexDescriptor from "../../../renderer/core/VertexDescriptor";
 import PointLight from "../../../renderer/lighting/PointLight";
 import Drawable from "../../../renderer/scene/Drawable";
-import Renderer from "../../Renderer";
+
 import GeometryCache from "../../utils/GeometryCache";
 import LightSubPass from "./LightSubPass";
 import GetGBufferVertexShader, {
@@ -24,7 +25,7 @@ export default class PointLightsMaskSubPass extends LightSubPass {
 	) {
 		super(lightsMaskBindGroupLayout);
 
-		const lightMaskPSOLayout = Renderer.device.createPipelineLayout({
+		const lightMaskPSOLayout = RenderingContext.device.createPipelineLayout({
 			label: "Mask Lights PSO Layout",
 			bindGroupLayouts: [lightsMaskBindGroupLayout],
 		});
@@ -41,7 +42,7 @@ export default class PointLightsMaskSubPass extends LightSubPass {
 				buffers: [VertexDescriptor.defaultLayout],
 			},
 			depthStencil: {
-				format: Renderer.depthStencilFormat,
+				format: RenderingContext.depthStencilFormat,
 				depthWriteEnabled: false,
 				depthCompare: "less-equal",
 				stencilReadMask: 0x0,

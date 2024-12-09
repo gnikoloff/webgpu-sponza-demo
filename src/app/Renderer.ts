@@ -47,37 +47,25 @@ import GeometryCache from "./utils/GeometryCache";
 import PointLightsMaskPass from "./render-passes/PointLightsMaskPass";
 import PointLightsRenderPass from "./render-passes/PointLightsRenderPass";
 import SkyboxRenderPass from "./render-passes/SkyboxRenderPass";
+import RenderingContext from "../renderer/core/RenderingContext";
 // import EnvironmentProbePass from "./render-passes/EnvironmentProbePass";
 
-const a = document.getElementById("a");
-export default class Renderer {
-	public static $canvas: HTMLCanvasElement;
-	public static canvasContext: GPUCanvasContext;
-	public static device: GPUDevice;
-	public static supportsGPUTimestampQuery: boolean;
-	public static elapsedTimeMs = 0;
-
-	public static activeRenderPass?: RenderPassType;
-
-	private static prevTimeMs = 0;
-
-	public static pixelFormat: GPUTextureFormat;
-	public static readonly depthStencilFormat: GPUTextureFormat =
-		"depth32float-stencil8";
-
+export default class Renderer extends RenderingContext {
 	public static initialize = async (
 		canvas: HTMLCanvasElement,
 	): Promise<Renderer> => {
 		const adapter = await navigator.gpu.requestAdapter();
 
-		Renderer.$canvas = canvas;
-		Renderer.canvasContext = canvas.getContext("webgpu") as GPUCanvasContext;
+		RenderingContext.$canvas = canvas;
+		RenderingContext.canvasContext = canvas.getContext(
+			"webgpu",
+		) as GPUCanvasContext;
 
-		Renderer.pixelFormat = navigator.gpu.getPreferredCanvasFormat();
+		RenderingContext.pixelFormat = navigator.gpu.getPreferredCanvasFormat();
 
 		const requiredFeatures: GPUFeatureName[] = [];
 
-		const supportsGPUTimestampQuery = adapter.features.has("timestamp-query");
+		const supportsGPUTimestampQuery = false; //adapter.features.has("timestamp-query");
 
 		if (supportsGPUTimestampQuery) {
 			requiredFeatures.push("timestamp-query");
@@ -90,20 +78,19 @@ export default class Renderer {
 		if (supportsDepth32Stencil8Texture) {
 			requiredFeatures.push("depth32float-stencil8");
 		}
-		requiredFeatures.push("bgra8unorm-storage");
-		console.log(requiredFeatures);
-		Renderer.device = await adapter.requestDevice({
+		// requiredFeatures.push("bgra8unorm-storage");
+
+		RenderingContext.device = await adapter.requestDevice({
 			requiredFeatures,
 		});
 
-		Renderer.supportsGPUTimestampQuery = supportsGPUTimestampQuery;
+		RenderingContext.supportsGPUTimestampQuery = supportsGPUTimestampQuery;
 
-		Renderer.canvasContext.configure({
-			device: Renderer.device,
-			format: Renderer.pixelFormat,
-			usage:
-				GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.STORAGE_BINDING,
-			alphaMode: "premultiplied",
+		RenderingContext.canvasContext.configure({
+			device: RenderingContext.device,
+			format: RenderingContext.pixelFormat,
+			usage: GPUTextureUsage.RENDER_ATTACHMENT,
+			// alphaMode: "premultiplied",
 		});
 
 		return new Renderer();
@@ -203,6 +190,7 @@ export default class Renderer {
 	}
 
 	constructor() {
+		super();
 		this.mainCamera = new PerspectiveCamera(
 			70,
 			1,
@@ -216,7 +204,7 @@ export default class Renderer {
 
 		this.mainCameraCtrl = new CameraFlyController(
 			this.mainCamera,
-			// Renderer.$canvas,
+			// RenderingContext.$canvas,
 		);
 		this.mainCameraCtrl.startTick();
 
@@ -354,9 +342,9 @@ export default class Renderer {
 			RENDER_PASS_TAA_RESOLVE_TEXTURE,
 		);
 
-		const ssrRenderPass = new ReflectionComputePass().addInputTexture(
-			RENDER_PASS_TAA_RESOLVE_TEXTURE,
-		);
+		// const ssrRenderPass = new ReflectionComputePass().addInputTexture(
+		// 	RENDER_PASS_TAA_RESOLVE_TEXTURE,
+		// );
 
 		this.renderPassComposer
 			.addPass(shadowRenderPass)
@@ -374,7 +362,7 @@ export default class Renderer {
 
 		// this.mainCameraCtrl = new CameraOrbitController(
 		// 	this.mainCamera,
-		// 	Renderer.$canvas,
+		// 	RenderingContext.$canvas,
 		// 	true,
 		// );
 		// this.mainCameraCtrl.setLookAt(0, 2, 0);
@@ -471,7 +459,7 @@ export default class Renderer {
 			const bdrfLutTexture = BDRFLutGenerator.encode();
 
 			TextureController.generateMipsForCubeTexture(diffuseTexture);
-			this.scene.skybox.setTexture(diffuseTexture);
+			this.scene.skybox.setTexture(texture);
 
 			const dirAmbientLightPass = this.renderPassComposer.getPass(
 				RenderPassType.DirectionalAmbientLighting,
@@ -514,23 +502,23 @@ export default class Renderer {
 
 		this.renderPassComposer.onResize(w, h);
 
-		if (!this.reflectionComputePass) {
-			this.reflectionComputePass = new ReflectionComputePass(this.scene);
-		}
-		this.reflectionComputePass.onResize(w, h);
+		// if (!this.reflectionComputePass) {
+		// 	this.reflectionComputePass = new ReflectionComputePass(this.scene);
+		// }
+		// this.reflectionComputePass.onResize(w, h);
 	}
 
 	public async renderFrame(elapsedTime: number) {
-		const now = (elapsedTime - Renderer.elapsedTimeMs) * 0.001;
-		const deltaDiff = now - Renderer.prevTimeMs;
-		Renderer.prevTimeMs = now;
-		Renderer.elapsedTimeMs += this.enableAnimation ? deltaDiff : 0;
+		const now = (elapsedTime - RenderingContext.elapsedTimeMs) * 0.001;
+		const deltaDiff = now - RenderingContext.prevTimeMs;
+		RenderingContext.prevTimeMs = now;
+		RenderingContext.elapsedTimeMs += this.enableAnimation ? deltaDiff : 0;
 
 		const jsPerfStartTime = performance.now();
 
 		a.textContent = `Display Meshes: ${this.scene.visibleNodesCount} / ${this.scene.nodesCount}`;
 
-		const device = Renderer.device;
+		const device = RenderingContext.device;
 
 		// this.gbufferIntegratePass.debugPointLights = this.debugPointLights;
 
@@ -549,13 +537,13 @@ export default class Renderer {
 		if (this.enableAnimation) {
 			this.cube
 				.setScale(0.5, 0.5, 0.5)
-				.setRotationY(Renderer.elapsedTimeMs)
+				.setRotationY(RenderingContext.elapsedTimeMs)
 				.updateWorldMatrix();
 
 			this.sphere
 				.setScale(0.2, 0.2, 0.2)
-				.setPositionX(Math.cos(Renderer.elapsedTimeMs) * 1)
-				.setPositionZ(Math.sin(Renderer.elapsedTimeMs) * 1)
+				.setPositionX(Math.cos(RenderingContext.elapsedTimeMs) * 1)
+				.setPositionZ(Math.sin(RenderingContext.elapsedTimeMs) * 1)
 				.setPositionY(4)
 				.updateWorldMatrix();
 		}
@@ -564,7 +552,7 @@ export default class Renderer {
 			this.scene.sortTransparentNodesFrom(this.mainCamera);
 		}
 
-		const commandEncoder = Renderer.device.createCommandEncoder({
+		const commandEncoder = RenderingContext.device.createCommandEncoder({
 			label: "Render Pass Composer Command Encoder",
 		});
 
@@ -626,7 +614,7 @@ export default class Renderer {
 		);
 		this.texturesDebugContainer.render(commandEncoder);
 
-		Renderer.device.queue.submit([commandEncoder.finish()]);
+		RenderingContext.device.queue.submit([commandEncoder.finish()]);
 
 		this.mainCamera.onFrameEnd();
 		this.debugCamera.onFrameEnd();
@@ -643,83 +631,83 @@ export default class Renderer {
 
 		const jsPerfTime = performance.now() - jsPerfStartTime;
 
-		const [
-			gbufferRenderPassTimingResult,
-			directionalAmbientLightRenderPassTimingResult,
-			pointLightsStencilMaskPassTimingResult,
-			pointLightsLightingTimingResult,
-			ssaoRenderPassTimingResult,
-			transparentRenderPassTimingResult,
-			taaResolveRenderPassTimingResult,
-			blitRenderPassTimingResult,
-		] = await Promise.all([
-			this.renderPassComposer
-				.getPass(RenderPassType.Deferred)
-				.getTimingResult(),
-			this.renderPassComposer
-				.getPass(RenderPassType.DirectionalAmbientLighting)
-				.getTimingResult(),
-			this.renderPassComposer
-				.getPass(RenderPassType.PointLightsStencilMask)
-				.getTimingResult(),
-			this.renderPassComposer
-				.getPass(RenderPassType.PointLightsLighting)
-				.getTimingResult(),
-			this.renderPassComposer.getPass(RenderPassType.SSAO).getTimingResult(),
-			this.renderPassComposer
-				.getPass(RenderPassType.Transparent)
-				.getTimingResult(),
-			this.renderPassComposer
-				.getPass(RenderPassType.TAAResolve)
-				.getTimingResult(),
-			this.renderPassComposer.getPass(RenderPassType.Blit).getTimingResult(),
-		]);
+		// const [
+		// 	gbufferRenderPassTimingResult,
+		// 	directionalAmbientLightRenderPassTimingResult,
+		// 	pointLightsStencilMaskPassTimingResult,
+		// 	pointLightsLightingTimingResult,
+		// 	ssaoRenderPassTimingResult,
+		// 	transparentRenderPassTimingResult,
+		// 	taaResolveRenderPassTimingResult,
+		// 	blitRenderPassTimingResult,
+		// ] = await Promise.all([
+		// 	this.renderPassComposer
+		// 		.getPass(RenderPassType.Deferred)
+		// 		.getTimingResult(),
+		// 	this.renderPassComposer
+		// 		.getPass(RenderPassType.DirectionalAmbientLighting)
+		// 		.getTimingResult(),
+		// 	this.renderPassComposer
+		// 		.getPass(RenderPassType.PointLightsStencilMask)
+		// 		.getTimingResult(),
+		// 	this.renderPassComposer
+		// 		.getPass(RenderPassType.PointLightsLighting)
+		// 		.getTimingResult(),
+		// 	this.renderPassComposer.getPass(RenderPassType.SSAO).getTimingResult(),
+		// 	this.renderPassComposer
+		// 		.getPass(RenderPassType.Transparent)
+		// 		.getTimingResult(),
+		// 	this.renderPassComposer
+		// 		.getPass(RenderPassType.TAAResolve)
+		// 		.getTimingResult(),
+		// 	this.renderPassComposer.getPass(RenderPassType.Blit).getTimingResult(),
+		// ]);
 
-		const gbufferRenderPassTimings = gbufferRenderPassTimingResult.timings;
-		const blitRenderPassTimings = blitRenderPassTimingResult.timings;
-		const totalGPUTime =
-			Math.abs(blitRenderPassTimings[1] - gbufferRenderPassTimings[0]) /
-			1_000_000;
+		// const gbufferRenderPassTimings = gbufferRenderPassTimingResult.timings;
+		// const blitRenderPassTimings = blitRenderPassTimingResult.timings;
+		// const totalGPUTime =
+		// 	Math.abs(blitRenderPassTimings[1] - gbufferRenderPassTimings[0]) /
+		// 	1_000_000;
 
-		this.cpuAverage.addSample(jsPerfTime);
-		this.fpsAverage.addSample(1 / deltaDiff);
-		this.gpuAverage.addSample(totalGPUTime);
+		// this.cpuAverage.addSample(jsPerfTime);
+		// this.fpsAverage.addSample(1 / deltaDiff);
+		// this.gpuAverage.addSample(totalGPUTime);
 
-		this.timingDebugContainer
-			.setDisplayValue(DebugTimingType.CPUTotal, this.cpuAverage.get())
-			.setDisplayValue(DebugTimingType.GPUTotal, this.gpuAverage.get())
-			.setDisplayValue(DebugTimingType.FPS, this.fpsAverage.get())
-			.setDisplayValue(
-				DebugTimingType.DeferredRenderPass,
-				gbufferRenderPassTimingResult.avgValue,
-			)
-			.setDisplayValue(
-				DebugTimingType.DirectionalAmbientLightingRenderPass,
-				directionalAmbientLightRenderPassTimingResult.avgValue,
-			)
-			.setDisplayValue(
-				DebugTimingType.PointLightsStencilMask,
-				pointLightsStencilMaskPassTimingResult.avgValue,
-			)
-			.setDisplayValue(
-				DebugTimingType.PointLightsLighting,
-				pointLightsLightingTimingResult.avgValue,
-			)
-			.setDisplayValue(
-				DebugTimingType.SSAORenderPass,
-				ssaoRenderPassTimingResult.avgValue,
-			)
-			.setDisplayValue(
-				DebugTimingType.TransparentRenderPass,
-				transparentRenderPassTimingResult.avgValue,
-			)
-			.setDisplayValue(
-				DebugTimingType.BlitRenderPass,
-				blitRenderPassTimingResult.avgValue,
-			)
-			.setDisplayValue(
-				DebugTimingType.TAAResolveRenderPass,
-				taaResolveRenderPassTimingResult.avgValue,
-			);
+		// this.timingDebugContainer
+		// 	.setDisplayValue(DebugTimingType.CPUTotal, this.cpuAverage.get())
+		// 	.setDisplayValue(DebugTimingType.GPUTotal, this.gpuAverage.get())
+		// 	.setDisplayValue(DebugTimingType.FPS, this.fpsAverage.get())
+		// 	.setDisplayValue(
+		// 		DebugTimingType.DeferredRenderPass,
+		// 		gbufferRenderPassTimingResult.avgValue,
+		// 	)
+		// 	.setDisplayValue(
+		// 		DebugTimingType.DirectionalAmbientLightingRenderPass,
+		// 		directionalAmbientLightRenderPassTimingResult.avgValue,
+		// 	)
+		// 	.setDisplayValue(
+		// 		DebugTimingType.PointLightsStencilMask,
+		// 		pointLightsStencilMaskPassTimingResult.avgValue,
+		// 	)
+		// 	.setDisplayValue(
+		// 		DebugTimingType.PointLightsLighting,
+		// 		pointLightsLightingTimingResult.avgValue,
+		// 	)
+		// 	.setDisplayValue(
+		// 		DebugTimingType.SSAORenderPass,
+		// 		ssaoRenderPassTimingResult.avgValue,
+		// 	)
+		// 	.setDisplayValue(
+		// 		DebugTimingType.TransparentRenderPass,
+		// 		transparentRenderPassTimingResult.avgValue,
+		// 	)
+		// 	.setDisplayValue(
+		// 		DebugTimingType.BlitRenderPass,
+		// 		blitRenderPassTimingResult.avgValue,
+		// 	)
+		// 	.setDisplayValue(
+		// 		DebugTimingType.TAAResolveRenderPass,
+		// 		taaResolveRenderPassTimingResult.avgValue,
+		// 	);
 	}
 }

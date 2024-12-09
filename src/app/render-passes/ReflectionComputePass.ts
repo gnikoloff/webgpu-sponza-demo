@@ -1,8 +1,7 @@
 import PipelineStates from "../../renderer/core/PipelineStates";
 import RenderPass from "../../renderer/core/RenderPass";
-import Scene from "../../renderer/scene/Scene";
+import RenderingContext from "../../renderer/core/RenderingContext";
 import { RenderPassType } from "../../renderer/types";
-import Renderer from "../Renderer";
 import {
 	REFLECTION_PASS_FRAGMENT_SHADER_ENTRY_NAME,
 	getReflectionComputeShader,
@@ -19,7 +18,7 @@ export default class ReflectionComputePass extends RenderPass {
 	constructor() {
 		super(RenderPassType.Reflection);
 
-		this.settingsGpuBuffer = Renderer.device.createBuffer({
+		this.settingsGpuBuffer = RenderingContext.device.createBuffer({
 			label: "Reflection Pass Settings GPUBuffer",
 			size: 4 * Uint32Array.BYTES_PER_ELEMENT,
 			usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
@@ -36,7 +35,7 @@ export default class ReflectionComputePass extends RenderPass {
 				visibility: GPUShaderStage.COMPUTE,
 				storageTexture: {
 					access: "write-only",
-					format: Renderer.pixelFormat,
+					format: RenderingContext.pixelFormat,
 					viewDimension: "2d",
 				},
 			},
@@ -48,20 +47,21 @@ export default class ReflectionComputePass extends RenderPass {
 				},
 			},
 		];
-		this.computePSOBindGroupLayout = Renderer.device.createBindGroupLayout({
-			label: "Reflection Pass ComputePSO Bind Group Layout",
-			entries: bindGroupLayoutEntries,
-		});
+		this.computePSOBindGroupLayout =
+			RenderingContext.device.createBindGroupLayout({
+				label: "Reflection Pass ComputePSO Bind Group Layout",
+				entries: bindGroupLayoutEntries,
+			});
 		this.computePSO = PipelineStates.createComputePipeline({
 			label: "Reflection Pass Compute PSO",
-			layout: Renderer.device.createPipelineLayout({
+			layout: RenderingContext.device.createPipelineLayout({
 				label: "Reflection PASS ComputePSO Layout",
 				bindGroupLayouts: [this.computePSOBindGroupLayout],
 			}),
 			compute: {
 				entryPoint: REFLECTION_PASS_FRAGMENT_SHADER_ENTRY_NAME,
 				module: PipelineStates.createShaderModule(
-					getReflectionComputeShader(Renderer.pixelFormat),
+					getReflectionComputeShader(RenderingContext.pixelFormat),
 				),
 				constants: {
 					WORKGROUP_SIZE_X: ReflectionComputePass.COMPUTE_WORKGROUP_SIZE_X,
@@ -72,7 +72,7 @@ export default class ReflectionComputePass extends RenderPass {
 	}
 
 	public onResize(w: number, h: number) {
-		Renderer.device.queue.writeBuffer(
+		RenderingContext.device.queue.writeBuffer(
 			this.settingsGpuBuffer,
 			0,
 			new Uint32Array([w, h]),
@@ -101,7 +101,7 @@ export default class ReflectionComputePass extends RenderPass {
 				},
 			},
 		];
-		const texturesBindGroup = Renderer.device.createBindGroup({
+		const texturesBindGroup = RenderingContext.device.createBindGroup({
 			label: "Textures Bind Group",
 			layout: this.computePSOBindGroupLayout,
 			entries: bindGroupEntries,

@@ -1,4 +1,3 @@
-import Renderer from "../../app/Renderer";
 import Camera from "../camera/Camera";
 import PipelineStates from "./PipelineStates";
 import {
@@ -10,6 +9,7 @@ import {
 import { RenderPassNames } from "../constants";
 import RollingAverage from "../math/RollingAverage";
 import Scene from "../scene/Scene";
+import RenderingContext from "./RenderingContext";
 
 export default class RenderPass {
 	public name: string;
@@ -33,14 +33,14 @@ export default class RenderPass {
 	constructor(public type: RenderPassType) {
 		this.name = RenderPassNames.get(type);
 
-		if (Renderer.supportsGPUTimestampQuery) {
+		if (RenderingContext.supportsGPUTimestampQuery) {
 			const renderPassName = RenderPassNames.get(type);
-			this.querySet = Renderer.device.createQuerySet({
+			this.querySet = RenderingContext.device.createQuerySet({
 				label: `Timestamp Query for Render Pass: ${renderPassName}`,
 				type: "timestamp",
 				count: 2,
 			});
-			this.resolveBuffer = Renderer.device.createBuffer({
+			this.resolveBuffer = RenderingContext.device.createBuffer({
 				label: `Timestamp Query Resolve GPUBuffer for Render Pass: ${renderPassName}`,
 				size: 2 * 8,
 				usage: GPUBufferUsage.QUERY_RESOLVE | GPUBufferUsage.COPY_SRC,
@@ -75,7 +75,7 @@ export default class RenderPass {
 	protected augmentRenderPassDescriptorWithTimestampQuery(
 		descriptor: GPURenderPassDescriptor,
 	): GPURenderPassDescriptor {
-		if (Renderer.supportsGPUTimestampQuery) {
+		if (RenderingContext.supportsGPUTimestampQuery) {
 			descriptor.timestampWrites = {
 				querySet: this.querySet,
 				beginningOfPassWriteIndex: 0,
@@ -86,7 +86,7 @@ export default class RenderPass {
 	}
 
 	protected resolveTiming(commandEncoder: GPUCommandEncoder) {
-		if (!Renderer.supportsGPUTimestampQuery) {
+		if (!RenderingContext.supportsGPUTimestampQuery) {
 			return;
 		}
 
@@ -94,7 +94,7 @@ export default class RenderPass {
 
 		this.resultBuffer =
 			this.resultBuffers.pop() ||
-			Renderer.device.createBuffer({
+			RenderingContext.device.createBuffer({
 				label: `Timestamp Query Result Buffer for render pass: ${this.name}`,
 				size: this.resolveBuffer.size,
 				usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
@@ -117,7 +117,7 @@ export default class RenderPass {
 	}
 
 	public async getStartAndEndTimings(): Promise<RenderPassTimingRange> {
-		if (!Renderer.supportsGPUTimestampQuery) {
+		if (!RenderingContext.supportsGPUTimestampQuery) {
 			return [0, 0];
 		}
 
@@ -136,7 +136,7 @@ export default class RenderPass {
 	}
 
 	public async getTimingResult(): Promise<RenderPassTiming> {
-		if (!Renderer.supportsGPUTimestampQuery) {
+		if (!RenderingContext.supportsGPUTimestampQuery) {
 			return {
 				avgValue: 0,
 				timings: [0, 0],
@@ -159,7 +159,7 @@ export default class RenderPass {
 	}
 
 	public toggleDebugCamera(v: boolean) {
-		this.cameraBindGroup = Renderer.device.createBindGroup({
+		this.cameraBindGroup = RenderingContext.device.createBindGroup({
 			label: `Camera Bind Group for: ${RenderPassNames.get(this.type)}`,
 			layout: PipelineStates.defaultCameraBindGroupLayout,
 			entries: [
@@ -176,7 +176,7 @@ export default class RenderPass {
 	public setCamera(camera: Camera): this {
 		this.camera = camera;
 
-		this.cameraBindGroup = Renderer.device.createBindGroup({
+		this.cameraBindGroup = RenderingContext.device.createBindGroup({
 			label: `Camera Bind Group for: ${RenderPassNames.get(this.type)}`,
 			layout: PipelineStates.defaultCameraBindGroupLayout,
 			entries: [

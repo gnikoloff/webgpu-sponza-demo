@@ -1,5 +1,5 @@
-import Renderer from "../Renderer";
 import RenderPass from "../../renderer/core/RenderPass";
+import RenderingContext from "../../renderer/core/RenderingContext";
 import Scene from "../../renderer/scene/Scene";
 import { BIND_GROUP_LOCATIONS } from "../../renderer/core/RendererBindings";
 import { RenderPassType } from "../../renderer/types";
@@ -19,7 +19,7 @@ export default class GBufferRenderPass extends RenderPass {
 			this.colorReflectanceTexture.destroy();
 		}
 
-		this.colorReflectanceTexture = Renderer.device.createTexture({
+		this.colorReflectanceTexture = RenderingContext.device.createTexture({
 			dimension: "2d",
 			format: "bgra8unorm",
 			mipLevelCount: 1,
@@ -33,7 +33,7 @@ export default class GBufferRenderPass extends RenderPass {
 		if (this.velocityTexture) {
 			this.velocityTexture.destroy();
 		}
-		this.velocityTexture = Renderer.device.createTexture({
+		this.velocityTexture = RenderingContext.device.createTexture({
 			dimension: "2d",
 			format: "rg16float",
 			mipLevelCount: 1,
@@ -47,23 +47,25 @@ export default class GBufferRenderPass extends RenderPass {
 		if (this.normalMetallicRoughnessTexture) {
 			this.normalMetallicRoughnessTexture.destroy();
 		}
-		this.normalMetallicRoughnessTexture = Renderer.device.createTexture({
-			dimension: "2d",
-			format: "rgba16float",
-			mipLevelCount: 1,
-			sampleCount: 1,
-			size: { width, height, depthOrArrayLayers: 1 },
-			usage:
-				GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
-			label: "Normal + Metallic + Roughness + GBuffer Texture",
-		});
+		this.normalMetallicRoughnessTexture = RenderingContext.device.createTexture(
+			{
+				dimension: "2d",
+				format: "rgba16float",
+				mipLevelCount: 1,
+				sampleCount: 1,
+				size: { width, height, depthOrArrayLayers: 1 },
+				usage:
+					GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
+				label: "Normal + Metallic + Roughness + GBuffer Texture",
+			},
+		);
 
 		if (this.depthStencilTexture) {
 			this.depthStencilTexture.destroy();
 		}
-		this.depthStencilTexture = Renderer.device.createTexture({
+		this.depthStencilTexture = RenderingContext.device.createTexture({
 			dimension: "2d",
-			format: Renderer.depthStencilFormat,
+			format: RenderingContext.depthStencilFormat,
 			mipLevelCount: 1,
 			sampleCount: 1,
 			size: { width, height, depthOrArrayLayers: 1 },
@@ -115,11 +117,11 @@ export default class GBufferRenderPass extends RenderPass {
 		scene: Scene,
 		inputs: GPUTexture[],
 	): GPUTexture[] {
-		Renderer.activeRenderPass = this.type;
-
 		const renderPassDescriptor = this.createRenderPassDescriptor();
 		const renderPassEncoder =
 			commandEncoder.beginRenderPass(renderPassDescriptor);
+
+		RenderingContext.setActiveRenderPass(this.type, renderPassEncoder);
 
 		renderPassEncoder.pushDebugGroup("Render G-Buffer");
 

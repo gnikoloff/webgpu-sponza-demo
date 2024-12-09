@@ -1,5 +1,5 @@
-import Renderer from "../../app/Renderer";
 import Camera from "../camera/Camera";
+import RenderingContext from "../core/RenderingContext";
 import DirectionalLight from "../lighting/DirectionalLight";
 import Light from "../lighting/Light";
 import PointLight from "../lighting/PointLight";
@@ -150,7 +150,7 @@ export default class Scene extends Transform {
 		if (this.lightsBuffer) {
 			this.lightsBuffer.destroy();
 		}
-		this.lightsBuffer = Renderer.device.createBuffer({
+		this.lightsBuffer = RenderingContext.device.createBuffer({
 			label: "Scene Lights GPUBuffer",
 			size: Light.STRUCT_BYTE_SIZE * this.getLights().length,
 			usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
@@ -158,7 +158,7 @@ export default class Scene extends Transform {
 
 		let lightIdx = 0;
 		for (let i = 0; i < this._directionalLights.length; i++) {
-			Renderer.device.queue.writeBuffer(
+			RenderingContext.device.queue.writeBuffer(
 				this.lightsBuffer,
 				lightIdx * Light.STRUCT_BYTE_SIZE,
 				this._directionalLights[i].lightsStorageView.arrayBuffer,
@@ -166,7 +166,7 @@ export default class Scene extends Transform {
 			lightIdx++;
 		}
 		for (let i = 0; i < this._pointLights.length; i++) {
-			Renderer.device.queue.writeBuffer(
+			RenderingContext.device.queue.writeBuffer(
 				this.lightsBuffer,
 				lightIdx * Light.STRUCT_BYTE_SIZE,
 				this._pointLights[i].lightsStorageView.arrayBuffer,

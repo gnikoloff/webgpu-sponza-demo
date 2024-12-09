@@ -2,9 +2,9 @@ import { Mat4, mat4 } from "wgpu-matrix";
 
 import Drawable from "./Drawable";
 import Geometry from "../geometry/Geometry";
-import Renderer from "../../app/Renderer";
 import PipelineStates from "../core/PipelineStates";
 import { BIND_GROUP_LOCATIONS } from "../core/RendererBindings";
+import RenderingContext from "../core/RenderingContext";
 
 interface InstanceValue {
 	worldMatrix: Mat4;
@@ -62,7 +62,7 @@ export default class InstancedDrawable extends Drawable {
 
 	public updateInstances() {
 		if (!this.instanceBuffer) {
-			this.instanceBuffer = Renderer.device.createBuffer({
+			this.instanceBuffer = RenderingContext.device.createBuffer({
 				label: "Drawable Instances GPUBuffer",
 				size: this.instanceCount * 20 * Float32Array.BYTES_PER_ELEMENT,
 				usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
@@ -77,7 +77,7 @@ export default class InstancedDrawable extends Drawable {
 				},
 			];
 
-			this.instanceMatricesBindGroup = Renderer.device.createBindGroup({
+			this.instanceMatricesBindGroup = RenderingContext.device.createBindGroup({
 				layout: PipelineStates.instancesBindGroupLayout,
 				entries: instanceMatricesBindGroupEntries,
 			});
@@ -98,7 +98,7 @@ export default class InstancedDrawable extends Drawable {
 			);
 		}
 
-		Renderer.device.queue.writeBuffer(
+		RenderingContext.device.queue.writeBuffer(
 			this.instanceBuffer,
 			0,
 			this.uploadValuesToGPU,

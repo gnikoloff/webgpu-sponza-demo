@@ -1,8 +1,8 @@
 import { Vec3, vec2, vec3, vec4 } from "wgpu-matrix";
-import Renderer from "../../app/Renderer";
 import Face from "./Face";
 import VertexDescriptor from "../core/VertexDescriptor";
 import BoundingBox from "../math/BoundingBox";
+import RenderingContext from "../core/RenderingContext";
 
 export default class Geometry {
 	public faces: Face[] = [];
@@ -128,7 +128,7 @@ export default class Geometry {
 			vec3.add(tan2[face.indexV2], tdir, tan2[face.indexV2]);
 		}
 
-		const vertexBuffer = Renderer.device.createBuffer({
+		const vertexBuffer = RenderingContext.device.createBuffer({
 			mappedAtCreation: true,
 			size:
 				indexCount *
@@ -144,7 +144,7 @@ export default class Geometry {
 		this.vertexBuffers.push(vertexBuffer);
 		this.vertexBufferOffsets.set(vertexBuffer, [0, 0]);
 
-		this.indexBuffer = Renderer.device.createBuffer({
+		this.indexBuffer = RenderingContext.device.createBuffer({
 			mappedAtCreation: true,
 			size: Uint16Array.BYTES_PER_ELEMENT * indices.length,
 			usage: GPUBufferUsage.INDEX,

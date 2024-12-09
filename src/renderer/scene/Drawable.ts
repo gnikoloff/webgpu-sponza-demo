@@ -7,7 +7,6 @@ import {
 
 import { SHADER_CHUNKS } from "../shader/chunks";
 
-import Renderer from "../../app/Renderer";
 import Geometry from "../geometry/Geometry";
 import Material from "../material/Material";
 import MaterialProps from "../material/MaterialProps";
@@ -20,9 +19,9 @@ import {
 	BIND_GROUP_LOCATIONS,
 	PBR_TEXTURES_LOCATIONS,
 	SAMPLER_LOCATIONS,
-	TextureLocation,
 } from "../core/RendererBindings";
-import { RenderPassType } from "../types";
+import { RenderPassType, TextureLocation } from "../types";
+import RenderingContext from "../core/RenderingContext";
 
 export default class Drawable extends Transform {
 	public static readonly INDEX_FORMAT: GPUIndexFormat = "uint16";
@@ -105,11 +104,11 @@ export default class Drawable extends Transform {
 	}
 
 	public get material(): Material {
-		return this.materials.get(Renderer.activeRenderPass);
+		return this.materials.get(RenderingContext.getActiveRenderPassType());
 	}
 
 	private updateTexturesBindGroup() {
-		this.texturesBindGroup = Renderer.device.createBindGroup({
+		this.texturesBindGroup = RenderingContext.device.createBindGroup({
 			label: "Model Textures Bind Group",
 			layout: PipelineStates.defaultModelMaterialBindGroupLayout,
 			entries: this.modelMaterialBindGroupEntries,
@@ -127,7 +126,7 @@ export default class Drawable extends Transform {
 		this.bufferUniformValues = makeStructuredView(
 			modelShaderDefs.structs.ModelUniform,
 		);
-		this.modelBuffer = Renderer.device.createBuffer({
+		this.modelBuffer = RenderingContext.device.createBuffer({
 			label: `${this.label} Model GPUBuffer`,
 			size: this.bufferUniformValues.arrayBuffer.byteLength,
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -142,7 +141,7 @@ export default class Drawable extends Transform {
 			},
 		];
 
-		this.modelBindGroup = Renderer.device.createBindGroup({
+		this.modelBindGroup = RenderingContext.device.createBindGroup({
 			layout: PipelineStates.defaultModelBindGroupLayout,
 			entries: modelBindGroupEntries,
 		});
@@ -166,7 +165,7 @@ export default class Drawable extends Transform {
 			},
 		];
 
-		this.texturesBindGroup = Renderer.device.createBindGroup({
+		this.texturesBindGroup = RenderingContext.device.createBindGroup({
 			label: "Model Textures Bind Group",
 			layout: PipelineStates.defaultModelMaterialBindGroupLayout,
 			entries: this.modelMaterialBindGroupEntries,
@@ -198,7 +197,7 @@ export default class Drawable extends Transform {
 	}
 
 	override preRender(renderEncoder: GPURenderPassEncoder): void {
-		renderEncoder.pushDebugGroup(`Render Object ${this.label}`);
+		renderEncoder.pushDebugGroup(`Render ${this.label}`);
 
 		if (this.uploadModelBufferToGPU) {
 			this.bufferUniformValues.set({
@@ -210,7 +209,7 @@ export default class Drawable extends Transform {
 				metallic: this.materialProps.metallic,
 				roughness: this.materialProps.roughness,
 			});
-			Renderer.device.queue.writeBuffer(
+			RenderingContext.device.queue.writeBuffer(
 				this.modelBuffer,
 				0,
 				this.bufferUniformValues.arrayBuffer,
@@ -245,7 +244,7 @@ export default class Drawable extends Transform {
 	}
 
 	override onRender(renderEncoder: GPURenderPassEncoder) {
-		this.material.bind(renderEncoder);
+		this.material.bind();
 
 		renderEncoder.drawIndexed(
 			this.geometry.indexCount,

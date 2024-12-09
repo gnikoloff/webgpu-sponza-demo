@@ -1,5 +1,5 @@
-import Renderer from "../../app/Renderer";
 import { PBR_TEXTURES_LOCATIONS, SAMPLER_LOCATIONS } from "./RendererBindings";
+import RenderingContext from "./RenderingContext";
 
 let _cameraBindGroupLayout: GPUBindGroupLayout;
 let _cameraPlusLightsBindGroupLayout: GPUBindGroupLayout;
@@ -31,10 +31,11 @@ const PipelineStates = {
 			},
 		];
 
-		_cameraPlusLightsBindGroupLayout = Renderer.device.createBindGroupLayout({
-			label: "Camera + Lights GPUBindGroupLayout",
-			entries: bindGroupLayoutEntries,
-		});
+		_cameraPlusLightsBindGroupLayout =
+			RenderingContext.device.createBindGroupLayout({
+				label: "Camera + Lights GPUBindGroupLayout",
+				entries: bindGroupLayoutEntries,
+			});
 
 		return _cameraPlusLightsBindGroupLayout;
 	},
@@ -52,7 +53,7 @@ const PipelineStates = {
 			},
 		];
 
-		_cameraBindGroupLayout = Renderer.device.createBindGroupLayout({
+		_cameraBindGroupLayout = RenderingContext.device.createBindGroupLayout({
 			label: "Camera GPUBindGroupLayout",
 			entries: bindGroupLayoutEntries,
 		});
@@ -72,7 +73,7 @@ const PipelineStates = {
 				buffer: {},
 			},
 		];
-		_modelBindGroupLayout = Renderer.device.createBindGroupLayout({
+		_modelBindGroupLayout = RenderingContext.device.createBindGroupLayout({
 			label: "Model GPUBindGroupLayout",
 			entries: bindGroupLayoutEntries,
 		});
@@ -112,7 +113,7 @@ const PipelineStates = {
 			},
 		];
 		_defaultModelMaterialBindGroupLayout =
-			Renderer.device.createBindGroupLayout({
+			RenderingContext.device.createBindGroupLayout({
 				label: "Model Textures GPUBindGroupLayout",
 				entries: bindGroupLayoutEntries,
 			});
@@ -132,7 +133,7 @@ const PipelineStates = {
 				},
 			},
 		];
-		_instanceBindGroupLayout = Renderer.device.createBindGroupLayout({
+		_instanceBindGroupLayout = RenderingContext.device.createBindGroupLayout({
 			label: "Instance Models GPUBindGroupLayout",
 			entries: bindGroupLayoutEntries,
 		});
@@ -147,7 +148,7 @@ const PipelineStates = {
 		if ((shaderModule = cachedShaderModules.get(shaderModuleSrc))) {
 			return shaderModule;
 		}
-		shaderModule = Renderer.device.createShaderModule({
+		shaderModule = RenderingContext.device.createShaderModule({
 			label: debugLabel,
 			code: shaderModuleSrc,
 		});
@@ -163,7 +164,7 @@ const PipelineStates = {
 		// if ((renderPSO = cachedRenderPSOs.get(key))) {
 		// 	return renderPSO;
 		// }
-		renderPSO = Renderer.device.createRenderPipeline(descriptor);
+		renderPSO = RenderingContext.device.createRenderPipeline(descriptor);
 
 		// cachedRenderPSOs.set(key, renderPSO);
 
@@ -173,7 +174,7 @@ const PipelineStates = {
 	createComputePipeline: (
 		descriptor: GPUComputePipelineDescriptor,
 	): GPUComputePipeline => {
-		const pipeline = Renderer.device.createComputePipeline(descriptor);
+		const pipeline = RenderingContext.device.createComputePipeline(descriptor);
 		return pipeline;
 	},
 };

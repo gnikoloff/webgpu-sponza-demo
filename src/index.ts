@@ -95,9 +95,9 @@ resize();
 
 function renderFrame() {
 	const nowMs = performance.now();
-	requestAnimationFrame(renderFrame);
 
 	renderer.renderFrame(nowMs);
+	requestAnimationFrame(renderFrame);
 }
 
 function resize() {

@@ -1,8 +1,8 @@
 import RenderPass from "../../renderer/core/RenderPass";
+import RenderingContext from "../../renderer/core/RenderingContext";
 import SamplerController from "../../renderer/texture/SamplerController";
 import TextureLoader from "../../renderer/texture/TextureLoader";
 import { RenderPassType } from "../../renderer/types";
-import Renderer from "../Renderer";
 
 export default class LightRenderPass extends RenderPass {
 	protected static readonly RENDER_TARGETS: GPUColorTargetState[] = [
@@ -95,7 +95,7 @@ export default class LightRenderPass extends RenderPass {
 	}
 
 	protected recreateGBufferTexturesBindGroup() {
-		this.gbufferTexturesBindGroup = Renderer.device.createBindGroup({
+		this.gbufferTexturesBindGroup = RenderingContext.device.createBindGroup({
 			label: "G-Buffer Textures Input Bind Group",
 			layout: this.gbufferCommonBindGroupLayout,
 			entries: this.gbufferTexturesBindGroupEntries,
@@ -105,10 +105,11 @@ export default class LightRenderPass extends RenderPass {
 	constructor(type: RenderPassType) {
 		super(type);
 
-		this.gbufferCommonBindGroupLayout = Renderer.device.createBindGroupLayout({
-			label: "GBuffer Textures Bind Group",
-			entries: LightRenderPass.gbufferCommonBindGroupLayoutEntries,
-		});
+		this.gbufferCommonBindGroupLayout =
+			RenderingContext.device.createBindGroupLayout({
+				label: "GBuffer Textures Bind Group",
+				entries: LightRenderPass.gbufferCommonBindGroupLayoutEntries,
+			});
 
 		this.bayerDitherSampler = SamplerController.createSampler({
 			addressModeU: "repeat",
@@ -117,7 +118,7 @@ export default class LightRenderPass extends RenderPass {
 			magFilter: "nearest",
 		});
 
-		this.debugLightsBuffer = Renderer.device.createBuffer({
+		this.debugLightsBuffer = RenderingContext.device.createBuffer({
 			label: "Debug Lights GPUBuffer",
 			size: 4 * Float32Array.BYTES_PER_ELEMENT,
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,

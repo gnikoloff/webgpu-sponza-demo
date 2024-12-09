@@ -1,5 +1,5 @@
 import RenderPass from "../../../renderer/core/RenderPass";
-import Renderer from "../../Renderer";
+
 import PointLight from "../../../renderer/lighting/PointLight";
 import TextureLoader from "../../../renderer/texture/TextureLoader";
 import Skybox from "../../meshes/Skybox";
@@ -9,6 +9,7 @@ import PointLightsMaskSubPass from "./PointLightsMaskSubPass";
 import { RenderPassType } from "../../../renderer/types";
 import SamplerController from "../../../renderer/texture/SamplerController";
 import Scene from "../../../renderer/scene/Scene";
+import RenderingContext from "../../../renderer/core/RenderingContext";
 
 export default class GBufferIntegratePass extends RenderPass {
 	public outTexture: GPUTexture;
@@ -35,7 +36,7 @@ export default class GBufferIntegratePass extends RenderPass {
 	}
 	public set debugPointLights(v: boolean) {
 		if (v !== this._debugPointLights) {
-			Renderer.device.queue.writeBuffer(
+			RenderingContext.device.queue.writeBuffer(
 				this.debugLightsBuffer,
 				0,
 				new Float32Array([v ? 1 : 0]),
@@ -50,7 +51,7 @@ export default class GBufferIntegratePass extends RenderPass {
 	}
 	public set debugShadowCascadeIndex(v: boolean) {
 		if (v !== this.debugShadowCascadeIndex) {
-			Renderer.device.queue.writeBuffer(
+			RenderingContext.device.queue.writeBuffer(
 				this.debugLightsBuffer,
 				Float32Array.BYTES_PER_ELEMENT,
 				new Float32Array([v ? 1 : 0]),
@@ -135,10 +136,11 @@ export default class GBufferIntegratePass extends RenderPass {
 			},
 		];
 
-		this.gbufferCommonBindGroupLayout = Renderer.device.createBindGroupLayout({
-			label: "GBuffer Textures Bind Group",
-			entries: gbufferCommonBindGroupLayoutEntries,
-		});
+		this.gbufferCommonBindGroupLayout =
+			RenderingContext.device.createBindGroupLayout({
+				label: "GBuffer Textures Bind Group",
+				entries: gbufferCommonBindGroupLayoutEntries,
+			});
 
 		const lightsMaskBindGroupLayoutEntries: GPUBindGroupLayoutEntry[] = [
 			{
@@ -157,10 +159,11 @@ export default class GBufferIntegratePass extends RenderPass {
 			},
 		];
 
-		this.lightsMaskBindGroupLayout = Renderer.device.createBindGroupLayout({
-			label: "Light Masking Bind Group",
-			entries: lightsMaskBindGroupLayoutEntries,
-		});
+		this.lightsMaskBindGroupLayout =
+			RenderingContext.device.createBindGroupLayout({
+				label: "Light Masking Bind Group",
+				entries: lightsMaskBindGroupLayoutEntries,
+			});
 
 		// const lightMaskStencilState: GPUStencilFaceState = {
 		// 	compare: "always",
@@ -169,7 +172,7 @@ export default class GBufferIntegratePass extends RenderPass {
 		// 	passOp: "keep",
 		// };
 
-		this.debugLightsBuffer = Renderer.device.createBuffer({
+		this.debugLightsBuffer = RenderingContext.device.createBuffer({
 			label: "Debug Lights GPUBuffer",
 			size: 4 * Float32Array.BYTES_PER_ELEMENT,
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -186,7 +189,7 @@ export default class GBufferIntegratePass extends RenderPass {
 		if (this.outTexture) {
 			this.outTexture.destroy();
 		}
-		this.outTexture = Renderer.device.createTexture({
+		this.outTexture = RenderingContext.device.createTexture({
 			dimension: "2d",
 			format: "rgba16float",
 			mipLevelCount: 1,
@@ -235,7 +238,7 @@ export default class GBufferIntegratePass extends RenderPass {
 		// 	},
 		// ];
 
-		// const lightMaskBindGroup = Renderer.device.createBindGroup({
+		// const lightMaskBindGroup = RenderingContext.device.createBindGroup({
 		// 	layout: this.lightsMaskBindGroupLayout,
 		// 	entries: lightsMaskBindGroupEntries,
 		// });

@@ -1,10 +1,10 @@
 import PipelineStates from "../../renderer/core/PipelineStates";
+import RenderingContext from "../../renderer/core/RenderingContext";
 import VertexDescriptor from "../../renderer/core/VertexDescriptor";
 import Drawable from "../../renderer/scene/Drawable";
 import Scene from "../../renderer/scene/Scene";
-import Transform from "../../renderer/scene/Transform";
 import { LightType, RenderPassType } from "../../renderer/types";
-import Renderer from "../Renderer";
+
 import GeometryCache from "../utils/GeometryCache";
 import DirectionalShadowRenderPass from "./DirectionalShadowRenderPass";
 import LightRenderPass from "./LightRenderPass";
@@ -21,10 +21,11 @@ export default class PointLightsRenderPass extends LightRenderPass {
 	constructor() {
 		super(RenderPassType.PointLightsLighting);
 
-		const pointLightRenderPSOLayout = Renderer.device.createPipelineLayout({
-			label: "Render Lights PSO Layout",
-			bindGroupLayouts: [this.gbufferCommonBindGroupLayout],
-		});
+		const pointLightRenderPSOLayout =
+			RenderingContext.device.createPipelineLayout({
+				label: "Render Lights PSO Layout",
+				bindGroupLayouts: [this.gbufferCommonBindGroupLayout],
+			});
 
 		const lightRenderStencilState: GPUStencilFaceState = {
 			compare: "less",
@@ -56,7 +57,7 @@ export default class PointLightsRenderPass extends LightRenderPass {
 				targets: PointLightsRenderPass.RENDER_TARGETS,
 			},
 			depthStencil: {
-				format: Renderer.depthStencilFormat,
+				format: RenderingContext.depthStencilFormat,
 				depthWriteEnabled: false,
 				depthCompare: "less-equal",
 				stencilReadMask: 0xff,
@@ -133,9 +134,12 @@ export default class PointLightsRenderPass extends LightRenderPass {
 		const renderPass = commandEncoder.beginRenderPass(
 			this.createRenderPassDescriptor(),
 		);
+
+		RenderingContext.setActiveRenderPass(this.type, renderPass);
+
 		renderPass.pushDebugGroup("Begin Point Lighting");
 
-		renderPass.setPipeline(this.renderPSO);
+		RenderingContext.bindRenderPSO(this.renderPSO);
 		renderPass.setBindGroup(0, this.gbufferTexturesBindGroup);
 		renderPass.setVertexBuffer(
 			0,

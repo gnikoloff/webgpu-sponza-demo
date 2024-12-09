@@ -17,13 +17,10 @@ import GLTFGeometry from "../geometry/GLTFGeometry";
 import Drawable from "./Drawable";
 import Material from "../material/Material";
 import TextureLoader from "../texture/TextureLoader";
-import {
-	PBR_TEXTURES_LOCATIONS,
-	TextureLocation,
-} from "../core/RendererBindings";
+import { PBR_TEXTURES_LOCATIONS } from "../core/RendererBindings";
 import SamplerController from "../texture/SamplerController";
-import Renderer from "../../app/Renderer";
-import { RenderPassType } from "../types";
+import { RenderPassType, TextureLocation } from "../types";
+import RenderingContext from "../core/RenderingContext";
 
 const GL_ELEMENT_ARRAY_BUFFER = 34963;
 const GL_ARRAY_BUFFER = 34962;
@@ -175,7 +172,7 @@ export default class GLTFModel extends Transform {
 			}
 
 			const alignedLength = Math.ceil(buffView.byteLength / 4) * 4;
-			const gpuBuffer = Renderer.device.createBuffer({
+			const gpuBuffer = RenderingContext.device.createBuffer({
 				label: buffView.id,
 				mappedAtCreation: true,
 				size: alignedLength,

@@ -80,7 +80,7 @@ export const SHADER_CHUNKS = Object.freeze({
 
       @must_use
       fn calcWorldPos(
-        camera: ptr<uniform, CameraUniform>,
+        camera: CameraUniform,
         coord: vec4f,
         depth: f32
       ) -> vec3f {
@@ -94,7 +94,7 @@ export const SHADER_CHUNKS = Object.freeze({
 
       @must_use
       fn calcViewSpacePos(
-        camera: ptr<uniform, CameraUniform>,
+        camera: CameraUniform,
         coord: vec2f,
         depth: f32
       ) -> vec3f {

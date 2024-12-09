@@ -1,8 +1,8 @@
 import PipelineStates from "../../../renderer/core/PipelineStates";
-import { LightType } from "../../../renderer/lighting/Light";
+import RenderingContext from "../../../renderer/core/RenderingContext";
 import SamplerController from "../../../renderer/texture/SamplerController";
 import TextureLoader from "../../../renderer/texture/TextureLoader";
-import Renderer from "../../Renderer";
+
 import FullscreenTriangleShader, {
 	FullscreenTriangleShaderEntryFn,
 } from "../../shaders/FullscreenTriangleShader";
@@ -141,18 +141,20 @@ export default class DirectionalLightSubPass extends LightSubPass {
 				},
 			},
 		];
-		this.dirLightShadowBindGroupLayout = Renderer.device.createBindGroupLayout({
-			label: "Direcional Light Shadow Bind Group Layout",
-			entries: dirLightShadowBindGroupLayoutEntries,
-		});
+		this.dirLightShadowBindGroupLayout =
+			RenderingContext.device.createBindGroupLayout({
+				label: "Direcional Light Shadow Bind Group Layout",
+				entries: dirLightShadowBindGroupLayoutEntries,
+			});
 
-		const dirLightRenderPSOLayout = Renderer.device.createPipelineLayout({
-			label: "Dir Light PSO Layout",
-			bindGroupLayouts: [
-				this.gbufferCommonBindGroupLayout,
-				this.dirLightShadowBindGroupLayout,
-			],
-		});
+		const dirLightRenderPSOLayout =
+			RenderingContext.device.createPipelineLayout({
+				label: "Dir Light PSO Layout",
+				bindGroupLayouts: [
+					this.gbufferCommonBindGroupLayout,
+					this.dirLightShadowBindGroupLayout,
+				],
+			});
 
 		const renderPSODescriptor: GPURenderPipelineDescriptor = {
 			label: "Directional Light Render PSO",
@@ -177,7 +179,7 @@ export default class DirectionalLightSubPass extends LightSubPass {
 				targets: DirectionalLightSubPass.RENDER_TARGETS,
 			},
 			depthStencil: {
-				format: Renderer.depthStencilFormat,
+				format: RenderingContext.depthStencilFormat,
 				depthWriteEnabled: false,
 			},
 		};
@@ -185,7 +187,7 @@ export default class DirectionalLightSubPass extends LightSubPass {
 	}
 
 	public override render(renderPassEncoder: GPURenderPassEncoder) {
-		this.dirLightShadowBindGroup = Renderer.device.createBindGroup({
+		this.dirLightShadowBindGroup = RenderingContext.device.createBindGroup({
 			layout: this.dirLightShadowBindGroupLayout,
 			entries: this.dirLightShadowBindGroupEntries,
 		});

@@ -8,13 +8,13 @@ import Camera from "../../renderer/camera/Camera";
 import RenderPass from "../../renderer/core/RenderPass";
 import Transform from "../../renderer/scene/Transform";
 import { SHADER_CHUNKS } from "../../renderer/shader/chunks";
-import Renderer from "../Renderer";
 import PipelineStates from "../../renderer/core/PipelineStates";
 
 import DirectionalLight from "../../renderer/lighting/DirectionalLight";
 import { BIND_GROUP_LOCATIONS } from "../../renderer/core/RendererBindings";
 import Scene from "../../renderer/scene/Scene";
 import { RenderPassType } from "../../renderer/types";
+import RenderingContext from "../../renderer/core/RenderingContext";
 
 export default class DirectionalShadowRenderPass extends RenderPass {
 	public static readonly TEXTURE_SIZE = 2048;
@@ -39,7 +39,7 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 		super(RenderPassType.Shadow);
 		this.type = RenderPassType.Shadow;
 
-		this.shadowTexture = Renderer.device.createTexture({
+		this.shadowTexture = RenderingContext.device.createTexture({
 			dimension: "2d",
 			format: "depth32float",
 			size: {
@@ -65,43 +65,45 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 			cameraShaderDefs.structs.CameraUniform,
 		);
 
-		this.shadowCameraCascade0GPUBuffer = Renderer.device.createBuffer({
+		this.shadowCameraCascade0GPUBuffer = RenderingContext.device.createBuffer({
 			label: "Shadow Camera GPU Buffer Cascade #0",
 			size: this.shadowCameraCascade0BufferUniformValues.arrayBuffer.byteLength,
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 		});
 
-		this.shadowCameraCascade1GPUBuffer = Renderer.device.createBuffer({
+		this.shadowCameraCascade1GPUBuffer = RenderingContext.device.createBuffer({
 			label: "Shadow Camera GPU Buffer Cascade #1",
 			size: this.shadowCameraCascade1BufferUniformValues.arrayBuffer.byteLength,
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 		});
 
-		this.shadowCameraCascade0BindGroup = Renderer.device.createBindGroup({
-			label: "Shadow Camera Bind Group Cascade #0",
-			layout: PipelineStates.defaultCameraBindGroupLayout,
-			entries: [
-				{
-					binding: 0,
-					resource: {
-						buffer: this.shadowCameraCascade0GPUBuffer,
+		this.shadowCameraCascade0BindGroup =
+			RenderingContext.device.createBindGroup({
+				label: "Shadow Camera Bind Group Cascade #0",
+				layout: PipelineStates.defaultCameraBindGroupLayout,
+				entries: [
+					{
+						binding: 0,
+						resource: {
+							buffer: this.shadowCameraCascade0GPUBuffer,
+						},
 					},
-				},
-			],
-		});
+				],
+			});
 
-		this.shadowCameraCascade1BindGroup = Renderer.device.createBindGroup({
-			label: "Shadow Camera Bind Group Cascade #1",
-			layout: PipelineStates.defaultCameraBindGroupLayout,
-			entries: [
-				{
-					binding: 0,
-					resource: {
-						buffer: this.shadowCameraCascade1GPUBuffer,
+		this.shadowCameraCascade1BindGroup =
+			RenderingContext.device.createBindGroup({
+				label: "Shadow Camera Bind Group Cascade #1",
+				layout: PipelineStates.defaultCameraBindGroupLayout,
+				entries: [
+					{
+						binding: 0,
+						resource: {
+							buffer: this.shadowCameraCascade1GPUBuffer,
+						},
 					},
-				},
-			],
-		});
+				],
+			});
 
 		const lightCascadeShaderDefs = makeShaderDataDefinitions(
 			SHADER_CHUNKS.ShadowCascade,
@@ -110,7 +112,7 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 			lightCascadeShaderDefs.structs.ShadowCascade,
 		);
 
-		this.shadowCascadesBuffer = Renderer.device.createBuffer({
+		this.shadowCascadesBuffer = RenderingContext.device.createBuffer({
 			label: "Directional Shadow Cascade ProjView Matrices",
 			size:
 				(DirectionalShadowRenderPass.TEXTURE_CASCADES_COUNT + 1) *
@@ -192,8 +194,6 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 		scene: Scene,
 		inputs: GPUTexture[],
 	): GPUTexture[] {
-		Renderer.activeRenderPass = this.type;
-
 		const oldCameraNear = this.camera.near;
 		const oldCameraFar = this.camera.far;
 
@@ -209,7 +209,7 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 			projViewMatrix: lightSpaceMatCascade0,
 			distance: this.camera.far,
 		});
-		Renderer.device.queue.writeBuffer(
+		RenderingContext.device.queue.writeBuffer(
 			this.shadowCascadesBuffer,
 			0,
 			this.shadowCascadeView.arrayBuffer,
@@ -218,7 +218,7 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 			projectionViewMatrix: lightSpaceMatCascade0,
 		});
 
-		Renderer.device.queue.writeBuffer(
+		RenderingContext.device.queue.writeBuffer(
 			this.shadowCameraCascade0GPUBuffer,
 			0,
 			this.shadowCameraCascade0BufferUniformValues.arrayBuffer,
@@ -241,6 +241,8 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 		const renderPassEncoderCascade0 = commandEncoder.beginRenderPass(
 			renderPassDescriptorCascade0,
 		);
+
+		RenderingContext.setActiveRenderPass(this.type, renderPassEncoderCascade0);
 
 		renderPassEncoderCascade0.setBindGroup(
 			BIND_GROUP_LOCATIONS.CameraPlusOptionalLights,
@@ -267,7 +269,7 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 			projViewMatrix: lightSpaceMatCascade1,
 			distance: this.camera.far,
 		});
-		Renderer.device.queue.writeBuffer(
+		RenderingContext.device.queue.writeBuffer(
 			this.shadowCascadesBuffer,
 			this.shadowCascadeView.arrayBuffer.byteLength * 1,
 			this.shadowCascadeView.arrayBuffer,
@@ -276,7 +278,7 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 			projectionViewMatrix: lightSpaceMatCascade1,
 		});
 
-		Renderer.device.queue.writeBuffer(
+		RenderingContext.device.queue.writeBuffer(
 			this.shadowCameraCascade1GPUBuffer,
 			0,
 			this.shadowCameraCascade1BufferUniformValues.arrayBuffer,
@@ -299,6 +301,9 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 		const renderPassEncoderCascade1 = commandEncoder.beginRenderPass(
 			renderPassDescriptorCascade1,
 		);
+
+		RenderingContext.setActiveRenderPass(this.type, renderPassEncoderCascade1);
+
 		renderPassEncoderCascade1.pushDebugGroup("Render Shadow Cascade #1");
 
 		renderPassEncoderCascade1.setBindGroup(
@@ -311,23 +316,6 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 
 		renderPassEncoderCascade1.popDebugGroup();
 		renderPassEncoderCascade1.end();
-
-		this.camera.near =
-			DirectionalShadowRenderPass.TEXTURE_CASCADE_FAR_DISTANCES[1];
-		this.camera.far =
-			DirectionalShadowRenderPass.TEXTURE_CASCADE_FAR_DISTANCES[2];
-		this.camera.updateProjectionMatrix();
-		const lightSpaceMatCascade2 = this.getLightSpaceMatrix();
-
-		this.shadowCascadeView.set({
-			projViewMatrix: lightSpaceMatCascade2,
-			distance: this.camera.far,
-		});
-		Renderer.device.queue.writeBuffer(
-			this.shadowCascadesBuffer,
-			this.shadowCascadeView.arrayBuffer.byteLength * 2,
-			this.shadowCascadeView.arrayBuffer,
-		);
 
 		// Reset camera properties
 		this.camera.near = oldCameraNear;

@@ -1,6 +1,9 @@
 import { Vec2, vec2 } from "wgpu-matrix";
-import Renderer from "../../app/Renderer";
 import PipelineStates from "../core/PipelineStates";
+import { numMipLevelsForSize } from "../math/math";
+import BaseUtilObject from "../core/BaseUtilObject";
+import RenderingContext from "../core/RenderingContext";
+import { HDRImageResult } from "../types";
 import CopyTextureViewShaderUtils, {
 	CopyTextureViewShaderUtilsEntryFn,
 } from "../shader/CopyTextureViewShaderUtils";
@@ -8,9 +11,6 @@ import {
 	GetMipComputeGeneratorShaderUtils,
 	MipComputeGeneratorShaderEntryFn,
 } from "../shader/MipComputeGeneratorShaderUtils";
-import { HDRImageResult } from "./TextureLoader";
-import { numMipLevelsForSize } from "../math/math";
-import BaseUtilObject from "../core/BaseUtilObject";
 
 function initBindGroup(
 	nextMipLevel: number,
@@ -27,7 +27,7 @@ function initBindGroup(
 			resource: textureMipViews[nextMipLevel],
 		},
 	];
-	return Renderer.device.createBindGroup({
+	return RenderingContext.device.createBindGroup({
 		label: "Mip Generator Input Bind Group",
 		layout,
 		entries: bindGroupEntries,
@@ -97,13 +97,13 @@ export default class TextureController extends BaseUtilObject {
 			},
 		];
 
-		const inputBindGroupLayout = Renderer.device.createBindGroupLayout({
+		const inputBindGroupLayout = RenderingContext.device.createBindGroupLayout({
 			label: "Mip Generator CubeTexture Input Bind Group Layout",
 			entries: inputBindGroupLayoutEntries,
 		});
 		const computeMipComputePSO = PipelineStates.createComputePipeline({
 			label: "Compute Mip ComputePSO",
-			layout: Renderer.device.createPipelineLayout({
+			layout: RenderingContext.device.createPipelineLayout({
 				label: "Compute Mip ComputePSO CubeTexture Layout",
 				bindGroupLayouts: [inputBindGroupLayout],
 			}),
@@ -115,7 +115,7 @@ export default class TextureController extends BaseUtilObject {
 			},
 		});
 
-		const commandEncoder = Renderer.device.createCommandEncoder({
+		const commandEncoder = RenderingContext.device.createCommandEncoder({
 			label: `Mip Generate Command Encoder}`,
 		});
 		const computePass = commandEncoder.beginComputePass();
@@ -144,7 +144,7 @@ export default class TextureController extends BaseUtilObject {
 		}
 		computePass.end();
 
-		Renderer.device.queue.submit([commandEncoder.finish()]);
+		RenderingContext.device.queue.submit([commandEncoder.finish()]);
 	};
 
 	public static generateMipsFor2DTextureWithRenderPSO = () => {};
@@ -183,14 +183,14 @@ export default class TextureController extends BaseUtilObject {
 			},
 		];
 
-		const inputBindGroupLayout = Renderer.device.createBindGroupLayout({
+		const inputBindGroupLayout = RenderingContext.device.createBindGroupLayout({
 			label: "Mip Generator Input Bind Group Layout",
 			entries: inputBindGroupLayoutEntries,
 		});
 
 		const computeMipComputePSO = PipelineStates.createComputePipeline({
 			label: "Compute Mip ComputePSO",
-			layout: Renderer.device.createPipelineLayout({
+			layout: RenderingContext.device.createPipelineLayout({
 				label: "Compute Mip ComputePSO Layout",
 				bindGroupLayouts: [inputBindGroupLayout],
 			}),
@@ -220,7 +220,7 @@ export default class TextureController extends BaseUtilObject {
 			}
 		}
 
-		const commandEncoder = Renderer.device.createCommandEncoder({
+		const commandEncoder = RenderingContext.device.createCommandEncoder({
 			label: `Mip Generate Command Encoder for ${debugLabel}`,
 		});
 		const computePass = commandEncoder.beginComputePass();
@@ -245,7 +245,7 @@ export default class TextureController extends BaseUtilObject {
 		}
 		computePass.end();
 
-		Renderer.device.queue.submit([commandEncoder.finish()]);
+		RenderingContext.device.queue.submit([commandEncoder.finish()]);
 	};
 
 	public static copyTextureView(
@@ -265,7 +265,7 @@ export default class TextureController extends BaseUtilObject {
 			viewDimension: "2d",
 		},
 	) {
-		const inOutTextureScaleFactorBuffer = Renderer.device.createBuffer({
+		const inOutTextureScaleFactorBuffer = RenderingContext.device.createBuffer({
 			label: "Copy Texture View Compute Tex Scale Factor Buffer",
 			size: Uint32Array.BYTES_PER_ELEMENT,
 			usage: GPUBufferUsage.UNIFORM,
@@ -297,7 +297,7 @@ export default class TextureController extends BaseUtilObject {
 			},
 		];
 
-		const bindGroupLayout = Renderer.device.createBindGroupLayout({
+		const bindGroupLayout = RenderingContext.device.createBindGroupLayout({
 			label: "Copy Texture View Compute Bind Group Layout",
 			entries: bindGroupLayoutEntries,
 		});
@@ -319,12 +319,12 @@ export default class TextureController extends BaseUtilObject {
 			},
 		];
 
-		const bindGroup = Renderer.device.createBindGroup({
+		const bindGroup = RenderingContext.device.createBindGroup({
 			layout: bindGroupLayout,
 			entries,
 		});
 
-		const pipelineLayout = Renderer.device.createPipelineLayout({
+		const pipelineLayout = RenderingContext.device.createPipelineLayout({
 			label: "Copy Texture View Compute PSO Layout",
 			bindGroupLayouts: [bindGroupLayout],
 		});
@@ -352,7 +352,7 @@ export default class TextureController extends BaseUtilObject {
 		usage = GPUTextureUsage.TEXTURE_BINDING,
 		debugLabel = "HDR Texture",
 	): GPUTexture => {
-		const texture = Renderer.device.createTexture({
+		const texture = RenderingContext.device.createTexture({
 			label: debugLabel,
 			format: "rgba16float",
 			size: {
@@ -363,7 +363,7 @@ export default class TextureController extends BaseUtilObject {
 			usage,
 		});
 
-		Renderer.device.queue.writeTexture(
+		RenderingContext.device.queue.writeTexture(
 			{ texture, mipLevel: 0 },
 			hdrImage.rgbaHalfFloat,
 			{

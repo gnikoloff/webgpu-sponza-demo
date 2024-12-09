@@ -1,7 +1,7 @@
 import { GLTFMeshPrimitivePostprocessed } from "@loaders.gl/gltf";
 
 import Geometry from "./Geometry";
-import Renderer from "../../app/Renderer";
+import RenderingContext from "../core/RenderingContext";
 
 export default class GLTFGeometry extends Geometry {
 	public firstIndex = 0;
@@ -24,7 +24,7 @@ export default class GLTFGeometry extends Geometry {
 		[positionAttrib, normalAttrib, texCoord0Attrib, tangentAttrib].forEach(
 			(attrib, i) => {
 				if (!attrib) {
-					const buffer = Renderer.device.createBuffer({
+					const buffer = RenderingContext.device.createBuffer({
 						label: `Vertex Buffer Placeholder`,
 						size: 1,
 						usage: GPUBufferUsage.VERTEX,

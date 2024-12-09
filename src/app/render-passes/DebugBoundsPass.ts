@@ -2,6 +2,7 @@ import Camera from "../../renderer/camera/Camera";
 import PipelineStates from "../../renderer/core/PipelineStates";
 import RenderPass from "../../renderer/core/RenderPass";
 import { BIND_GROUP_LOCATIONS } from "../../renderer/core/RendererBindings";
+import RenderingContext from "../../renderer/core/RenderingContext";
 import BoundingBox from "../../renderer/math/BoundingBox";
 import Drawable from "../../renderer/scene/Drawable";
 import Scene from "../../renderer/scene/Scene";
@@ -10,7 +11,6 @@ import DebugBoundingBoxesShaderUtils, {
 	DebugBoundingBoxesVertexShaderEntryFn,
 } from "../../renderer/shader/DebugBoundingBoxesShaderUtils";
 import { RenderPassType } from "../../renderer/types";
-import Renderer from "../Renderer";
 
 export default class DebugBoundsPass extends RenderPass {
 	private renderPSO: GPURenderPipeline;
@@ -45,10 +45,11 @@ export default class DebugBoundsPass extends RenderPass {
 			},
 		];
 
-		this.linesDebugBindGroupLayout = Renderer.device.createBindGroupLayout({
-			label: "Debug Bounding Boxes Bind Group Layout",
-			entries: linesBindGroupLayoutEntries,
-		});
+		this.linesDebugBindGroupLayout =
+			RenderingContext.device.createBindGroupLayout({
+				label: "Debug Bounding Boxes Bind Group Layout",
+				entries: linesBindGroupLayoutEntries,
+			});
 
 		this.renderPSO = PipelineStates.createRenderPipeline({
 			label: "Debug Bounding Boxes Render PSO",
@@ -61,7 +62,7 @@ export default class DebugBoundsPass extends RenderPass {
 				entryPoint: DebugBoundingBoxesFragmentShaderEntryFn,
 				targets,
 			},
-			layout: Renderer.device.createPipelineLayout({
+			layout: RenderingContext.device.createPipelineLayout({
 				label: "Debug Bounding Boxes Render PSO Layout",
 				bindGroupLayouts: [
 					PipelineStates.defaultCameraBindGroupLayout,
@@ -69,7 +70,7 @@ export default class DebugBoundsPass extends RenderPass {
 				],
 			}),
 			depthStencil: {
-				format: Renderer.depthStencilFormat,
+				format: RenderingContext.depthStencilFormat,
 				depthWriteEnabled: false,
 				depthCompare: "less",
 			},
@@ -104,7 +105,7 @@ export default class DebugBoundsPass extends RenderPass {
 				this.worldBBoxesBuffer.destroy();
 			}
 
-			this.worldBBoxesBuffer = Renderer.device.createBuffer({
+			this.worldBBoxesBuffer = RenderingContext.device.createBuffer({
 				label: "Debug World Bounding Boxes GPUBuffer",
 				size: Float32Array.BYTES_PER_ELEMENT * 8 * this.worldBBoxes.size,
 				mappedAtCreation: true,
@@ -134,7 +135,7 @@ export default class DebugBoundsPass extends RenderPass {
 					},
 				},
 			];
-			this.linesDebugBindGroup = Renderer.device.createBindGroup({
+			this.linesDebugBindGroup = RenderingContext.device.createBindGroup({
 				label: "Debug Bounding Boxes Bind Group",
 				entries: linesBindGroupEntries,
 				layout: this.linesDebugBindGroupLayout,
@@ -172,11 +173,13 @@ export default class DebugBoundsPass extends RenderPass {
 			this.inputTextureViews.push(inputs[0].createView());
 			this.inputTextureViews.push(inputs[1].createView());
 		}
-		Renderer.activeRenderPass = this.type;
 
 		const renderPassEncoder = commandEncoder.beginRenderPass(
 			this.createRenderPassDescriptor(),
 		);
+
+		RenderingContext.setActiveRenderPass(this.type, renderPassEncoder);
+
 		renderPassEncoder.pushDebugGroup("Render Bounding Boxes");
 
 		renderPassEncoder.setPipeline(this.renderPSO);

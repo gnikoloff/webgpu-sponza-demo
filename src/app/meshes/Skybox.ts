@@ -1,10 +1,9 @@
-import Camera from "../../renderer/camera/Camera";
 import PipelineStates from "../../renderer/core/PipelineStates";
+import RenderingContext from "../../renderer/core/RenderingContext";
 import Material from "../../renderer/material/Material";
 import Drawable from "../../renderer/scene/Drawable";
 import SamplerController from "../../renderer/texture/SamplerController";
 import { RenderPassType } from "../../renderer/types";
-import Renderer from "../Renderer";
 import SkyboxShader, {
 	SkyboxShaderFragmentEntryFn,
 	SkyboxShaderVertexEntryFn,
@@ -45,7 +44,7 @@ export default class Skybox extends Drawable {
 				}),
 			},
 		];
-		this.texSamplerBindGroup = Renderer.device.createBindGroup({
+		this.texSamplerBindGroup = RenderingContext.device.createBindGroup({
 			label: "Skybox Sampler + Texture Bind Group",
 			layout: this.texSamplerBindGroupLayout,
 			entries: texSamplerBindGroupEntries,
@@ -74,10 +73,11 @@ export default class Skybox extends Drawable {
 				visibility: GPUShaderStage.FRAGMENT,
 			},
 		];
-		this.texSamplerBindGroupLayout = Renderer.device.createBindGroupLayout({
-			label: "Skybox Sampler + Texture Bind Group Layout",
-			entries: texSamplerBindgroupLayoutEntries,
-		});
+		this.texSamplerBindGroupLayout =
+			RenderingContext.device.createBindGroupLayout({
+				label: "Skybox Sampler + Texture Bind Group Layout",
+				entries: texSamplerBindgroupLayoutEntries,
+			});
 
 		const material = new Material({
 			debugLabel: "Skybox Material",
@@ -95,7 +95,7 @@ export default class Skybox extends Drawable {
 				this.texSamplerBindGroupLayout,
 			],
 			depthStencilState: {
-				format: Renderer.depthStencilFormat,
+				format: RenderingContext.depthStencilFormat,
 				depthWriteEnabled: false,
 				depthCompare: "less-equal",
 			},

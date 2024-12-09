@@ -1,5 +1,6 @@
 import RenderPass from "../../renderer/core/RenderPass";
 import { BIND_GROUP_LOCATIONS } from "../../renderer/core/RendererBindings";
+import RenderingContext from "../../renderer/core/RenderingContext";
 import Scene from "../../renderer/scene/Scene";
 import Transform from "../../renderer/scene/Transform";
 import { RenderPassType } from "../../renderer/types";
@@ -22,10 +23,13 @@ export default class SkyboxRenderPass extends RenderPass {
 			label: "Skybox render Pass",
 			colorAttachments: renderPassColorAttachments,
 			depthStencilAttachment: {
-				depthReadOnly: true,
+				// depthReadOnly: true,
+				stencilReadOnly: true,
 				view: this.inputTextureViews[1],
-				stencilLoadOp: "load",
-				stencilStoreOp: "store",
+				depthLoadOp: "load",
+				depthStoreOp: "discard",
+				// stencilLoadOp: "load",
+				// stencilStoreOp: "discard",
 			},
 		});
 	}
@@ -35,8 +39,6 @@ export default class SkyboxRenderPass extends RenderPass {
 		scene: Scene,
 		inputs: GPUTexture[],
 	): GPUTexture[] {
-		Renderer.activeRenderPass = this.type;
-
 		if (!this.inputTextureViews.length) {
 			this.inputTextureViews.push(inputs[0].createView());
 			this.inputTextureViews.push(inputs[1].createView());
@@ -45,6 +47,9 @@ export default class SkyboxRenderPass extends RenderPass {
 		const renderEncoder = commandEncoder.beginRenderPass(
 			this.createRenderPassDescriptor(),
 		);
+
+		RenderingContext.setActiveRenderPass(this.type, renderEncoder);
+
 		renderEncoder.pushDebugGroup("Begin Skybox");
 
 		renderEncoder.setBindGroup(
