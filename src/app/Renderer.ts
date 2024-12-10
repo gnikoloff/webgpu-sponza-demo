@@ -3,6 +3,7 @@ import {
 	MAIN_CAMERA_FAR,
 	MAIN_CAMERA_NEAR,
 	RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
+	RENDER_PASS_COMPUTED_REFLECTIONS_TEXTURE,
 	RENDER_PASS_DEPTH_STENCIL_TEXTURE,
 	RENDER_PASS_DIRECTIONAL_LIGHT_DEPTH_TEXTURE,
 	RENDER_PASS_LIGHTING_RESULT_TEXTURE,
@@ -239,7 +240,7 @@ export default class Renderer extends RenderingContext {
 
 		this.sceneDirectionalLight.setPosition(0, 100, 1);
 		this.sceneDirectionalLight.setColor(1, 1, 1);
-		this.sceneDirectionalLight.intensity = 1;
+		this.sceneDirectionalLight.intensity = 0.01;
 		this.scene.addDirectionalLight(this.sceneDirectionalLight);
 
 		this.scene.updateLightsBuffer();
@@ -328,9 +329,19 @@ export default class Renderer extends RenderingContext {
 				RENDER_PASS_DEPTH_STENCIL_TEXTURE,
 			]);
 
-		const taaResolveRenderPass = new TAAResolveRenderPass()
+		const reflectionsComputePass = new ReflectionComputePass()
+			.setCamera(this.mainCamera)
 			.addInputTextures([
 				RENDER_PASS_LIGHTING_RESULT_TEXTURE,
+				RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
+				RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
+				RENDER_PASS_DEPTH_STENCIL_TEXTURE,
+			])
+			.addOutputTexture(RENDER_PASS_COMPUTED_REFLECTIONS_TEXTURE);
+
+		const taaResolveRenderPass = new TAAResolveRenderPass()
+			.addInputTextures([
+				RENDER_PASS_COMPUTED_REFLECTIONS_TEXTURE,
 				RENDER_PASS_VELOCITY_TEXTURE,
 			])
 			.addOutputTexture(RENDER_PASS_TAA_RESOLVE_TEXTURE);
@@ -362,6 +373,7 @@ export default class Renderer extends RenderingContext {
 			.addPass(pointLightsRenderPass)
 			.addPass(transparentRenderPass)
 			.addPass(skyboxRenderPass)
+			.addPass(reflectionsComputePass)
 			.addPass(taaResolveRenderPass)
 			.addPass(blitRenderPass);
 
@@ -384,7 +396,7 @@ export default class Renderer extends RenderingContext {
 		this.cube = new Drawable(GeometryCache.unitCubeGeometry);
 		this.cube.label = "Cube 1";
 
-		this.cube.setPosition(0, 3, 0);
+		this.cube.setPosition(0, 2, 0);
 		this.cube.updateWorldMatrix();
 		this.cube.setMaterial(
 			MaterialCache.defaultDeferredPBRMaterial,
@@ -428,6 +440,7 @@ export default class Renderer extends RenderingContext {
 		this.sphere.materialProps.setColor(0.8, 0.3, 0.3);
 		this.sphere.materialProps.metallic = 1;
 		this.sphere.materialProps.roughness = 0.96;
+		this.sphere.materialProps.isReflective = false;
 
 		this.scene.addChild(this.sphere);
 
@@ -524,8 +537,6 @@ export default class Renderer extends RenderingContext {
 		const jsPerfStartTime = performance.now();
 
 		a.textContent = `Display Meshes: ${this.scene.visibleNodesCount} / ${this.scene.nodesCount}`;
-
-		const device = RenderingContext.device;
 
 		// this.gbufferIntegratePass.debugPointLights = this.debugPointLights;
 

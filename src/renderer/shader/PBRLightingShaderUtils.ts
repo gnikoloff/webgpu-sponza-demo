@@ -157,7 +157,7 @@ const GetPBRLightingShaderUtils = ({
       let envBDRF = textureSample(bdrfLutTexture, envTexSampler, uv).rg;
       specular = prefilteredColor * (F * envBDRF.x + envBDRF.y);
 
-      let diffuse = irradiance * (albedo * 0.2);
+      let diffuse = irradiance * (albedo * 1);
       // let ambient = (kD * diffuse) * ambientOcclusion;
       let ambient = kD * diffuse * (shadow + 0.5) * material.ambientOcclusion;
       
