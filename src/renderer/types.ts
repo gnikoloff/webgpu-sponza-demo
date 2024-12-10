@@ -4,6 +4,7 @@ export enum RenderPassType {
 	PointLightsStencilMask,
 	PointLightsLighting,
 	SSAO,
+	SSAOBlur,
 	Skybox,
 	Transparent,
 	Shadow,

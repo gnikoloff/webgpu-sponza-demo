@@ -81,7 +81,7 @@ export const SHADER_CHUNKS = Object.freeze({
       @must_use
       fn calcWorldPos(
         camera: CameraUniform,
-        coord: vec4f,
+        coord: vec2f,
         depth: f32
       ) -> vec3f {
         let ndcX = coord.x / f32(camera.viewportWidth) * 2.0 - 1.0;

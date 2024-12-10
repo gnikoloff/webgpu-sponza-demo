@@ -14,6 +14,7 @@ export const RENDER_PASS_DEPTH_STENCIL_TEXTURE = "depth texture";
 export const RENDER_PASS_DIRECTIONAL_LIGHT_DEPTH_TEXTURE =
 	"directional light depth texture";
 export const RENDER_PASS_SSAO_TEXTURE = "ssao texture";
+export const RENDER_PASS_SSAO_BLUR_TEXTURE = "ssao blur texture";
 export const RENDER_PASS_LIGHTING_RESULT_TEXTURE = "lighting texture";
 export const RENDER_PASS_TAA_RESOLVE_TEXTURE = "taa resolve texture";
 

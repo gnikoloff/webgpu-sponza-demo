@@ -7,6 +7,7 @@ import {
 	RENDER_PASS_DIRECTIONAL_LIGHT_DEPTH_TEXTURE,
 	RENDER_PASS_LIGHTING_RESULT_TEXTURE,
 	RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
+	RENDER_PASS_SSAO_BLUR_TEXTURE,
 	RENDER_PASS_SSAO_TEXTURE,
 	RENDER_PASS_TAA_RESOLVE_TEXTURE,
 	RENDER_PASS_VELOCITY_TEXTURE,
@@ -48,6 +49,7 @@ import PointLightsMaskPass from "./render-passes/PointLightsMaskPass";
 import PointLightsRenderPass from "./render-passes/PointLightsRenderPass";
 import SkyboxRenderPass from "./render-passes/SkyboxRenderPass";
 import RenderingContext from "../renderer/core/RenderingContext";
+import SSAOBlurRenderPass from "./render-passes/SSAOBlurRenderPass";
 // import EnvironmentProbePass from "./render-passes/EnvironmentProbePass";
 
 export default class Renderer extends RenderingContext {
@@ -268,6 +270,10 @@ export default class Renderer extends RenderingContext {
 			])
 			.addOutputTexture(RENDER_PASS_SSAO_TEXTURE);
 
+		const ssaoBlurRenderPass = new SSAOBlurRenderPass()
+			.addInputTexture(RENDER_PASS_SSAO_TEXTURE)
+			.addOutputTexture(RENDER_PASS_SSAO_BLUR_TEXTURE);
+
 		const directionalAmbientLightRenderPass =
 			new DirectionalAmbientLightRenderPass(
 				shadowRenderPass.shadowCascadesBuffer,
@@ -277,7 +283,7 @@ export default class Renderer extends RenderingContext {
 					RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
 					RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
 					RENDER_PASS_DEPTH_STENCIL_TEXTURE,
-					RENDER_PASS_SSAO_TEXTURE,
+					RENDER_PASS_SSAO_BLUR_TEXTURE,
 					RENDER_PASS_DIRECTIONAL_LIGHT_DEPTH_TEXTURE,
 				])
 				.addOutputTexture(RENDER_PASS_LIGHTING_RESULT_TEXTURE);
@@ -295,7 +301,7 @@ export default class Renderer extends RenderingContext {
 				RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
 				RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
 				RENDER_PASS_DEPTH_STENCIL_TEXTURE,
-				RENDER_PASS_SSAO_TEXTURE,
+				RENDER_PASS_SSAO_BLUR_TEXTURE,
 				RENDER_PASS_LIGHTING_RESULT_TEXTURE,
 			])
 			.addOutputTexture(RENDER_PASS_LIGHTING_RESULT_TEXTURE);
@@ -339,7 +345,7 @@ export default class Renderer extends RenderingContext {
 		// 	.setCamera(this.mainCamera);
 
 		const blitRenderPass = new BlitRenderPass().addInputTexture(
-			RENDER_PASS_SSAO_TEXTURE,
+			RENDER_PASS_TAA_RESOLVE_TEXTURE,
 		);
 
 		// const ssrRenderPass = new ReflectionComputePass().addInputTexture(
@@ -350,6 +356,7 @@ export default class Renderer extends RenderingContext {
 			.addPass(shadowRenderPass)
 			.addPass(gbufferRenderPass)
 			.addPass(ssaoRenderPass)
+			.addPass(ssaoBlurRenderPass)
 			.addPass(directionalAmbientLightRenderPass)
 			.addPass(pointLightsStencilMaskPass)
 			.addPass(pointLightsRenderPass)
@@ -584,7 +591,7 @@ export default class Renderer extends RenderingContext {
 		);
 		this.texturesDebugContainer.gbufferDebugSection.setTextureFor(
 			TextureDebugMeshType.AO,
-			this.renderPassComposer.getTexture(RENDER_PASS_SSAO_TEXTURE),
+			this.renderPassComposer.getTexture(RENDER_PASS_SSAO_BLUR_TEXTURE),
 		);
 		this.texturesDebugContainer.gbufferDebugSection.setTextureFor(
 			TextureDebugMeshType.Reflectance,

@@ -66,10 +66,10 @@ const GetGBufferIntegrateShader = (
     // return vec4f(vec3f(1 - metallic), 1);
     material.metallic = metallic;
     // material.ambientOcclusion = select(1.0, ao, pixelCoords.x > i32(textureDimensions(normalTexture).x / 2));
-    material.ambientOcclusion = ao; //1;
+    material.ambientOcclusion = ao;
     
     let viewSpacePos = calcViewSpacePos(camera, coord.xy, depth);
-    let worldSpacePos = calcWorldPos(camera, coord, depth);
+    let worldSpacePos = calcWorldPos(camera, coord.xy, depth);
     
 
     let V = normalize(camera.position - viewSpacePos);

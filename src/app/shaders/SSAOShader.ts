@@ -2,7 +2,6 @@ import NormalEncoderShaderUtils from "../../renderer/shader/NormalEncoderShaderU
 import { SHADER_CHUNKS } from "../../renderer/shader/chunks";
 
 export const SSAOShaderName = "fragSSAO";
-export const SSSAOBlurShaderName = "fragBlurSSAO";
 
 const SSAOShaderSrc = /* wgsl */ `
   ${SHADER_CHUNKS.CameraUniform}
@@ -17,22 +16,6 @@ const SSAOShaderSrc = /* wgsl */ `
   @group(0) @binding(3) var<storage, read> kernelBuffer: array<vec4f>;
   @group(0) @binding(4) var<uniform> camera: CameraUniform;
 
-  @group(1) @binding(0) var ssaoTexture: texture_2d<f32>;
-
-  @fragment
-  fn ${SSSAOBlurShaderName}(in: VertexOutput) -> @location(0) vec4f {
-    let coord = in.position;
-    let pixelCoords = vec2i(floor(coord.xy));
-    var result = 0.0;
-    for (var y = -2; y < 2; y++) {
-      for (var x = -2; x < 2; x++) {
-        let offset = pixelCoords + vec2i(x, y);
-        result += textureLoad(ssaoTexture, offset, 0).r;
-      }
-    }
-    return vec4f(result / 16.0, 0, 0, 1);
-  }
-
   @fragment
   fn ${SSAOShaderName}(
     in: VertexOutput
@@ -44,71 +27,46 @@ const SSAOShaderSrc = /* wgsl */ `
     let centerDepth = textureLoad(depthTexture, pixelCoords, 0);
     let viewSpacePos = calcViewSpacePos(camera, coord.xy, centerDepth);
 
-
-    
-
     let noiseScale = vec2i(textureDimensions(noiseTexture).xy);
     let sampleCoords = pixelCoords % noiseScale;
-    var randomVec = textureLoad(noiseTexture, sampleCoords, 0).rgb * 2 - 1;
+    var randomVec = textureLoad(noiseTexture, sampleCoords, 0).rgb;
     randomVec = (camera.viewMatrix * vec4f(randomVec, 0)).xyz;
 
-    
+    let viewTangent = normalize(randomVec - viewNormal * dot(randomVec, viewNormal));
+    let viewBitangent = cross(viewNormal, viewTangent);
+    let TBN = mat3x3f(viewTangent, viewBitangent, viewNormal);
 
-    let tangent = normalize(randomVec - viewNormal * dot(randomVec, viewNormal));
-    let bitangent = cross(viewNormal, tangent);
-    let TBN = mat3x3f(tangent, bitangent, viewNormal);
-
-    
-
-    const kernelSize = 32u;
-    const radius = 0.35f;
+    const kernelSize = 16u;
+    const radius = 0.2f;
 
     var occlusion = 0.0;
 
     let screenSize = vec2i(textureDimensions(depthTexture).xy);
 
-    
+    for (var i = 0u; i < 16; i++) {
+      var viewSamplePos = TBN * kernelBuffer[i].xyz;
+      viewSamplePos = viewSpacePos + viewSamplePos * radius;
 
-    for (var i = 0u; i < kernelSize; i++) {
-      var samplePos = TBN * kernelBuffer[i].xyz;
-      samplePos = viewSpacePos + samplePos * radius;
+      let viewSampleDir = normalize(viewSamplePos - viewSpacePos);
+      let NdotS = max(dot(viewNormal, viewSampleDir), 0.0);
 
-      let clipPos = camera.projectionMatrix * vec4f(samplePos, 1.0);
-      let ndcPos = clipPos.xyz / clipPos.w;
+      let clipPos = camera.projectionMatrix * vec4f(viewSamplePos, 1.0);
+      let ndcPos = clipPos.xy / clipPos.w;
 
-      var uv = ndcPos.xy * 0.5 + 0.5;
-      uv.y = 1.0 - uv.y;
-      let screenCoord = vec2i(uv * vec2f(screenSize));
+      let screenCoord = vec2i(vec2f(ndcPos.x * 0.5 + 0.5, -ndcPos.y * 0.5 + 0.5) * vec2f(screenSize));
 
+      var sampleDepth = textureLoad(depthTexture, screenCoord, 0);
+      sampleDepth = calcViewSpacePos(camera, vec2f(screenCoord), sampleDepth).z;
       
-      if (screenCoord.x < 0 || screenCoord.x >= screenSize.x || 
-          screenCoord.y < 0 || screenCoord.y >= screenSize.y) {
-          continue;
-      }
+      let rangeCheck = smoothstep(0.0, 1.0, radius / abs(viewSpacePos.z - sampleDepth));
 
-      let sampleDepth = textureLoad(depthTexture, screenCoord, 0);
-
-      let sampleOffsetViewPos = calcViewSpacePos(camera, vec2f(screenCoord.xy), sampleDepth);
-      let rangeCheck = smoothstep(0.0, 1.0, radius / abs(viewSpacePos.z - sampleOffsetViewPos.z));
-
-      let bias = 0.015;
-      occlusion += select(
-        0.0,
-        1.0,
-        sampleOffsetViewPos.z >= samplePos.z + bias
-      ) * rangeCheck;
+      occlusion += select(0.0, 1.0, sampleDepth > viewSamplePos.z) * rangeCheck * NdotS;
     }
-    // return vec4f(1, 0, 0, 1);
 
-    occlusion = 1 - (occlusion / f32(kernelSize));
-    // // occlusion = pow(occlusion, 1);
+    occlusion = 1 - (occlusion / f32(16));
+    let finalOcclusion = pow(occlusion, 2);
 
-    return vec4f(vec3f(occlusion), 1);
-
-    // let near: f32 = 0.1; // Example near plane
-    // let far: f32 = 0.8; // Example far plane
-    // let depth_linear = near * far / (far - centerDepth * (far - near));
-    // return vec4f(depth_linear, 0, 0, 1);
+    return vec4f(finalOcclusion);
   }
 `;
 
