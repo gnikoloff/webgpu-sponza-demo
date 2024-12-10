@@ -339,7 +339,7 @@ export default class Renderer extends RenderingContext {
 		// 	.setCamera(this.mainCamera);
 
 		const blitRenderPass = new BlitRenderPass().addInputTexture(
-			RENDER_PASS_TAA_RESOLVE_TEXTURE,
+			RENDER_PASS_SSAO_TEXTURE,
 		);
 
 		// const ssrRenderPass = new ReflectionComputePass().addInputTexture(
@@ -459,7 +459,7 @@ export default class Renderer extends RenderingContext {
 			const bdrfLutTexture = BDRFLutGenerator.encode();
 
 			TextureController.generateMipsForCubeTexture(diffuseTexture);
-			this.scene.skybox.setTexture(texture);
+			this.scene.skybox.setTexture(diffuseTexture);
 
 			const dirAmbientLightPass = this.renderPassComposer.getPass(
 				RenderPassType.DirectionalAmbientLighting,

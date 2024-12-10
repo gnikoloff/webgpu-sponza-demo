@@ -9,7 +9,7 @@ import GeometryCache from "../utils/GeometryCache";
 import LightRenderPass from "./LightRenderPass";
 import GetGBufferVertexShader, {
 	GBufferVertexEntryFn,
-} from "./LightingPass/shader/GBufferVertexShader";
+} from "../shaders/GBufferVertexShader";
 
 export default class PointLightsMaskPass extends LightRenderPass {
 	private renderPSO: GPURenderPipeline;

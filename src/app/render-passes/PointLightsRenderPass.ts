@@ -4,16 +4,16 @@ import VertexDescriptor from "../../renderer/core/VertexDescriptor";
 import Drawable from "../../renderer/scene/Drawable";
 import Scene from "../../renderer/scene/Scene";
 import { LightType, RenderPassType } from "../../renderer/types";
+import GetGBufferIntegrateShader, {
+	GBufferIntegrateShaderEntryFn,
+} from "../shaders/GBufferIntegrateShader";
+import GetGBufferVertexShader, {
+	GBufferVertexEntryFn,
+} from "../shaders/GBufferVertexShader";
 
 import GeometryCache from "../utils/GeometryCache";
 import DirectionalShadowRenderPass from "./DirectionalShadowRenderPass";
 import LightRenderPass from "./LightRenderPass";
-import GetGBufferIntegrateShader, {
-	GBufferIntegrateShaderEntryFn,
-} from "./LightingPass/shader/GBufferIntegrateShader";
-import GetGBufferVertexShader, {
-	GBufferVertexEntryFn,
-} from "./LightingPass/shader/GBufferVertexShader";
 
 export default class PointLightsRenderPass extends LightRenderPass {
 	private renderPSO: GPURenderPipeline;

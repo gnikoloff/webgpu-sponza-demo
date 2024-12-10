@@ -27,7 +27,7 @@ export default class SkyboxRenderPass extends RenderPass {
 				stencilReadOnly: true,
 				view: this.inputTextureViews[1],
 				depthLoadOp: "load",
-				depthStoreOp: "discard",
+				depthStoreOp: "store",
 				// stencilLoadOp: "load",
 				// stencilStoreOp: "discard",
 			},

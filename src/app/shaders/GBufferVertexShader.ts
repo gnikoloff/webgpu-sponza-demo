@@ -1,5 +1,5 @@
 import { wgsl } from "wgsl-preprocessor/wgsl-preprocessor.js";
-import { SHADER_CHUNKS } from "../../../../renderer/shader/chunks";
+import { SHADER_CHUNKS } from "../../renderer/shader/chunks";
 
 export const GBufferVertexEntryFn = "pointLightVertex";
 

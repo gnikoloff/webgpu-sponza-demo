@@ -11,7 +11,7 @@ import DirectionalShadowRenderPass from "./DirectionalShadowRenderPass";
 import LightRenderPass from "./LightRenderPass";
 import GetGBufferIntegrateShader, {
 	GBufferIntegrateShaderEntryFn,
-} from "./LightingPass/shader/GBufferIntegrateShader";
+} from "../shaders/GBufferIntegrateShader";
 
 export default class DirectionalAmbientLightRenderPass extends LightRenderPass {
 	private outTexture: GPUTexture;
