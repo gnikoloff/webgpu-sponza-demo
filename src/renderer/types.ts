@@ -10,6 +10,8 @@ export enum RenderPassType {
 	Shadow,
 	EnvironmentCube,
 	TAAResolve,
+	CopyDepthForHiZ,
+	HiZ,
 	Reflection,
 	DebugBounds,
 	Blit,

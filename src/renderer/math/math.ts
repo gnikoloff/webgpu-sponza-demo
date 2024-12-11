@@ -8,7 +8,7 @@ export const deg2Rad = (deg: number): number => (deg * Math.PI) / 180;
 
 export const rad2Deg = (rad: number): number => (rad * 180) / Math.PI;
 
-export const numMipLevelsForSize = (width: number, height: number) => {
+export const numMipLevelsForSize = (width: number, height: number): number => {
 	const maxSize = Math.max(width, height);
 	return (1 + Math.log2(maxSize)) | 0;
 };

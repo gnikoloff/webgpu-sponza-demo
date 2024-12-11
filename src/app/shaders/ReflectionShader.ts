@@ -11,7 +11,7 @@ export const getReflectionComputeShader = (
   @group(0) @binding(0) var sceneTexture: texture_2d<f32>;
   @group(0) @binding(1) var normalMetallicRoughnessTexture: texture_2d<f32>;
   @group(0) @binding(2) var albedoReflectanceTexture: texture_2d<f32>;
-  @group(0) @binding(3) var depthTexture: texture_depth_2d;
+  @group(0) @binding(3) var depthTexture: texture_2d<f32>;
   @group(0) @binding(4) var outTexture: texture_storage_2d<${pixelFormat}, write>;
   @group(0) @binding(5) var<uniform> camera: CameraUniform;
 
@@ -20,6 +20,9 @@ export const getReflectionComputeShader = (
 
   ${NormalEncoderShaderUtils}
 
+  const MAX_ITERATIONS = 150;
+  const MAX_THICKNESS = 0.001;
+
   fn ComputePosAndReflection(
     tid: vec2u,
     viewNormal: vec3f,
@@ -27,12 +30,12 @@ export const getReflectionComputeShader = (
     inverseProjectionMatrix: mat4x4f,
     viewportWidth: u32,
     viewportHeight: u32,
-    depthTexture: texture_depth_2d,
+    depthTexture: texture_2d<f32>,
     outSamplePosInTexSpace: ptr<function, vec3f>,
     outReflDirInTexSpace: ptr<function, vec3f>,
     outMaxDistance: ptr<function, f32>
   ) {
-    let sampleDepth = textureLoad(depthTexture, tid, 0);
+    let sampleDepth = textureLoad(depthTexture, tid, 0).r;
     var samplePosClipSpace = vec4f(
       ((f32(tid.x) + 0.5) / f32(viewportWidth)) * 2 - 1.0,
       ((f32(tid.y) + 0.5) / f32(viewportHeight)) * 2 - 1.0,
@@ -46,7 +49,7 @@ export const getReflectionComputeShader = (
     let vReflectionViewSpace = vec4f(reflect(vCamToSampleViewSpace.xyz, viewNormal.xyz), 0.0);
 
     var vReflectionEndPosViewSpace = samplePosViewSpace + vReflectionViewSpace * 1000;
-    vReflectionEndPosViewSpace /= select(1.0, vReflectionEndPosViewSpace.z, vReflectionEndPosViewSpace.z > 0.0);
+    // vReflectionEndPosViewSpace /= select(1.0, vReflectionEndPosViewSpace.z, vReflectionEndPosViewSpace.z > 0.0);
     var vReflectionEndPosClipSpace = projectionMatrix * vec4f(vReflectionEndPosViewSpace.xyz, 1.0);
     vReflectionEndPosClipSpace /= vReflectionEndPosClipSpace.w;
 
@@ -68,13 +71,14 @@ export const getReflectionComputeShader = (
     (*outMaxDistance) = min(*outMaxDistance, select((1 - outSamplePosInTexSpace.z) / outReflDirInTexSpace.z, -outSamplePosInTexSpace.z / outReflDirInTexSpace.z, outReflDirInTexSpace.z < 0));
   }
 
+  @must_use
   fn FindIntersectionLinear(
     samplePosInTexSpace: vec3f,
     reflDirInTexSpace: vec3f,
     maxTraceDistance: f32,
     viewportWidth: u32,
     viewportHeight: u32,
-    depthTexture: texture_depth_2d,
+    depthTexture: texture_2d<f32>,
     intersection: ptr<function, vec3f>
   ) -> f32 {
     let vReflectionEndPosTexSpace = samplePosInTexSpace + reflDirInTexSpace * maxTraceDistance;
@@ -90,8 +94,7 @@ export const getReflectionComputeShader = (
     let rayDirTexSpace = vec4f(dp.xyz, 0);
     let rayPosStartTexSpace = rayPosTexSpace;
 
-    let MAX_ITERATIONS = 2000;
-    let MAX_THICKNESS = 0.001;
+    
 
     var hitIndex = -1;
     for (var i = 0; i < maxDist && i < MAX_ITERATIONS; i += 4) {
@@ -100,10 +103,10 @@ export const getReflectionComputeShader = (
       let rayPosTexSpace2 = rayPosTexSpace + rayDirTexSpace * 2;
       let rayPosTexSpace3 = rayPosTexSpace + rayDirTexSpace * 3;
 
-      let depth0 = textureLoad(depthTexture, vec2u(rayPosTexSpace0.xy * viewSize), 0);
-      let depth1 = textureLoad(depthTexture, vec2u(rayPosTexSpace1.xy * viewSize), 0);
-      let depth2 = textureLoad(depthTexture, vec2u(rayPosTexSpace2.xy * viewSize), 0);
-      let depth3 = textureLoad(depthTexture, vec2u(rayPosTexSpace3.xy * viewSize), 0);
+      let depth0 = textureLoad(depthTexture, vec2u(rayPosTexSpace0.xy * viewSize), 0).r;
+      let depth1 = textureLoad(depthTexture, vec2u(rayPosTexSpace1.xy * viewSize), 0).r;
+      let depth2 = textureLoad(depthTexture, vec2u(rayPosTexSpace2.xy * viewSize), 0).r;
+      let depth3 = textureLoad(depthTexture, vec2u(rayPosTexSpace3.xy * viewSize), 0).r;
 
       var thickness = 0.0;
 
@@ -132,6 +135,145 @@ export const getReflectionComputeShader = (
     return select(0.0, 1.0, intersected);
   }
 
+  @must_use
+  fn getCellCount(mipLevel: i32, depthTexture: texture_2d<f32>) -> vec2f {
+    return vec2f(textureDimensions(depthTexture, mipLevel));
+  }
+
+  @must_use
+  fn getCell(pos: vec2f, cell_count: vec2f) -> vec2f {
+    return vec2f(floor(pos * cell_count));
+  }
+
+  @must_use
+  fn intersectDepthPlane(o: vec3f, d: vec3f, z: f32) -> vec3f {
+	  return o + d * z;
+  }
+
+  @must_use
+  fn intersectCellBoundary(
+    o: vec3f,
+    d: vec3f,
+    cell: vec2f,
+    cellCount: vec2f,
+    crossStep: vec2f,
+    crossOffset: vec2f
+  ) -> vec3f {
+    var intersection = vec3f(0.0);
+    
+    let index = cell + crossStep;
+    var boundary = index / cellCount;
+    boundary += crossOffset;
+    
+    var delta = boundary - o.xy;
+    delta /= d.xy;
+    let t = min(delta.x, delta.y);
+    
+    intersection = intersectDepthPlane(o, d, t);
+    
+    return intersection;
+  }
+
+  @must_use
+  fn getMinimumDepthPlane(
+    p: vec2f,
+    mipLevel: i32,
+    depthTexture: texture_2d<f32>
+  ) -> f32 {
+    return textureLoad(depthTexture, vec2u(p), mipLevel).r;
+  }
+
+  @must_use
+  fn crossedCellBoundary(oldCellIndex: vec2f, newCellIndex: vec2f) -> bool {
+	  return (oldCellIndex.x != newCellIndex.x) || (oldCellIndex.y != newCellIndex.y);
+  }
+
+  @must_use
+  fn FindIntersectionHiZ(
+    samplePosInTexSpace: vec3f,
+    reflDirInTexSpace: vec3f,
+    maxTraceDistance: f32,
+    viewportWidth: u32,
+    viewportHeight: u32,
+    depthTexture: texture_2d<f32>,
+    intersection: ptr<function, vec3f>
+  ) -> f32 {
+    let viewSize = vec2f(f32(viewportWidth), f32(viewportHeight));
+    let maxLevel = textureNumLevels(depthTexture) - 1;
+
+    var crossStep = vec2f(
+      select(-1.0, 1.0, reflDirInTexSpace.x >= 0),
+      select(-1.0, 1.0, reflDirInTexSpace.y >= 0)
+    );
+    let crossOffset = crossStep / viewSize / 128.0;
+    crossStep = saturate(crossStep);
+    
+    var ray = samplePosInTexSpace.xyz;
+    let minZ = ray.z;
+    let maxZ = ray.z + reflDirInTexSpace.z * maxTraceDistance;
+    let deltaZ = (maxZ - minZ);
+
+    let o = ray;
+    let d = reflDirInTexSpace * maxTraceDistance;
+
+    let startLevel = 2;
+    let stopLevel = 0;
+
+    let startCellCount = getCellCount(startLevel, depthTexture);
+	
+    let rayCell = getCell(ray.xy, startCellCount);
+    ray = intersectCellBoundary(
+      o,
+      d,
+      rayCell,
+      startCellCount,
+      crossStep,
+      crossOffset * 64
+    );
+
+    var level = startLevel;
+    var iter = 0;
+    let isBackwardRay = reflDirInTexSpace.z < 0;
+    let rayDir = select(1.0, -1.0, isBackwardRay);
+
+    while(level >= stopLevel && ray.z * rayDir <= maxZ * rayDir && iter < MAX_ITERATIONS) {
+      let cellCount = getCellCount(level, depthTexture);
+      let oldCellIdx = getCell(ray.xy, cellCount);
+      let cellMinZ = getMinimumDepthPlane((oldCellIdx + 0.5), level, depthTexture);
+      let tmpRay = select(
+        ray,
+        intersectDepthPlane(o, d, (cellMinZ - minZ) / deltaZ),
+        (cellMinZ > ray.z) && !isBackwardRay
+      );
+      let newCellIdx = getCell(tmpRay.xy, cellCount);
+      
+      let thickness = select(0, (ray.z - cellMinZ), level == 0);
+      let crossed = (isBackwardRay && (cellMinZ > ray.z)) ||
+                    (thickness > (MAX_THICKNESS)) ||
+                    crossedCellBoundary(oldCellIdx, newCellIdx);
+      ray = select(
+        tmpRay,
+        intersectCellBoundary(o, d, oldCellIdx, cellCount, crossStep, crossOffset),
+        crossed
+      );
+      level = select(
+        level - 1,
+        min(i32(maxLevel), level + 1),
+        crossed
+      );
+      
+      iter++;
+    }
+
+    let intersected = (level < stopLevel);
+    (*intersection) = ray;
+	
+    let intensity = select(0.0, 1.0, intersected);
+    
+    return intensity;
+  }
+
+  @must_use
   fn ComputeReflectionColor(
     intensity: f32,
     intersection: vec3f,
@@ -177,7 +319,16 @@ export const getReflectionComputeShader = (
 
        var intersection = vec3f(0);
 
-       let intensity = FindIntersectionLinear(
+      //  let intensity = FindIntersectionLinear(
+      //   samplePosInTexSpace,
+      //   reflDirInTexSpace,
+      //   maxTraceDistance,
+      //   camera.viewportWidth,
+      //   camera.viewportHeight,
+      //   depthTexture,
+      //   &intersection
+      // );
+      let intensity = FindIntersectionHiZ(
         samplePosInTexSpace,
         reflDirInTexSpace,
         maxTraceDistance,

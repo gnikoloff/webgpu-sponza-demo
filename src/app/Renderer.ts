@@ -6,6 +6,7 @@ import {
 	RENDER_PASS_COMPUTED_REFLECTIONS_TEXTURE,
 	RENDER_PASS_DEPTH_STENCIL_TEXTURE,
 	RENDER_PASS_DIRECTIONAL_LIGHT_DEPTH_TEXTURE,
+	RENDER_PASS_HI_Z_DEPTH_TEXTURE,
 	RENDER_PASS_LIGHTING_RESULT_TEXTURE,
 	RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
 	RENDER_PASS_SSAO_BLUR_TEXTURE,
@@ -51,6 +52,8 @@ import PointLightsRenderPass from "./render-passes/PointLightsRenderPass";
 import SkyboxRenderPass from "./render-passes/SkyboxRenderPass";
 import RenderingContext from "../renderer/core/RenderingContext";
 import SSAOBlurRenderPass from "./render-passes/SSAOBlurRenderPass";
+import HiZDepthComputePass from "./render-passes/HiZDepthComputePass";
+import HiZCopyDepthComputePass from "./render-passes/HiZCopyDepthComputePass";
 // import EnvironmentProbePass from "./render-passes/EnvironmentProbePass";
 
 export default class Renderer extends RenderingContext {
@@ -329,13 +332,21 @@ export default class Renderer extends RenderingContext {
 				RENDER_PASS_DEPTH_STENCIL_TEXTURE,
 			]);
 
+		const hiZCopyDepthComputePass = new HiZCopyDepthComputePass()
+			.addInputTexture(RENDER_PASS_DEPTH_STENCIL_TEXTURE)
+			.addOutputTexture(RENDER_PASS_HI_Z_DEPTH_TEXTURE);
+
+		const hiZDepthComputePass = new HiZDepthComputePass()
+			.addInputTexture(RENDER_PASS_HI_Z_DEPTH_TEXTURE)
+			.addOutputTexture(RENDER_PASS_HI_Z_DEPTH_TEXTURE);
+
 		const reflectionsComputePass = new ReflectionComputePass()
 			.setCamera(this.mainCamera)
 			.addInputTextures([
 				RENDER_PASS_LIGHTING_RESULT_TEXTURE,
 				RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
 				RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
-				RENDER_PASS_DEPTH_STENCIL_TEXTURE,
+				RENDER_PASS_HI_Z_DEPTH_TEXTURE,
 			])
 			.addOutputTexture(RENDER_PASS_COMPUTED_REFLECTIONS_TEXTURE);
 
@@ -373,6 +384,8 @@ export default class Renderer extends RenderingContext {
 			.addPass(pointLightsRenderPass)
 			.addPass(transparentRenderPass)
 			.addPass(skyboxRenderPass)
+			.addPass(hiZCopyDepthComputePass)
+			.addPass(hiZDepthComputePass)
 			.addPass(reflectionsComputePass)
 			.addPass(taaResolveRenderPass)
 			.addPass(blitRenderPass);

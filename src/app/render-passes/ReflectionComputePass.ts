@@ -41,7 +41,7 @@ export default class ReflectionComputePass extends RenderPass {
 				binding: 3,
 				visibility: GPUShaderStage.COMPUTE,
 				texture: {
-					sampleType: "depth",
+					sampleType: "unfilterable-float",
 				},
 			},
 			{
@@ -111,11 +111,7 @@ export default class ReflectionComputePass extends RenderPass {
 			this.inputTextureViews.push(inputs[0].createView());
 			this.inputTextureViews.push(inputs[1].createView());
 			this.inputTextureViews.push(inputs[2].createView());
-			this.inputTextureViews.push(
-				inputs[3].createView({
-					aspect: "depth-only",
-				}),
-			);
+			this.inputTextureViews.push(inputs[3].createView());
 
 			const bindGroupEntries: GPUBindGroupEntry[] = [
 				{
@@ -173,47 +169,4 @@ export default class ReflectionComputePass extends RenderPass {
 
 		return [this.outTexture];
 	}
-
-	// public computeReflections(
-	// 	commandEncoder: GPUCommandEncoder,
-	// 	outTexture: GPUTexture,
-	// 	inTextureView: GPUTextureView,
-	// ) {
-	// 	const bindGroupEntries: GPUBindGroupEntry[] = [
-	// 		{
-	// 			binding: 0,
-	// 			resource: inTextureView,
-	// 		},
-	// 		{
-	// 			binding: 1,
-	// 			resource: outTexture.createView(),
-	// 		},
-	// 		{
-	// 			binding: 2,
-	// 			resource: {
-	// 				label: "Settings GPU Buffer Bind Group Entry",
-	// 				buffer: this.settingsGpuBuffer,
-	// 			},
-	// 		},
-	// 	];
-	// 	const texturesBindGroup = RenderingContext.device.createBindGroup({
-	// 		label: "Textures Bind Group",
-	// 		layout: this.bindGroupLayout,
-	// 		entries: bindGroupEntries,
-	// 	});
-
-	// 	const computeEncoder = commandEncoder.beginComputePass();
-	// 	computeEncoder.setPipeline(this.computePSO);
-	// 	computeEncoder.setBindGroup(0, texturesBindGroup);
-	// 	computeEncoder.dispatchWorkgroups(
-	// 		Math.ceil(
-	// 			outTexture.width / ReflectionComputePass.COMPUTE_WORKGROUP_SIZE_X,
-	// 		),
-	// 		Math.ceil(
-	// 			outTexture.width / ReflectionComputePass.COMPUTE_WORKGROUP_SIZE_Y,
-	// 		),
-	// 		1,
-	// 	);
-	// 	computeEncoder.end();
-	// }
 }

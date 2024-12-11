@@ -85,18 +85,18 @@ const GetGBufferIntegrateShader = (
     // TODO: Directional light is expected to be at index 0
     // Write a better mechanism for quering it
     let lightPosition = (camera.viewMatrix * vec4f(lightsBuffer[0].position, 1)).xyz;
-    let shadow = 1.0;
-    // let shadow = ShadowCalculate(
-    //   worldSpacePos,
-    //   N,
-    //   lightPosition,
-    //   camera,
-    //   SHADOW_MAP_SIZE,
-    //   SHADOW_MAP_SIZE,
-    //   shadowCascades,
-    //   shadowDepthTexture,
-    //   shadowMapSampler
-    // );
+    // let shadow = 1.0;
+    let shadow = ShadowCalculate(
+      worldSpacePos,
+      N,
+      lightPosition,
+      camera,
+      SHADOW_MAP_SIZE,
+      SHADOW_MAP_SIZE,
+      shadowCascades,
+      shadowDepthTexture,
+      shadowMapSampler
+    );
     #else
     let shadow = 1.0;
     #endif
