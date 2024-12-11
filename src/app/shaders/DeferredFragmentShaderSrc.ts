@@ -77,7 +77,11 @@ export const getDefaultDeferredPBRFragmentShader = ({
     
     var color = model.baseColor;
     if (${hasPBRTextures}) {
-      color = textureSample(albedoTexture, texSampler, uv).rgb;;
+      let texColor = textureSample(albedoTexture, texSampler, uv);
+      if (texColor.a < 0.1) {
+        discard;
+      }
+      color = texColor.rgb;
     }
     
     out.color = vec4f(color, f32(model.isReflective));

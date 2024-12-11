@@ -202,6 +202,7 @@ export default class DirectionalAmbientLightRenderPass extends LightRenderPass {
 	}
 
 	public override onResize(width: number, height: number): void {
+		super.onResize(width, height);
 		if (this.outTexture) {
 			this.outTexture.destroy();
 		}

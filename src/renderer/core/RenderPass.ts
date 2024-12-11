@@ -191,8 +191,8 @@ export default class RenderPass {
 		return this;
 	}
 
-	public onResize(_width: number, _height: number) {
-		// noop
+	public onResize(width: number, height: number) {
+		this.inputTextureViews.length = 0;
 	}
 
 	public render(

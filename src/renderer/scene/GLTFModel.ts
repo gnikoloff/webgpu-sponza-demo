@@ -252,7 +252,7 @@ export default class GLTFModel extends Transform {
 					);
 				}
 
-				mesh.isOpaque = !primitive.material.alphaCutoff;
+				// mesh.isOpaque = !primitive.material.alphaCutoff;
 				mesh.setCustomMatrixFromTRS(nodePosition, nodeRotation, nodeScale);
 				mesh.sampler = this.gpuSamplers.get("sampler-0");
 				this.addChild(mesh);

@@ -242,8 +242,9 @@ export default class Renderer extends RenderingContext {
 		}
 
 		this.sceneDirectionalLight.setPosition(0, 100, 1);
-		this.sceneDirectionalLight.setColor(1, 1, 1);
-		this.sceneDirectionalLight.intensity = 0.01;
+		this.sceneDirectionalLight.setColor(0.2156, 0.2627, 0.3333);
+		// this.sceneDirectionalLight.setColor(1, 1, 1);
+		this.sceneDirectionalLight.intensity = 1;
 		this.scene.addDirectionalLight(this.sceneDirectionalLight);
 
 		this.scene.updateLightsBuffer();
@@ -380,8 +381,8 @@ export default class Renderer extends RenderingContext {
 			.addPass(ssaoRenderPass)
 			.addPass(ssaoBlurRenderPass)
 			.addPass(directionalAmbientLightRenderPass)
-			.addPass(pointLightsStencilMaskPass)
-			.addPass(pointLightsRenderPass)
+			// .addPass(pointLightsStencilMaskPass)
+			// .addPass(pointLightsRenderPass)
 			.addPass(transparentRenderPass)
 			.addPass(skyboxRenderPass)
 			.addPass(hiZCopyDepthComputePass)
@@ -451,7 +452,7 @@ export default class Renderer extends RenderingContext {
 			RenderPassType.Shadow,
 		);
 		this.sphere.materialProps.setColor(0.8, 0.3, 0.3);
-		this.sphere.materialProps.metallic = 1;
+		this.sphere.materialProps.metallic = 0.3;
 		this.sphere.materialProps.roughness = 0.96;
 		this.sphere.materialProps.isReflective = false;
 

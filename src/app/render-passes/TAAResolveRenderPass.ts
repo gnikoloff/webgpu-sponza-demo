@@ -92,6 +92,7 @@ export default class TAAResolveRenderPass extends RenderPass {
 	}
 
 	public override onResize(width: number, height: number): void {
+		super.onResize(width, height);
 		if (this.outTexture) {
 			this.outTexture.destroy();
 		}

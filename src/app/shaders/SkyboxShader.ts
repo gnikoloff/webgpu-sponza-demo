@@ -33,7 +33,7 @@ const SkyboxShader = /* wgsl */ `
   @fragment
   fn ${SkyboxShaderFragmentEntryFn}(in: VertexOutput) -> @location(0) vec4f {
     var cubemapVec = in.viewNormal - vec3(0.5);
-    let color = textureSampleLevel(inTexture, inSampler, cubemapVec, 3); //7.8);
+    let color = textureSampleLevel(inTexture, inSampler, cubemapVec, 4); //7.8);
     return vec4f(color.rgb, 1.0);
     // return vec4f(cubemapVec, 1);
   }

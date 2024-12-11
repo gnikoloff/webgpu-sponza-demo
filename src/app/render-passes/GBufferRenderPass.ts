@@ -15,6 +15,7 @@ export default class GBufferRenderPass extends RenderPass {
 	}
 
 	public override onResize(width: number, height: number): void {
+		super.onResize(width, height);
 		if (this.colorReflectanceTexture) {
 			this.colorReflectanceTexture.destroy();
 		}

@@ -47,9 +47,7 @@ const GetGBufferIntegrateShader = (
     let encodedN = textureLoad(normalTexture, pixelCoords, 0).rg;
     let metallic = textureLoad(normalTexture, pixelCoords, 0).b;
     let roughness = textureLoad(normalTexture, pixelCoords, 0).a;
-    let N = decodeNormal(encodedN);
-
-    
+    let viewSpaceNormal = decodeNormal(encodedN);
     
     let albedo = textureLoad(colorTexture, pixelCoords, 0).xyz;
     let depth = textureLoad(depthTexture, pixelCoords, 0);
@@ -57,7 +55,7 @@ const GetGBufferIntegrateShader = (
     let ao = textureLoad(aoTexture, pixelCoords, 0).r;
     // return vec4f(ao, ao, ao, 1);
 
-    // return vec4f(N, 1.0);
+    // return vec4f(viewSpaceNormal, 1.0);
     
 
     var material = Material();
@@ -71,8 +69,7 @@ const GetGBufferIntegrateShader = (
     let viewSpacePos = calcViewSpacePos(camera, coord.xy, depth);
     let worldSpacePos = calcWorldPos(camera, coord.xy, depth);
     
-
-    let V = normalize(camera.position - viewSpacePos);
+    let V = normalize(-viewSpacePos);
 
     #if ${lightType === LightType.Directional}
     let shadowLayerIdx = ShadowLayerIdxCalculate(worldSpacePos, camera, shadowCascades);
@@ -84,11 +81,11 @@ const GetGBufferIntegrateShader = (
     }
     // TODO: Directional light is expected to be at index 0
     // Write a better mechanism for quering it
-    let lightPosition = (camera.viewMatrix * vec4f(lightsBuffer[0].position, 1)).xyz;
+    let lightPosition = (vec4f(lightsBuffer[0].position, 1)).xyz;
     // let shadow = 1.0;
     let shadow = ShadowCalculate(
       worldSpacePos,
-      N,
+      viewSpaceNormal,
       lightPosition,
       camera,
       SHADOW_MAP_SIZE,
@@ -107,7 +104,7 @@ const GetGBufferIntegrateShader = (
       material,
       in.instanceId,
       viewSpacePos,
-      N,
+      viewSpaceNormal,
       V,
       shadow,
       opacity,
@@ -129,8 +126,8 @@ const GetGBufferIntegrateShader = (
 
     #if ${ligthSampleOffset !== 0}
     let debugColor = vec4f(1.0, 0.0, 0.0, 1.0);
-    // return mix(color, debugColor, debugLightsInfo.debugLights);
-    return color;
+    return mix(color, debugColor, debugLightsInfo.debugLights);
+    // return color;
     #else
     return color;
     #endif

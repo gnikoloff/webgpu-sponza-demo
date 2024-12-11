@@ -11,10 +11,10 @@ const GetPBRLightingShaderUtils = ({
 	hasIBL,
 }): IPBRLightingShaderUtils => wgsl/* wgsl */ `
   @must_use
-  fn DistributionGGX(N: vec3f, H: vec3f, roughness: f32) -> f32 {
+  fn DistributionGGX(viewSpaceNormal: vec3f, H: vec3f, roughness: f32) -> f32 {
     let a = roughness*roughness;
     let a2 = a*a;
-    let NdotH = max(dot(N, H), 0.0);
+    let NdotH = max(dot(viewSpaceNormal, H), 0.0);
     let NdotH2 = NdotH*NdotH;
 
     let nom   = a2;
@@ -35,9 +35,9 @@ const GetPBRLightingShaderUtils = ({
   }
 
   @must_use
-  fn GeometrySmith(N: vec3f, V: vec3f, L: vec3f, roughness: f32) -> f32 {
-    let NdotV = max(dot(N, V), 0.0);
-    let NdotL = max(dot(N, L), 0.0);
+  fn GeometrySmith(viewSpaceNormal: vec3f, V: vec3f, L: vec3f, roughness: f32) -> f32 {
+    let NdotV = max(dot(viewSpaceNormal, V), 0.0);
+    let NdotL = max(dot(viewSpaceNormal, L), 0.0);
     let ggx2 = GeometrySchlickGGX(NdotV, roughness);
     let ggx1 = GeometrySchlickGGX(NdotL, roughness);
     return ggx1 * ggx2;
@@ -58,7 +58,7 @@ const GetPBRLightingShaderUtils = ({
     material: Material,
     instanceId: u32,
     viewSpacePos: vec3f,
-    N: vec3f,
+    viewSpaceNormal: vec3f,
     V: vec3f,
     shadow: f32,
     opacity: f32,
@@ -72,7 +72,6 @@ const GetPBRLightingShaderUtils = ({
     let albedo = material.albedo;
     let F0 = mix(vec3f(0.04), albedo, material.metallic);
     
-    
     var Lo = vec3f(0.0);
     let albedoOverPi = albedo / PI;
 
@@ -83,12 +82,13 @@ const GetPBRLightingShaderUtils = ({
     let metallic = material.metallic;
 
     let light = &lightsBuffer[instanceId];
-    let lightPos = (camera.viewMatrix * vec4f(light.position, 1.0)).xyz;
+    let lightViewSpacePos = (camera.viewMatrix * vec4f(light.position, 0.0)).xyz;
+    // let lightPos = light.position;
     let isPointLight = light.lightType == ${LightType.Point};
-    let dist = lightPos.xyz - viewSpacePos.xyz;
+    let dist = lightViewSpacePos.xyz - viewSpacePos.xyz;
     let d = length(dist);
 
-    let L = select(normalize(lightPos), normalize(dist), isPointLight);
+    let L = select(normalize(lightViewSpacePos), normalize(dist), isPointLight);
     let H = normalize(V + L);
 
 
@@ -106,13 +106,13 @@ const GetPBRLightingShaderUtils = ({
     attenuation *= attenuation;
     let radiance = light.color * attenuation * light.intensity;
 
-    let NDF = DistributionGGX(N, H, roughnessQuad);
-    let G = GeometrySmith(N, V, L, roughness);
+    let NDF = DistributionGGX(viewSpaceNormal, H, roughnessQuad);
+    let G = GeometrySmith(viewSpaceNormal, V, L, roughness);
     var F = FresnelSchlick(max(dot(H, V), 0.0), F0);
 
     let numerator = NDF * G * F;
     // let denominator = 4.0 * (NdotV * NdotL, 0.0001); // + 0.0001 to prevent divide by zero
-    let denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001; // + 0.0001 to prevent divide by zero
+    let denominator = 4.0 * max(dot(viewSpaceNormal, V), 0.0) * max(dot(viewSpaceNormal, L), 0.0) + 0.0001; // + 0.0001 to prevent divide by zero
 
     var specular = numerator / denominator;
 
@@ -127,22 +127,22 @@ const GetPBRLightingShaderUtils = ({
     // have no diffuse light).
     kD *= 1.0 - metallic;
 
-    let NdotL = max(dot(N, L), 0.0); 
+    let NdotL = max(dot(viewSpaceNormal, L), 0.0); 
 
     // add to outgoing radiance Lo
-    Lo += (kD * albedoOverPi + specular) * radiance * NdotL * shadow * material.ambientOcclusion; // * light.opacity;  // note that we already multiplied the BRDF by the Fresnel
+    Lo += (kD * albedoOverPi + specular) * radiance * NdotL * shadow; // * light.opacity;  // note that we already multiplied the BRDF by the Fresnel
   
     #if ${hasIBL}
-      let irradiance = textureSampleLevel(diffuseIBLTexture, envTexSampler, N, 0).rgb;
-      kS = FresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness); 
+      let worldSpaceNorm = (camera.inverseViewMatrix * vec4f(viewSpaceNormal, 0)).xyz;
+      let worldSpaceV = (camera.inverseViewMatrix * vec4f(V, 0)).xyz;
+      let irradiance = textureSampleLevel(diffuseIBLTexture, envTexSampler, worldSpaceNorm, 0).rgb;
+      kS = FresnelSchlickRoughness(max(dot(viewSpaceNormal, V), 0.0), F0, roughness); 
       kD = 1.0 - kS;
       kD *= 1.0 - metallic;
       // let ambientIBL = kD * irradiance;
       // let ambientFactor = 0.2;
-      
-      
 
-      let R = reflect(-V, N);
+      let R = reflect(-worldSpaceV, worldSpaceNorm);
       let MAX_REFLECTION_LOD = 8.0;
       let prefilteredColor = vec3f(
         textureSampleLevel(
@@ -153,23 +153,20 @@ const GetPBRLightingShaderUtils = ({
         ).rgb
       );
 
-      let uv = vec2f(max(dot(N, V), 0.0), roughness);
+      let uv = vec2f(max(dot(worldSpaceNorm, worldSpaceV), 0.0), roughness);
       let envBDRF = textureSample(bdrfLutTexture, envTexSampler, uv).rg;
       specular = prefilteredColor * (F * envBDRF.x + envBDRF.y);
+      specular = mix(specular, specular * 0.2, 1 - shadow);
 
-      let diffuse = irradiance * (albedo * 1);
-      // let ambient = (kD * diffuse) * ambientOcclusion;
-      let ambient = kD * diffuse * (shadow + 0.5) * material.ambientOcclusion;
-      
+      let diffuse = irradiance * albedo;
+      let ambient = (kD * diffuse + specular * metallic) * material.ambientOcclusion;
+
+      // let ambient = vec3f(0.03) * albedo * material.ambientOcclusion;
       
       var color = ambient + Lo;
     #else
       var color = Lo;
     #endif
-
-    if (isPointLight && d > light.radius) {
-      return vec4f(0);
-    }
 
     return vec4f(color, opacity);
   }
