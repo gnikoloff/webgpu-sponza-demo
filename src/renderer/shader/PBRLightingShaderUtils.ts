@@ -82,9 +82,9 @@ const GetPBRLightingShaderUtils = ({
     let metallic = material.metallic;
 
     let light = &lightsBuffer[instanceId];
-    let lightViewSpacePos = (camera.viewMatrix * vec4f(light.position, 0.0)).xyz;
-    // let lightPos = light.position;
     let isPointLight = light.lightType == ${LightType.Point};
+    let lightViewSpacePos = (camera.viewMatrix * vec4f(light.position, select(0.0, 1.0, isPointLight))).xyz;
+    // let lightPos = light.position;
     let dist = lightViewSpacePos.xyz - viewSpacePos.xyz;
     let d = length(dist);
 

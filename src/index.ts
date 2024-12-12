@@ -1,18 +1,21 @@
 import Renderer from "./app/Renderer";
 
 import * as dat from "dat.gui";
+import { IGUIParams, SSRMethod } from "./types";
 
 const $canvas = document.getElementById("c") as HTMLCanvasElement;
 const renderer = await Renderer.initialize($canvas);
 
-const GUI_PARAMS = {
+const GUI_PARAMS: IGUIParams = {
 	"Play Animation": true,
-	"Toggle Debug Camera": true,
 	"Enable TAA": true,
 	"Debug G-Buffer": true,
 	"Debug Shadow Map": false,
-	"Debug Point Lights Mask": false,
 	"Debug Shadow Cascade Index": false,
+	"Debug Point Lights Mask": false,
+	"SSR Enabled": true,
+	"SSR Method": "hi-z",
+	"SSR Max Iterations": 150,
 	"Auto-Rotate Sun": false,
 	"Debug Skybox": true,
 	"Debug Bounding Boxes": false,
@@ -22,9 +25,6 @@ const gui = new dat.GUI({ width: 243 });
 
 gui.add(GUI_PARAMS, "Play Animation").onChange((v: boolean) => {
 	renderer.enableAnimation = v;
-});
-gui.add(GUI_PARAMS, "Toggle Debug Camera").onChange((v) => {
-	renderer.toggleDebugCamera = v;
 });
 
 // const envFolder = gui.addFolder("Environment");
@@ -50,14 +50,6 @@ const debugShadowController = shadowFolder
 	});
 debugShadowController.listen();
 
-const environmentFolder = gui.addFolder("Environment");
-environmentFolder.open();
-const debugBBoxesController = environmentFolder
-	.add(GUI_PARAMS, "Debug Bounding Boxes")
-	.onChange((v) => {
-		renderer.debugBoundingBoxes = v;
-	});
-
 shadowFolder
 	.add(GUI_PARAMS, "Debug Shadow Cascade Index")
 	.onChange((v: boolean) => {
@@ -80,7 +72,26 @@ debugGBufferController.listen();
 deferredRendererFolder
 	.add(GUI_PARAMS, "Debug Point Lights Mask")
 	.onChange((v: boolean) => {
-		renderer.debugPointLights = v;
+		renderer.debugLightsMask = v;
+	});
+
+const ssrFolder = gui.addFolder("Screenspace Reflections");
+ssrFolder.open();
+
+const ssrEnabledController = ssrFolder
+	.add(GUI_PARAMS, "SSR Enabled")
+	.onChange((v: boolean) => {
+		renderer.ssrEnabled = v;
+	});
+const ssrMethodController = ssrFolder
+	.add(GUI_PARAMS, "SSR Method", ["hi-z", "linear"])
+	.onChange((v: SSRMethod) => {
+		renderer.ssrIsHiZ = v === "hi-z";
+	});
+const ssrMaxIterationsController = ssrFolder
+	.add(GUI_PARAMS, "SSR Max Iterations", 0, 1500, 1)
+	.onChange((v: number) => {
+		renderer.ssrMaxIterations = v;
 	});
 
 const antialiasFolder = gui.addFolder("Anti-Aliasing");
@@ -88,6 +99,14 @@ antialiasFolder.open();
 antialiasFolder.add(GUI_PARAMS, "Enable TAA").onChange((v: boolean) => {
 	renderer.enableTAA = v;
 });
+
+const miscFolder = gui.addFolder("Misc");
+miscFolder.open();
+const debugBBoxesController = miscFolder
+	.add(GUI_PARAMS, "Debug Bounding Boxes")
+	.onChange((v) => {
+		renderer.debugBoundingBoxes = v;
+	});
 
 requestAnimationFrame(renderFrame);
 window.addEventListener("resize", resize);

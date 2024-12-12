@@ -26,13 +26,17 @@ export default class CameraFlyController {
 
 	public speed = 20;
 
-	constructor(private camera: Camera, private domElement = document.body) {
+	constructor(
+		private camera: Camera,
+		private keyboardDomElement = document.body,
+		private mouseDomElement = keyboardDomElement,
+	) {
 		this.position = camera.position;
-		domElement.addEventListener("keydown", this.onKeyDown);
-		domElement.addEventListener("keyup", this.onKeyUp);
+		keyboardDomElement.addEventListener("keydown", this.onKeyDown);
+		keyboardDomElement.addEventListener("keyup", this.onKeyUp);
 
-		domElement.addEventListener("mousedown", this.onMouseDown);
-		domElement.addEventListener("mouseup", this.onMouseUp);
+		mouseDomElement.addEventListener("mousedown", this.onMouseDown);
+		mouseDomElement.addEventListener("mouseup", this.onMouseUp);
 
 		this.rotateView(0.0075, 0.005);
 	}
@@ -129,11 +133,11 @@ export default class CameraFlyController {
 	private onMouseDown = (e: MouseEvent) => {
 		this.lastX = e.pageX;
 		this.lastY = e.pageY;
-		this.domElement.addEventListener("mousemove", this.onMouseMove);
+		this.mouseDomElement.addEventListener("mousemove", this.onMouseMove);
 	};
 
 	private onMouseUp = (e: MouseEvent) => {
-		this.domElement.removeEventListener("mousemove", this.onMouseMove);
+		this.mouseDomElement.removeEventListener("mousemove", this.onMouseMove);
 	};
 
 	private onMouseMove = (e: MouseEvent) => {

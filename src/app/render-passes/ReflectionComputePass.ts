@@ -18,6 +18,34 @@ export default class ReflectionComputePass extends RenderPass {
 	private bindGroupLayout: GPUBindGroupLayout;
 	private bindGroup!: GPUBindGroup;
 
+	private settingsBuffer: GPUBuffer;
+
+	private _maxIterations = 150;
+	public get maxIterations(): number {
+		return this._maxIterations;
+	}
+	public set maxIterations(v: number) {
+		this._maxIterations = v;
+		this.updateSettingsBuffer();
+	}
+
+	private _isHiZ = true;
+	public get isHiZ(): boolean {
+		return this._isHiZ;
+	}
+	public set isHiZ(v: boolean) {
+		this._isHiZ = v;
+		this.updateSettingsBuffer();
+	}
+
+	private updateSettingsBuffer() {
+		RenderingContext.device.queue.writeBuffer(
+			this.settingsBuffer,
+			0,
+			new Int32Array([this._isHiZ ? 1 : 0, this._maxIterations]),
+		);
+	}
+
 	constructor() {
 		super(RenderPassType.Reflection);
 
@@ -60,6 +88,13 @@ export default class ReflectionComputePass extends RenderPass {
 					type: "uniform",
 				},
 			},
+			{
+				binding: 6,
+				visibility: GPUShaderStage.COMPUTE,
+				buffer: {
+					type: "uniform",
+				},
+			},
 		];
 
 		this.bindGroupLayout = RenderingContext.device.createBindGroupLayout({
@@ -83,6 +118,17 @@ export default class ReflectionComputePass extends RenderPass {
 				},
 			},
 		});
+
+		this.settingsBuffer = RenderingContext.device.createBuffer({
+			label: "SSR Settings Buffer",
+			size: 4 * Uint32Array.BYTES_PER_ELEMENT,
+			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+			mappedAtCreation: true,
+		});
+		new Int32Array(this.settingsBuffer.getMappedRange()).set(
+			new Int32Array([this.isHiZ ? 1 : 0, this.maxIterations]),
+		);
+		this.settingsBuffer.unmap();
 	}
 
 	public override setCamera(camera: Camera): this {
@@ -139,6 +185,12 @@ export default class ReflectionComputePass extends RenderPass {
 					binding: 5,
 					resource: {
 						buffer: this.camera.gpuBuffer,
+					},
+				},
+				{
+					binding: 6,
+					resource: {
+						buffer: this.settingsBuffer,
 					},
 				},
 			];

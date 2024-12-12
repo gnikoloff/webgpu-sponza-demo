@@ -78,7 +78,7 @@ export const getDefaultDeferredPBRFragmentShader = ({
     var color = model.baseColor;
     if (${hasPBRTextures}) {
       let texColor = textureSample(albedoTexture, texSampler, uv);
-      if (texColor.a < 0.1) {
+      if (texColor.a < 0.2) {
         discard;
       }
       color = texColor.rgb;

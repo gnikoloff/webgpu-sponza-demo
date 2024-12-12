@@ -54,6 +54,7 @@ import RenderingContext from "../renderer/core/RenderingContext";
 import SSAOBlurRenderPass from "./render-passes/SSAOBlurRenderPass";
 import HiZDepthComputePass from "./render-passes/HiZDepthComputePass";
 import HiZCopyDepthComputePass from "./render-passes/HiZCopyDepthComputePass";
+import DebugBoundsPass from "./render-passes/DebugBoundsPass";
 // import EnvironmentProbePass from "./render-passes/EnvironmentProbePass";
 
 export default class Renderer extends RenderingContext {
@@ -107,23 +108,22 @@ export default class Renderer extends RenderingContext {
 	// public mainCameraCtrl: CameraOrbitController;
 	public mainCameraCtrl: CameraFlyController;
 
-	public debugBoundingBoxes = false;
+	public set debugBoundingBoxes(v: boolean) {
+		(
+			this.renderPassComposer.getPass(
+				RenderPassType.DebugBounds,
+			) as DebugBoundsPass
+		).enabled = v;
+	}
 
 	private scene = new Scene();
-	private skybox: Skybox;
-	private ground: GroundContainer;
 	private cube: Drawable;
 	private cube1: Drawable;
 	private sphere: Drawable;
-	private pbrSpheres: PBRSpheres;
 
 	private sceneDirectionalLight = new DirectionalLight();
 
-	// private bdrfLUTDebugTex?: TextureDebugMesh
 	private renderPassComposer: RenderPassComposer;
-
-	private reflectionComputePass: ReflectionComputePass;
-	// private environmentProbePass: EnvironmentProbePass;
 
 	private cpuAverage = new RollingAverage();
 	private gpuAverage = new RollingAverage();
@@ -135,64 +135,68 @@ export default class Renderer extends RenderingContext {
 	public autoRotateSun = false;
 	public rotateAngle = Math.PI * 0.2;
 
-	private _enableTAA = true;
-	public get enableTAA(): boolean {
-		return this._enableTAA;
-	}
 	public set enableTAA(v: boolean) {
-		this._enableTAA = v;
 		this.mainCamera.shouldJitter = v;
 	}
 
-	private _debugGBuffer = false;
-	public get debugGBuffer(): boolean {
-		return this._debugGBuffer;
-	}
 	public set debugGBuffer(v: boolean) {
-		this._debugGBuffer = v;
 		v
 			? this.texturesDebugContainer.reveal()
 			: this.texturesDebugContainer.hide();
 	}
 
-	private _debugShadowMap = false;
-	public get debugShadowMap(): boolean {
-		return this._debugShadowMap;
-	}
 	public set debugShadowMap(v: boolean) {
-		this._debugShadowMap = v;
 		v
 			? this.texturesDebugContainer.reveal()
 			: this.texturesDebugContainer.hide();
 	}
 
-	public get debugShadowCascadeIndex(): boolean {
-		return this.gbufferIntegratePass.debugShadowCascadeIndex;
-	}
 	public set debugShadowCascadeIndex(v: boolean) {
-		this.gbufferIntegratePass.debugShadowCascadeIndex = v;
+		(
+			this.renderPassComposer.getPass(
+				RenderPassType.DirectionalAmbientLighting,
+			) as DirectionalAmbientLightRenderPass
+		).debugShadowCascadeLayer = v;
 	}
 
-	public debugPointLights = false;
-
-	private _enableAnimation = true;
-	public get enableAnimation(): boolean {
-		return this._enableAnimation;
-	}
-	public set enableAnimation(v: boolean) {
-		this._enableAnimation = v;
+	public set debugLightsMask(v: boolean) {
+		(
+			this.renderPassComposer.getPass(
+				RenderPassType.PointLightsLighting,
+			) as PointLightsRenderPass
+		).debugLightsMask = v;
 	}
 
-	private _toggleDebugCamera = false;
-	public get toggleDebugCamera(): boolean {
-		return this._toggleDebugCamera;
+	public enableAnimation = true;
+
+	public set ssrIsHiZ(v: boolean) {
+		(
+			this.renderPassComposer.getPass(
+				RenderPassType.Reflection,
+			) as ReflectionComputePass
+		).isHiZ = v;
+		this.renderPassComposer.getPass(RenderPassType.HiZ).enabled = v;
 	}
-	public set toggleDebugCamera(v: boolean) {
-		this._toggleDebugCamera = v;
-		// this.gbufferRenderPass.toggleDebugCamera(v);
-		// this.gbufferIntegratePass.toggleDebugCamera(v);
-		// this.transparentPass.toggleDebugCamera(v);
-		// this.taaResolvePass.toggleDebugCamera(v);
+
+	public set ssrMaxIterations(v: number) {
+		(
+			this.renderPassComposer.getPass(
+				RenderPassType.Reflection,
+			) as ReflectionComputePass
+		).maxIterations = v;
+	}
+
+	public set ssrEnabled(v: boolean) {
+		this.renderPassComposer.getPass(RenderPassType.Reflection).enabled = v;
+		this.renderPassComposer
+			.getPass(RenderPassType.TAAResolve)
+			.clearInputTextures()
+			.addInputTextures([
+				v
+					? RENDER_PASS_COMPUTED_REFLECTIONS_TEXTURE
+					: RENDER_PASS_LIGHTING_RESULT_TEXTURE,
+				RENDER_PASS_VELOCITY_TEXTURE,
+			]);
 	}
 
 	constructor() {
@@ -210,7 +214,8 @@ export default class Renderer extends RenderingContext {
 
 		this.mainCameraCtrl = new CameraFlyController(
 			this.mainCamera,
-			// RenderingContext.$canvas,
+			document.body,
+			RenderingContext.$canvas,
 		);
 		this.mainCameraCtrl.startTick();
 
@@ -244,7 +249,7 @@ export default class Renderer extends RenderingContext {
 		this.sceneDirectionalLight.setPosition(0, 100, 1);
 		this.sceneDirectionalLight.setColor(0.2156, 0.2627, 0.3333);
 		// this.sceneDirectionalLight.setColor(1, 1, 1);
-		this.sceneDirectionalLight.intensity = 1;
+		this.sceneDirectionalLight.intensity = 2;
 		this.scene.addDirectionalLight(this.sceneDirectionalLight);
 
 		this.scene.updateLightsBuffer();
@@ -358,14 +363,16 @@ export default class Renderer extends RenderingContext {
 			])
 			.addOutputTexture(RENDER_PASS_TAA_RESOLVE_TEXTURE);
 
-		// const debugBBoxesPass = new DebugBoundsPass()
-		// 	.addInputTextures([
-		// 		RENDER_PASS_TAA_RESOLVE_TEXTURE,
-		// 		RENDER_PASS_DEPTH_STENCIL_TEXTURE,
-		// 	])
-		// 	.addOutputTexture(RENDER_PASS_TAA_RESOLVE_TEXTURE)
-		// 	.setScene(this.scene)
-		// 	.setCamera(this.mainCamera);
+		const debugBBoxesPass = new DebugBoundsPass()
+			.addInputTextures([
+				RENDER_PASS_TAA_RESOLVE_TEXTURE,
+				RENDER_PASS_DEPTH_STENCIL_TEXTURE,
+			])
+			.addOutputTexture(RENDER_PASS_TAA_RESOLVE_TEXTURE)
+			.setScene(this.scene)
+			.setCamera(this.mainCamera);
+
+		debugBBoxesPass.enabled = false;
 
 		const blitRenderPass = new BlitRenderPass().addInputTexture(
 			RENDER_PASS_TAA_RESOLVE_TEXTURE,
@@ -381,14 +388,15 @@ export default class Renderer extends RenderingContext {
 			.addPass(ssaoRenderPass)
 			.addPass(ssaoBlurRenderPass)
 			.addPass(directionalAmbientLightRenderPass)
-			// .addPass(pointLightsStencilMaskPass)
-			// .addPass(pointLightsRenderPass)
+			.addPass(pointLightsStencilMaskPass)
+			.addPass(pointLightsRenderPass)
 			.addPass(transparentRenderPass)
 			.addPass(skyboxRenderPass)
 			.addPass(hiZCopyDepthComputePass)
 			.addPass(hiZDepthComputePass)
 			.addPass(reflectionsComputePass)
 			.addPass(taaResolveRenderPass)
+			.addPass(debugBBoxesPass)
 			.addPass(blitRenderPass);
 
 		// this.renderPassComposer.addPass(debugBBoxesPass);
@@ -552,8 +560,6 @@ export default class Renderer extends RenderingContext {
 
 		a.textContent = `Display Meshes: ${this.scene.visibleNodesCount} / ${this.scene.nodesCount}`;
 
-		// this.gbufferIntegratePass.debugPointLights = this.debugPointLights;
-
 		if (this.autoRotateSun) {
 			this.rotateAngle += deltaDiff * 0.1;
 			// this.sceneDirectionalLight.setPosition(
@@ -663,83 +669,83 @@ export default class Renderer extends RenderingContext {
 
 		const jsPerfTime = performance.now() - jsPerfStartTime;
 
-		// const [
-		// 	gbufferRenderPassTimingResult,
-		// 	directionalAmbientLightRenderPassTimingResult,
-		// 	pointLightsStencilMaskPassTimingResult,
-		// 	pointLightsLightingTimingResult,
-		// 	ssaoRenderPassTimingResult,
-		// 	transparentRenderPassTimingResult,
-		// 	taaResolveRenderPassTimingResult,
-		// 	blitRenderPassTimingResult,
-		// ] = await Promise.all([
-		// 	this.renderPassComposer
-		// 		.getPass(RenderPassType.Deferred)
-		// 		.getTimingResult(),
-		// 	this.renderPassComposer
-		// 		.getPass(RenderPassType.DirectionalAmbientLighting)
-		// 		.getTimingResult(),
-		// 	this.renderPassComposer
-		// 		.getPass(RenderPassType.PointLightsStencilMask)
-		// 		.getTimingResult(),
-		// 	this.renderPassComposer
-		// 		.getPass(RenderPassType.PointLightsLighting)
-		// 		.getTimingResult(),
-		// 	this.renderPassComposer.getPass(RenderPassType.SSAO).getTimingResult(),
-		// 	this.renderPassComposer
-		// 		.getPass(RenderPassType.Transparent)
-		// 		.getTimingResult(),
-		// 	this.renderPassComposer
-		// 		.getPass(RenderPassType.TAAResolve)
-		// 		.getTimingResult(),
-		// 	this.renderPassComposer.getPass(RenderPassType.Blit).getTimingResult(),
-		// ]);
+		const [
+			gbufferRenderPassTimingResult,
+			directionalAmbientLightRenderPassTimingResult,
+			pointLightsStencilMaskPassTimingResult,
+			pointLightsLightingTimingResult,
+			ssaoRenderPassTimingResult,
+			transparentRenderPassTimingResult,
+			taaResolveRenderPassTimingResult,
+			blitRenderPassTimingResult,
+		] = await Promise.all([
+			this.renderPassComposer
+				.getPass(RenderPassType.Deferred)
+				.getTimingResult(),
+			this.renderPassComposer
+				.getPass(RenderPassType.DirectionalAmbientLighting)
+				.getTimingResult(),
+			this.renderPassComposer
+				.getPass(RenderPassType.PointLightsStencilMask)
+				.getTimingResult(),
+			this.renderPassComposer
+				.getPass(RenderPassType.PointLightsLighting)
+				.getTimingResult(),
+			this.renderPassComposer.getPass(RenderPassType.SSAO).getTimingResult(),
+			this.renderPassComposer
+				.getPass(RenderPassType.Transparent)
+				.getTimingResult(),
+			this.renderPassComposer
+				.getPass(RenderPassType.TAAResolve)
+				.getTimingResult(),
+			this.renderPassComposer.getPass(RenderPassType.Blit).getTimingResult(),
+		]);
 
-		// const gbufferRenderPassTimings = gbufferRenderPassTimingResult.timings;
-		// const blitRenderPassTimings = blitRenderPassTimingResult.timings;
-		// const totalGPUTime =
-		// 	Math.abs(blitRenderPassTimings[1] - gbufferRenderPassTimings[0]) /
-		// 	1_000_000;
+		const gbufferRenderPassTimings = gbufferRenderPassTimingResult.timings;
+		const blitRenderPassTimings = blitRenderPassTimingResult.timings;
+		const totalGPUTime =
+			Math.abs(blitRenderPassTimings[1] - gbufferRenderPassTimings[0]) /
+			1_000_000;
 
-		// this.cpuAverage.addSample(jsPerfTime);
-		// this.fpsAverage.addSample(1 / deltaDiff);
-		// this.gpuAverage.addSample(totalGPUTime);
+		this.cpuAverage.addSample(jsPerfTime);
+		this.fpsAverage.addSample(1 / deltaDiff);
+		this.gpuAverage.addSample(totalGPUTime);
 
-		// this.timingDebugContainer
-		// 	.setDisplayValue(DebugTimingType.CPUTotal, this.cpuAverage.get())
-		// 	.setDisplayValue(DebugTimingType.GPUTotal, this.gpuAverage.get())
-		// 	.setDisplayValue(DebugTimingType.FPS, this.fpsAverage.get())
-		// 	.setDisplayValue(
-		// 		DebugTimingType.DeferredRenderPass,
-		// 		gbufferRenderPassTimingResult.avgValue,
-		// 	)
-		// 	.setDisplayValue(
-		// 		DebugTimingType.DirectionalAmbientLightingRenderPass,
-		// 		directionalAmbientLightRenderPassTimingResult.avgValue,
-		// 	)
-		// 	.setDisplayValue(
-		// 		DebugTimingType.PointLightsStencilMask,
-		// 		pointLightsStencilMaskPassTimingResult.avgValue,
-		// 	)
-		// 	.setDisplayValue(
-		// 		DebugTimingType.PointLightsLighting,
-		// 		pointLightsLightingTimingResult.avgValue,
-		// 	)
-		// 	.setDisplayValue(
-		// 		DebugTimingType.SSAORenderPass,
-		// 		ssaoRenderPassTimingResult.avgValue,
-		// 	)
-		// 	.setDisplayValue(
-		// 		DebugTimingType.TransparentRenderPass,
-		// 		transparentRenderPassTimingResult.avgValue,
-		// 	)
-		// 	.setDisplayValue(
-		// 		DebugTimingType.BlitRenderPass,
-		// 		blitRenderPassTimingResult.avgValue,
-		// 	)
-		// 	.setDisplayValue(
-		// 		DebugTimingType.TAAResolveRenderPass,
-		// 		taaResolveRenderPassTimingResult.avgValue,
-		// 	);
+		this.timingDebugContainer
+			.setDisplayValue(DebugTimingType.CPUTotal, this.cpuAverage.get())
+			.setDisplayValue(DebugTimingType.GPUTotal, this.gpuAverage.get())
+			.setDisplayValue(DebugTimingType.FPS, this.fpsAverage.get())
+			.setDisplayValue(
+				DebugTimingType.DeferredRenderPass,
+				gbufferRenderPassTimingResult.avgValue,
+			)
+			.setDisplayValue(
+				DebugTimingType.DirectionalAmbientLightingRenderPass,
+				directionalAmbientLightRenderPassTimingResult.avgValue,
+			)
+			.setDisplayValue(
+				DebugTimingType.PointLightsStencilMask,
+				pointLightsStencilMaskPassTimingResult.avgValue,
+			)
+			.setDisplayValue(
+				DebugTimingType.PointLightsLighting,
+				pointLightsLightingTimingResult.avgValue,
+			)
+			.setDisplayValue(
+				DebugTimingType.SSAORenderPass,
+				ssaoRenderPassTimingResult.avgValue,
+			)
+			.setDisplayValue(
+				DebugTimingType.TransparentRenderPass,
+				transparentRenderPassTimingResult.avgValue,
+			)
+			.setDisplayValue(
+				DebugTimingType.BlitRenderPass,
+				blitRenderPassTimingResult.avgValue,
+			)
+			.setDisplayValue(
+				DebugTimingType.TAAResolveRenderPass,
+				taaResolveRenderPassTimingResult.avgValue,
+			);
 	}
 }

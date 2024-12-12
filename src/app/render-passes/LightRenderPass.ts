@@ -86,6 +86,30 @@ export default class LightRenderPass extends RenderPass {
 	protected bayerDitherSampler: GPUSampler;
 	protected debugLightsBuffer: GPUBuffer;
 
+	private _debugLightsMask = false;
+	private _debugShadowCascadeLayer = false;
+
+	public set debugLightsMask(v: boolean) {
+		this._debugLightsMask = v;
+		this.updateLightSettingsBuffer();
+	}
+
+	public set debugShadowCascadeLayer(v: boolean) {
+		this._debugShadowCascadeLayer = v;
+		this.updateLightSettingsBuffer();
+	}
+
+	private updateLightSettingsBuffer() {
+		RenderingContext.device.queue.writeBuffer(
+			this.debugLightsBuffer,
+			0,
+			new Float32Array([
+				this._debugLightsMask ? 1 : 0,
+				this._debugShadowCascadeLayer ? 1 : 0,
+			]),
+		);
+	}
+
 	protected updateGbufferBindGroupEntryAt(
 		idx: number,
 		val: GPUBindingResource,

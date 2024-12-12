@@ -46,6 +46,9 @@ export default class RenderPassComposer {
 
 	public async render(commandEncoder: GPUCommandEncoder) {
 		for (const pass of this.passes) {
+			if (!pass.enabled) {
+				continue;
+			}
 			const inputs = pass.inputTextureNames.map((inputName) =>
 				this.textureCache.get(inputName),
 			);

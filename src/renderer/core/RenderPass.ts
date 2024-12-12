@@ -13,6 +13,7 @@ import RenderingContext from "./RenderingContext";
 
 export default class RenderPass {
 	public name: string;
+	public enabled = true;
 	public inputTextureNames: string[] = [];
 	public outputTextureNames: string[] = [];
 
@@ -46,6 +47,17 @@ export default class RenderPass {
 				usage: GPUBufferUsage.QUERY_RESOLVE | GPUBufferUsage.COPY_SRC,
 			});
 		}
+	}
+
+	public clearInputTextures(): this {
+		this.inputTextureNames.length = 0;
+		this.inputTextureViews.length = 0;
+		return this;
+	}
+
+	public clearOutputTextures(): this {
+		this.outputTextureNames.length = 0;
+		return this;
 	}
 
 	public addInputTexture(name: string): this {

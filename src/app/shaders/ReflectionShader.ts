@@ -8,19 +8,24 @@ export const getReflectionComputeShader = (
 ): string => /* wgsl */ `
   ${SHADER_CHUNKS.CameraUniform}
 
+  struct SSRSettings {
+    isHiZ: i32,
+    maxIterations: i32,
+  };
+
   @group(0) @binding(0) var sceneTexture: texture_2d<f32>;
   @group(0) @binding(1) var normalMetallicRoughnessTexture: texture_2d<f32>;
   @group(0) @binding(2) var albedoReflectanceTexture: texture_2d<f32>;
   @group(0) @binding(3) var depthTexture: texture_2d<f32>;
   @group(0) @binding(4) var outTexture: texture_storage_2d<${pixelFormat}, write>;
   @group(0) @binding(5) var<uniform> camera: CameraUniform;
+  @group(0) @binding(6) var<uniform> settings: SSRSettings;
 
   override WORKGROUP_SIZE_X: u32;
   override WORKGROUP_SIZE_Y: u32;
 
   ${NormalEncoderShaderUtils}
 
-  const MAX_ITERATIONS = 150;
   const MAX_THICKNESS = 0.001;
 
   fn ComputePosAndReflection(
@@ -97,7 +102,7 @@ export const getReflectionComputeShader = (
     
 
     var hitIndex = -1;
-    for (var i = 0; i < maxDist && i < MAX_ITERATIONS; i += 4) {
+    for (var i = 0; i < maxDist && i < settings.maxIterations; i += 4) {
       let rayPosTexSpace0 = rayPosTexSpace + rayDirTexSpace * 0;
       let rayPosTexSpace1 = rayPosTexSpace + rayDirTexSpace * 1;
       let rayPosTexSpace2 = rayPosTexSpace + rayDirTexSpace * 2;
@@ -236,7 +241,7 @@ export const getReflectionComputeShader = (
     let isBackwardRay = reflDirInTexSpace.z < 0;
     let rayDir = select(1.0, -1.0, isBackwardRay);
 
-    while(level >= stopLevel && ray.z * rayDir <= maxZ * rayDir && iter < MAX_ITERATIONS) {
+    while(level >= stopLevel && ray.z * rayDir <= maxZ * rayDir && iter < settings.maxIterations) {
       let cellCount = getCellCount(level, depthTexture);
       let oldCellIdx = getCell(ray.xy, cellCount);
       let cellMinZ = getMinimumDepthPlane((oldCellIdx + 0.5), level, depthTexture);
@@ -300,43 +305,47 @@ export const getReflectionComputeShader = (
     var reflectionColor = vec4f(0);
 
     if (reflectanceMask != 0) {
-       var samplePosInTexSpace = vec3f(0);
-       var reflDirInTexSpace = vec3f(0);
-       var maxTraceDistance = 0.0;
+      var samplePosInTexSpace = vec3f(0);
+      var reflDirInTexSpace = vec3f(0);
+      var maxTraceDistance = 0.0;
 
-       ComputePosAndReflection(
-        pos.xy,
-        N,
-        camera.projectionMatrix,
-        camera.inverseProjectionMatrix,
-        camera.viewportWidth,
-        camera.viewportHeight,
-        depthTexture,
-        &samplePosInTexSpace,
-        &reflDirInTexSpace,
-        &maxTraceDistance
-       );
-
-       var intersection = vec3f(0);
-
-      //  let intensity = FindIntersectionLinear(
-      //   samplePosInTexSpace,
-      //   reflDirInTexSpace,
-      //   maxTraceDistance,
-      //   camera.viewportWidth,
-      //   camera.viewportHeight,
-      //   depthTexture,
-      //   &intersection
-      // );
-      let intensity = FindIntersectionHiZ(
-        samplePosInTexSpace,
-        reflDirInTexSpace,
-        maxTraceDistance,
-        camera.viewportWidth,
-        camera.viewportHeight,
-        depthTexture,
-        &intersection
+      ComputePosAndReflection(
+      pos.xy,
+      N,
+      camera.projectionMatrix,
+      camera.inverseProjectionMatrix,
+      camera.viewportWidth,
+      camera.viewportHeight,
+      depthTexture,
+      &samplePosInTexSpace,
+      &reflDirInTexSpace,
+      &maxTraceDistance
       );
+
+      var intersection = vec3f(0);
+
+      var intensity = 0.0;
+      if (settings.isHiZ == 1) {
+        intensity = FindIntersectionHiZ(
+          samplePosInTexSpace,
+          reflDirInTexSpace,
+          maxTraceDistance,
+          camera.viewportWidth,
+          camera.viewportHeight,
+          depthTexture,
+          &intersection
+        );
+      } else {
+        intensity = FindIntersectionLinear(
+          samplePosInTexSpace,
+          reflDirInTexSpace,
+          maxTraceDistance,
+          camera.viewportWidth,
+          camera.viewportHeight,
+          depthTexture,
+          &intersection
+        );
+      }
 
       reflectionColor = ComputeReflectionColor(
         intensity,
@@ -345,7 +354,6 @@ export const getReflectionComputeShader = (
         camera.viewportHeight,
         sceneTexture
       );
-      // reflectionColor = vec4f(vec3f(intensity), 1);
     }
 
     let finalColor = sceneColor + reflectionColor;
