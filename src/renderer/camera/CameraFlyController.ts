@@ -9,6 +9,10 @@ const LEFT_CHAR_CODE = "A".charCodeAt(0);
 const RIGHT_CHAR_CODE = "D".charCodeAt(0);
 const UP_CHAR_CODE = "E".charCodeAt(0);
 const DOWN_CHAR_CODE = "Q".charCodeAt(0);
+const ARROW_FORWARD_CHAR_CODE = 38;
+const ARROW_LEFT_CHAR_CODE = 37;
+const ARROW_RIGHT_CHAR_CODE = 39;
+const ARROW_BACKWARD_CHAR_CODE = 40;
 
 export default class CameraFlyController {
 	private angles = vec2.create(0, -Math.PI * 0.5);
@@ -56,16 +60,28 @@ export default class CameraFlyController {
 
 		vec3.set(0, 0, 0, DIR);
 
-		if (this.presedKeys[FORWARD_CHAR_CODE]) {
+		if (
+			this.presedKeys[FORWARD_CHAR_CODE] ||
+			this.presedKeys[ARROW_FORWARD_CHAR_CODE]
+		) {
 			DIR[2] -= speed;
 		}
-		if (this.presedKeys[BACKWARD_CHAR_CODE]) {
+		if (
+			this.presedKeys[BACKWARD_CHAR_CODE] ||
+			this.presedKeys[ARROW_BACKWARD_CHAR_CODE]
+		) {
 			DIR[2] += speed;
 		}
-		if (this.presedKeys[LEFT_CHAR_CODE]) {
+		if (
+			this.presedKeys[LEFT_CHAR_CODE] ||
+			this.presedKeys[ARROW_LEFT_CHAR_CODE]
+		) {
 			DIR[0] -= speed;
 		}
-		if (this.presedKeys[RIGHT_CHAR_CODE]) {
+		if (
+			this.presedKeys[RIGHT_CHAR_CODE] ||
+			this.presedKeys[ARROW_RIGHT_CHAR_CODE]
+		) {
 			DIR[0] += speed;
 		}
 		if (this.presedKeys[UP_CHAR_CODE]) {
