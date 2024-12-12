@@ -71,7 +71,7 @@ export default class TransparentRenderPass extends RenderPass {
 				{
 					binding: 1,
 					resource: {
-						buffer: scene.lightsBuffer,
+						buffer: scene.lightingManager.gpuBuffer,
 					},
 				},
 			],
@@ -82,7 +82,7 @@ export default class TransparentRenderPass extends RenderPass {
 			this.cameraBindGroup,
 		);
 
-		scene.renderTransparentNodes(renderPassEncoder, this.camera);
+		scene.lightingManager.render(renderPassEncoder);
 
 		renderPassEncoder.popDebugGroup();
 		renderPassEncoder.end();

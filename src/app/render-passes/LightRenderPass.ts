@@ -49,30 +49,20 @@ export default class LightRenderPass extends RenderPass {
 			},
 			{
 				binding: 4,
-				visibility: GPUShaderStage.FRAGMENT,
-				texture: {},
-			},
-			{
-				binding: 5,
-				visibility: GPUShaderStage.FRAGMENT,
-				sampler: {},
-			},
-			{
-				binding: 6,
 				visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
 				buffer: {
 					type: "uniform",
 				},
 			},
 			{
-				binding: 7,
+				binding: 5,
 				visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
 				buffer: {
 					type: "read-only-storage",
 				},
 			},
 			{
-				binding: 8,
+				binding: 6,
 				visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
 				buffer: {
 					type: "uniform",
@@ -172,26 +162,18 @@ export default class LightRenderPass extends RenderPass {
 			},
 			{
 				binding: 4,
-				resource: TextureLoader.bayerDitherPatternTexture.createView(),
+				resource: {
+					buffer: null,
+				},
 			},
 			{
 				binding: 5,
-				resource: this.bayerDitherSampler,
+				resource: {
+					buffer: null,
+				},
 			},
 			{
 				binding: 6,
-				resource: {
-					buffer: null,
-				},
-			},
-			{
-				binding: 7,
-				resource: {
-					buffer: null,
-				},
-			},
-			{
-				binding: 8,
 				resource: {
 					buffer: this.debugLightsBuffer,
 				},

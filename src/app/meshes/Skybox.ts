@@ -3,6 +3,7 @@ import RenderingContext from "../../renderer/core/RenderingContext";
 import Material from "../../renderer/material/Material";
 import Drawable from "../../renderer/scene/Drawable";
 import SamplerController from "../../renderer/texture/SamplerController";
+import TextureLoader from "../../renderer/texture/TextureLoader";
 import { RenderPassType } from "../../renderer/types";
 import SkyboxShader, {
 	SkyboxShaderFragmentEntryFn,
@@ -43,6 +44,18 @@ export default class Skybox extends Drawable {
 					mipmapFilter: "linear",
 				}),
 			},
+			{
+				binding: 2,
+				resource: TextureLoader.bayerDitherPatternTexture.createView(),
+			},
+			{
+				binding: 3,
+				resource: SamplerController.createSampler({
+					addressModeU: "repeat",
+					addressModeV: "repeat",
+					minFilter: "linear",
+				}),
+			},
 		];
 		this.texSamplerBindGroup = RenderingContext.device.createBindGroup({
 			label: "Skybox Sampler + Texture Bind Group",
@@ -70,6 +83,18 @@ export default class Skybox extends Drawable {
 				sampler: {
 					type: "filtering",
 				},
+				visibility: GPUShaderStage.FRAGMENT,
+			},
+			{
+				binding: 2,
+				texture: {
+					sampleType: "float",
+				},
+				visibility: GPUShaderStage.FRAGMENT,
+			},
+			{
+				binding: 3,
+				sampler: {},
 				visibility: GPUShaderStage.FRAGMENT,
 			},
 		];

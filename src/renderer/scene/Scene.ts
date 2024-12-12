@@ -2,6 +2,7 @@ import Camera from "../camera/Camera";
 import RenderingContext from "../core/RenderingContext";
 import DirectionalLight from "../lighting/DirectionalLight";
 import Light from "../lighting/Light";
+import LightingManager from "../lighting/LightingManager";
 import PointLight from "../lighting/PointLight";
 import Drawable from "./Drawable";
 import Transform from "./Transform";
@@ -11,15 +12,10 @@ export default class Scene extends Transform {
 
 	public opaqueMeshes: Drawable[] = [];
 	public transparentMeshes: Drawable[] = [];
+	public lightingManager: LightingManager;
 
 	private culledOpaqueMeshes: Drawable[] = [];
 	private culledTransparentMeshes: Drawable[] = [];
-
-	public lightsBuffer?: GPUBuffer;
-
-	private _pointLights: PointLight[] = [];
-	private _directionalLights: DirectionalLight[] = [];
-	private _lights: Light[] = [];
 
 	private nonCulledTransparentCount = 0;
 	private nonCulledOpaqueCount = 0;
@@ -36,36 +32,6 @@ export default class Scene extends Transform {
 
 	public addOnGraphChangedCallback(v: () => void) {
 		this.onGraphChangedCallbacks.push(v);
-	}
-
-	public getLights(): Light[] {
-		return this._lights;
-	}
-
-	public addPointLight(v: PointLight) {
-		this._pointLights.push(v);
-		this._lights.push(v);
-	}
-
-	public getPointLights(): PointLight[] {
-		return this._pointLights;
-	}
-
-	public getPointLightAt(idx: number): PointLight {
-		return this._pointLights[idx];
-	}
-
-	public addDirectionalLight(v: DirectionalLight) {
-		this._directionalLights.push(v);
-		this._lights.push(v);
-	}
-
-	public getDiretionalLights(): DirectionalLight[] {
-		return this._directionalLights;
-	}
-
-	public getDirectionalLightAt(idx: number): DirectionalLight {
-		return this._directionalLights[idx];
 	}
 
 	public renderOpaqueNodes(
@@ -144,37 +110,6 @@ export default class Scene extends Transform {
 			const out = d1 - d0;
 			return out;
 		});
-	}
-
-	public updateLightsBuffer() {
-		if (this.lightsBuffer) {
-			this.lightsBuffer.destroy();
-		}
-		this.lightsBuffer = RenderingContext.device.createBuffer({
-			label: "Scene Lights GPUBuffer",
-			size: Light.STRUCT_BYTE_SIZE * this.getLights().length,
-			usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-		});
-
-		let lightIdx = 0;
-		for (let i = 0; i < this._directionalLights.length; i++) {
-			RenderingContext.device.queue.writeBuffer(
-				this.lightsBuffer,
-				lightIdx * Light.STRUCT_BYTE_SIZE,
-				this._directionalLights[i].lightsStorageView.arrayBuffer,
-			);
-			lightIdx++;
-		}
-		for (let i = 0; i < this._pointLights.length; i++) {
-			RenderingContext.device.queue.writeBuffer(
-				this.lightsBuffer,
-				lightIdx * Light.STRUCT_BYTE_SIZE,
-				this._pointLights[i].lightsStorageView.arrayBuffer,
-			);
-			lightIdx++;
-		}
-
-		this.lightsBuffer.unmap();
 	}
 
 	protected override onChildAdd(child: Transform): void {

@@ -14,6 +14,8 @@ const SkyboxShader = /* wgsl */ `
   @group(${BIND_GROUP_LOCATIONS.CameraPlusOptionalLights}) @binding(0) var<uniform> camera: CameraUniform;
   @group(1) @binding(0) var inTexture: texture_cube<f32>;
   @group(1) @binding(1) var inSampler: sampler;
+  @group(1) @binding(2) var bayerDitherTexture: texture_2d<f32>;
+  @group(1) @binding(3) var bayerDitherSampler: sampler;
 
   @vertex
   fn ${SkyboxShaderVertexEntryFn}(in: VertexInput) -> VertexOutput {
@@ -24,7 +26,7 @@ const SkyboxShader = /* wgsl */ `
     let projViewMatrix = camera.projectionMatrix * viewMatrix;
     let position = in.position;
     out.position = (projViewMatrix * position).xyww;
-    // ugly - hijack to compute uvs for frag shader
+    // hijack to compute uvs for frag shader
     out.viewNormal = 0.5 * (in.position.xyz + vec3(1.0, 1.0, 1.0));
     out.uv = in.uv;
     return out;
@@ -33,9 +35,12 @@ const SkyboxShader = /* wgsl */ `
   @fragment
   fn ${SkyboxShaderFragmentEntryFn}(in: VertexOutput) -> @location(0) vec4f {
     var cubemapVec = in.viewNormal - vec3(0.5);
-    let color = textureSampleLevel(inTexture, inSampler, cubemapVec, 4); //7.8);
+    var color = textureSampleLevel(inTexture, inSampler, cubemapVec, 4); //7.8);
+    let o = textureSample(bayerDitherTexture, bayerDitherSampler, in.position.xy / 8.0).r / 32.0 - (1.0 / 128.0);
+    color.r += o;
+    color.g += o;
+    color.b += o;
     return vec4f(color.rgb, 1.0);
-    // return vec4f(cubemapVec, 1);
   }
 `;
 

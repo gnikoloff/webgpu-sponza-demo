@@ -34,7 +34,7 @@ export const RenderPassNames: Map<RenderPassType, string> = new Map([
 		"Directional + Ambient Render Pass",
 	],
 	[RenderPassType.PointLightsStencilMask, "Point Lights Stencil Mask Pass"],
-	[RenderPassType.PointLightsLighting, "Point Lights Lighting"],
+	[RenderPassType.PointLightsLighting, "Point Lights LightingSystem"],
 	[RenderPassType.SSAO, "SSAO Render Pass"],
 	[RenderPassType.SSAOBlur, "SSAO Blur Render Pass"],
 	[RenderPassType.Skybox, "Skybox Render Pass"],

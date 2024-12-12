@@ -17,14 +17,11 @@ import {
 import Drawable from "../renderer/scene/Drawable";
 
 import GBufferRenderPass from "./render-passes/GBufferRenderPass";
-import GroundContainer from "./meshes/ground/GroundContainer";
 import CubeGeometry from "../renderer/geometry/CubeGeometry";
 import MaterialCache from "./utils/MaterialCache";
 import ReflectionComputePass from "./render-passes/ReflectionComputePass";
 import SphereGeometry from "../renderer/geometry/SphereGeometry";
 import TAAResolveRenderPass from "./render-passes/TAAResolveRenderPass";
-import PointLight from "../renderer/lighting/PointLight";
-import DirectionalLight from "../renderer/lighting/DirectionalLight";
 import DirectionalShadowRenderPass from "./render-passes/DirectionalShadowRenderPass";
 import GLTFModel from "../renderer/scene/GLTFModel";
 import TextureLoader from "../renderer/texture/TextureLoader";
@@ -33,9 +30,7 @@ import DiffuseIBLGenerator from "../renderer/texture/DiffuseIBLGenerator";
 import TextureController from "../renderer/texture/TextureController";
 import SpecularIBLGenerator from "../renderer/texture/SpecularIBLGenerator";
 import BDRFLutGenerator from "../renderer/texture/BDRFLutGenerator";
-import PBRSpheres from "./meshes/PBRSpheres";
 import TexturesDebugContainer from "./debug/textures-debug/TexturesDebugContainer";
-import { TextureDebugMeshType } from "./debug/textures-debug/DebugTextureCanvas";
 import Scene from "../renderer/scene/Scene";
 import TransparentRenderPass from "./render-passes/TransparentRenderPass";
 import CameraFlyController from "../renderer/camera/CameraFlyController";
@@ -55,6 +50,8 @@ import SSAOBlurRenderPass from "./render-passes/SSAOBlurRenderPass";
 import HiZDepthComputePass from "./render-passes/HiZDepthComputePass";
 import HiZCopyDepthComputePass from "./render-passes/HiZCopyDepthComputePass";
 import DebugBoundsPass from "./render-passes/DebugBoundsPass";
+import LightingSystem from "./lighting/LightingSystem";
+import { TextureDebugMeshType } from "../types";
 // import EnvironmentProbePass from "./render-passes/EnvironmentProbePass";
 
 export default class Renderer extends RenderingContext {
@@ -116,12 +113,11 @@ export default class Renderer extends RenderingContext {
 		).enabled = v;
 	}
 
+	private lightingManager = new LightingSystem();
 	private scene = new Scene();
 	private cube: Drawable;
 	private cube1: Drawable;
 	private sphere: Drawable;
-
-	private sceneDirectionalLight = new DirectionalLight();
 
 	private renderPassComposer: RenderPassComposer;
 
@@ -229,36 +225,13 @@ export default class Renderer extends RenderingContext {
 		this.debugCamera.setLookAt(0, 7, 0);
 		this.debugCamera.updateViewMatrix();
 
-		const pointLightsCount = 20;
-		const pointLightsCircleStep = (Math.PI * 2) / pointLightsCount;
-		const radiusStep = pointLightsCount / 4;
-		for (let i = 0; i < pointLightsCount; i++) {
-			const p = new PointLight();
-			const r = i * radiusStep;
-			p.setPosition(
-				Math.cos(i * pointLightsCircleStep) * 2,
-				3,
-				Math.sin(i * pointLightsCircleStep) * 2,
-			);
-			p.intensity = 20;
-			p.radius = 1;
-			p.setColor(1, 1, 0);
-			this.scene.addPointLight(p);
-		}
-
-		this.sceneDirectionalLight.setPosition(0, 100, 1);
-		this.sceneDirectionalLight.setColor(0.2156, 0.2627, 0.3333);
-		// this.sceneDirectionalLight.setColor(1, 1, 1);
-		this.sceneDirectionalLight.intensity = 2;
-		this.scene.addDirectionalLight(this.sceneDirectionalLight);
-
-		this.scene.updateLightsBuffer();
+		this.scene.lightingManager = this.lightingManager;
 
 		this.renderPassComposer = new RenderPassComposer();
 		this.renderPassComposer.setScene(this.scene);
 
 		const shadowRenderPass = new DirectionalShadowRenderPass(
-			this.sceneDirectionalLight,
+			this.lightingManager.mainDirLight,
 		)
 			.addOutputTexture(RENDER_PASS_DIRECTIONAL_LIGHT_DEPTH_TEXTURE)
 			.setCamera(this.mainCamera);
@@ -302,7 +275,7 @@ export default class Renderer extends RenderingContext {
 			.setCamera(this.mainCamera)
 			.addInputTextures([RENDER_PASS_DEPTH_STENCIL_TEXTURE])
 			.addOutputTexture(RENDER_PASS_DEPTH_STENCIL_TEXTURE)
-			.setLightsBuffer(this.scene.lightsBuffer)
+			.setLightsBuffer(this.lightingManager.gpuBuffer)
 			.updateLightsMaskBindGroup();
 
 		const pointLightsRenderPass = new PointLightsRenderPass()
@@ -555,6 +528,7 @@ export default class Renderer extends RenderingContext {
 		const deltaDiff = now - RenderingContext.prevTimeMs;
 		RenderingContext.prevTimeMs = now;
 		RenderingContext.elapsedTimeMs += this.enableAnimation ? deltaDiff : 0;
+		RenderingContext.deltaTimeMs = deltaDiff;
 
 		const jsPerfStartTime = performance.now();
 
@@ -594,6 +568,7 @@ export default class Renderer extends RenderingContext {
 			label: "Render Pass Composer Command Encoder",
 		});
 
+		this.lightingManager.update(commandEncoder);
 		this.renderPassComposer.render(commandEncoder);
 
 		this.texturesDebugContainer.gbufferDebugSection.setTextureFor(
@@ -672,7 +647,7 @@ export default class Renderer extends RenderingContext {
 		const [
 			gbufferRenderPassTimingResult,
 			directionalAmbientLightRenderPassTimingResult,
-			pointLightsStencilMaskPassTimingResult,
+			// pointLightsStencilMaskPassTimingResult,
 			pointLightsLightingTimingResult,
 			ssaoRenderPassTimingResult,
 			transparentRenderPassTimingResult,
@@ -685,9 +660,9 @@ export default class Renderer extends RenderingContext {
 			this.renderPassComposer
 				.getPass(RenderPassType.DirectionalAmbientLighting)
 				.getTimingResult(),
-			this.renderPassComposer
-				.getPass(RenderPassType.PointLightsStencilMask)
-				.getTimingResult(),
+			// this.renderPassComposer
+			// 	.getPass(RenderPassType.PointLightsStencilMask)
+			// 	.getTimingResult(),
 			this.renderPassComposer
 				.getPass(RenderPassType.PointLightsLighting)
 				.getTimingResult(),
@@ -723,10 +698,10 @@ export default class Renderer extends RenderingContext {
 				DebugTimingType.DirectionalAmbientLightingRenderPass,
 				directionalAmbientLightRenderPassTimingResult.avgValue,
 			)
-			.setDisplayValue(
-				DebugTimingType.PointLightsStencilMask,
-				pointLightsStencilMaskPassTimingResult.avgValue,
-			)
+			// .setDisplayValue(
+			// 	DebugTimingType.PointLightsStencilMask,
+			// 	pointLightsStencilMaskPassTimingResult.avgValue,
+			// )
 			.setDisplayValue(
 				DebugTimingType.PointLightsLighting,
 				pointLightsLightingTimingResult.avgValue,

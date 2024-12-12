@@ -248,7 +248,7 @@ export default class DirectionalAmbientLightRenderPass extends LightRenderPass {
 	private recreateDirLightShadowBindGroup() {
 		this.dirLightShadowBindGroup = RenderingContext.device.createBindGroup({
 			label:
-				"Directional Ambient Lighting G-Buffer Directional Shadow Input Bind Group",
+				"Directional Ambient LightingSystem G-Buffer Directional Shadow Input Bind Group",
 			layout: this.dirLightShadowBindGroupLayout,
 			entries: this.dirLightShadowBindGroupEntries,
 		});
@@ -282,11 +282,11 @@ export default class DirectionalAmbientLightRenderPass extends LightRenderPass {
 				.updateGbufferBindGroupEntryAt(1, this.inputTextureViews[1])
 				.updateGbufferBindGroupEntryAt(2, this.inputTextureViews[2])
 				.updateGbufferBindGroupEntryAt(3, this.inputTextureViews[4])
-				.updateGbufferBindGroupEntryAt(6, {
+				.updateGbufferBindGroupEntryAt(4, {
 					buffer: this.camera.gpuBuffer,
 				})
-				.updateGbufferBindGroupEntryAt(7, {
-					buffer: scene.lightsBuffer,
+				.updateGbufferBindGroupEntryAt(5, {
+					buffer: scene.lightingManager.gpuBuffer,
 				})
 				.recreateGBufferTexturesBindGroup();
 
@@ -301,7 +301,7 @@ export default class DirectionalAmbientLightRenderPass extends LightRenderPass {
 
 		RenderingContext.setActiveRenderPass(this.type, renderPass);
 
-		renderPass.pushDebugGroup("Begin Directional + Ambient Lighting");
+		renderPass.pushDebugGroup("Begin Directional + Ambient LightingSystem");
 		RenderingContext.bindRenderPSO(this.renderPSO);
 		renderPass.setBindGroup(0, this.gbufferTexturesBindGroup);
 		renderPass.setBindGroup(1, this.dirLightShadowBindGroup);

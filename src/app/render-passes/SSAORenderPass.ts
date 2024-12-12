@@ -27,38 +27,6 @@ export default class SSAORenderPass extends RenderPass {
 
 	constructor() {
 		super(RenderPassType.SSAO);
-
-		// const kernelSize = 32 * 32;
-		// const noiseTextureFloats = new Float32Array(kernelSize * 4).fill(0);
-
-		// for (let i = 0; i < kernelSize; i++) {
-		// 	noiseTextureFloats[i * 4 + 0] = Math.random() * 2 - 1;
-		// 	noiseTextureFloats[i * 4 + 1] = Math.random() * 2 - 1;
-		// }
-
-		// this.noiseTexture = RenderingContext.device.createTexture({
-		// 	label: "SSAO Noise Texture",
-		// 	size: { width: 8, height: 8, depthOrArrayLayers: 1 },
-		// 	format: "rgba32float",
-		// 	usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
-		// });
-
-		// RenderingContext.device.queue.writeTexture(
-		// 	{
-		// 		texture: this.noiseTexture,
-		// 		mipLevel: 0,
-		// 	},
-		// 	noiseTextureFloats,
-		// 	{
-		// 		bytesPerRow: 8 * 4 * Float32Array.BYTES_PER_ELEMENT,
-		// 	},
-		// 	{
-		// 		width: 8,
-		// 		height: 8,
-		// 		depthOrArrayLayers: 1,
-		// 	},
-		// );
-
 		const kernel = new Float32Array(16 * 4);
 
 		for (let i = 0; i < 16; i++) {

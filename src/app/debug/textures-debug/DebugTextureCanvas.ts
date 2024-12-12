@@ -4,24 +4,11 @@ import FullScreenVertexShaderUtils, {
 	FullScreenVertexShaderEntryFn,
 } from "../../../renderer/shader/FullScreenVertexShaderUtils";
 import SamplerController from "../../../renderer/texture/SamplerController";
+import { TextureDebugMeshType } from "../../../types";
 import {
 	DebugFragmentShaderEntryFn,
 	getDebugFragmentShader,
 } from "./shaders/DebugFragmentShader";
-
-export enum TextureDebugMeshType {
-	Normal,
-	AO,
-	Metallic,
-	Roughness,
-	Reflectance,
-	Albedo,
-	Depth,
-	Velocity,
-	ShadowDepthCascade0,
-	ShadowDepthCascade1,
-	BDRF,
-}
 
 const TextureTypesToDisplayNames: Map<TextureDebugMeshType, string> = new Map([
 	[TextureDebugMeshType.Albedo, "Albedo"],

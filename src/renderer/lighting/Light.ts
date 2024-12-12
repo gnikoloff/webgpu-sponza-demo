@@ -6,7 +6,7 @@ import {
 import Transform from "../scene/Transform";
 import { SHADER_CHUNKS } from "../shader/chunks";
 import { Vec3, vec3 } from "wgpu-matrix";
-import { LightType } from "../types";
+import { LightType, UUIDString } from "../types";
 
 export const LightTypeToShaderType: Map<LightType, number> = new Map([
 	[LightType.Directional, 0],
@@ -22,6 +22,7 @@ export default class Light extends Transform {
 		return _lightsStorageView.arrayBuffer.byteLength;
 	}
 
+	public id: UUIDString = crypto.randomUUID();
 	public lightsStorageView: StructuredView;
 
 	private _color = vec3.create(1, 1, 0);
@@ -61,6 +62,14 @@ export default class Light extends Transform {
 
 	public override setPosition(x: number, y: number, z: number): this {
 		super.setPosition(x, y, z);
+		this.lightsStorageView.set({
+			position: this.position,
+		});
+		return this;
+	}
+
+	public override setPositionAsVec3(xyz: Float32Array): this {
+		super.setPositionAsVec3(xyz);
 		this.lightsStorageView.set({
 			position: this.position,
 		});

@@ -44,6 +44,9 @@ export default class PointLightsRenderPass extends LightRenderPass {
 				),
 				entryPoint: GBufferVertexEntryFn,
 				buffers: VertexDescriptor.defaultLayout,
+				constants: {
+					ANIMATED_PARTICLES_OFFSET_START: 5,
+				},
 			},
 			fragment: {
 				module: PipelineStates.createShaderModule(
@@ -122,11 +125,11 @@ export default class PointLightsRenderPass extends LightRenderPass {
 				.updateGbufferBindGroupEntryAt(1, this.inputTextureViews[1])
 				.updateGbufferBindGroupEntryAt(2, this.inputTextureViews[3])
 				.updateGbufferBindGroupEntryAt(3, this.inputTextureViews[4])
-				.updateGbufferBindGroupEntryAt(6, {
+				.updateGbufferBindGroupEntryAt(4, {
 					buffer: this.camera.gpuBuffer,
 				})
-				.updateGbufferBindGroupEntryAt(7, {
-					buffer: scene.lightsBuffer,
+				.updateGbufferBindGroupEntryAt(5, {
+					buffer: scene.lightingManager.gpuBuffer,
 				})
 				.recreateGBufferTexturesBindGroup();
 		}
@@ -137,7 +140,7 @@ export default class PointLightsRenderPass extends LightRenderPass {
 
 		RenderingContext.setActiveRenderPass(this.type, renderPass);
 
-		renderPass.pushDebugGroup("Begin Point Lighting");
+		renderPass.pushDebugGroup("Begin Point LightingSystem");
 
 		RenderingContext.bindRenderPSO(this.renderPSO);
 		renderPass.setBindGroup(0, this.gbufferTexturesBindGroup);
@@ -151,9 +154,7 @@ export default class PointLightsRenderPass extends LightRenderPass {
 		);
 		renderPass.drawIndexed(
 			GeometryCache.pointLightSphereGeometry.indexCount,
-			///////
-			20,
-			///////
+			scene.lightingManager.pointLightsCount,
 		);
 
 		renderPass.popDebugGroup();

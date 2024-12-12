@@ -1,3 +1,5 @@
+export type UUIDString = `${string}-${string}-${string}-${string}-${string}`;
+
 export enum RenderPassType {
 	Deferred,
 	DirectionalAmbientLighting,

@@ -3,13 +3,13 @@ import PipelineStates from "../../renderer/core/PipelineStates";
 import RenderingContext from "../../renderer/core/RenderingContext";
 import VertexDescriptor from "../../renderer/core/VertexDescriptor";
 import Drawable from "../../renderer/scene/Drawable";
-import Transform from "../../renderer/scene/Transform";
 import { RenderPassType } from "../../renderer/types";
 import GeometryCache from "../utils/GeometryCache";
 import LightRenderPass from "./LightRenderPass";
 import GetGBufferVertexShader, {
 	GBufferVertexEntryFn,
 } from "../shaders/GBufferVertexShader";
+import Scene from "../../renderer/scene/Scene";
 
 export default class PointLightsMaskPass extends LightRenderPass {
 	private renderPSO: GPURenderPipeline;
@@ -93,6 +93,9 @@ export default class PointLightsMaskPass extends LightRenderPass {
 				),
 				entryPoint: GBufferVertexEntryFn,
 				buffers: VertexDescriptor.defaultLayout,
+				constants: {
+					ANIMATED_PARTICLES_OFFSET_START: 5,
+				},
 			},
 			depthStencil: {
 				format: RenderingContext.depthStencilFormat,
@@ -138,7 +141,7 @@ export default class PointLightsMaskPass extends LightRenderPass {
 
 	public override render(
 		commandEncoder: GPUCommandEncoder,
-		scene: Transform,
+		scene: Scene,
 		inputs: GPUTexture[],
 	): GPUTexture[] {
 		if (!this.inputTextureViews.length) {
@@ -165,9 +168,7 @@ export default class PointLightsMaskPass extends LightRenderPass {
 		);
 		renderPass.drawIndexed(
 			GeometryCache.pointLightSphereGeometry.indexCount,
-			///////////
-			20,
-			///////////
+			scene.lightingManager.pointLightsCount,
 		);
 
 		renderPass.popDebugGroup();

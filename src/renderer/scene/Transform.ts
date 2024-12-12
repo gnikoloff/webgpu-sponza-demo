@@ -1,6 +1,6 @@
 import { Mat4, Quat, Vec3, mat3, mat4, quat, vec3 } from "wgpu-matrix";
 import { MAT4x4_IDENTITY_MATRIX, QUATERNION_COMP_ORDER } from "../math/math";
-type UUIDString = `${string}-${string}-${string}-${string}-${string}`;
+import { UUIDString } from "../types";
 
 export default class Transform {
 	private _position = vec3.fromValues(0, 0, 0);
@@ -19,7 +19,7 @@ export default class Transform {
 
 	protected matrixNeedsUpdate = true;
 
-	public id: UUIDString = self.crypto.randomUUID();
+	public id: UUIDString = crypto.randomUUID();
 	public label = "Object";
 
 	public parent?: Transform;
@@ -186,6 +186,12 @@ export default class Transform {
 		this._worldPosition[1] = this.worldMatrix[13];
 		this._worldPosition[2] = this.worldMatrix[14];
 		return this._worldPosition;
+	}
+
+	public setPositionAsVec3(xyz: Vec3): this {
+		vec3.clone(xyz, this._position);
+		this.matrixNeedsUpdate = true;
+		return this;
 	}
 
 	public setPosition(x: number, y: number, z: number): this {

@@ -130,6 +130,19 @@ export const SHADER_CHUNKS = Object.freeze({
     `;
 	},
 
+	get Particle(): string {
+		return /* wgsl */ `
+      struct Particle {
+        radius: f32,
+        position: vec3f,
+        origPosition: vec3f,
+        velocity: vec3f,
+        lifeSpeed: f32,
+        life: f32
+      };
+    `;
+	},
+
 	get Light(): string {
 		return /* wgsl */ `
 

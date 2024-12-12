@@ -1,5 +1,6 @@
 import TexturesDebugSection, { DebugSectionType } from "./TexturesDebugSection";
-import DebugTextureCanvas, { TextureDebugMeshType } from "./DebugTextureCanvas";
+import DebugTextureCanvas from "./DebugTextureCanvas";
+import { TextureDebugMeshType } from "../../../types";
 
 export default class GBufferDebugSection extends TexturesDebugSection {
 	constructor() {
