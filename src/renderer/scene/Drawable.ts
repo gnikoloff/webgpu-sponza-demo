@@ -46,8 +46,6 @@ export default class Drawable extends Transform {
 	private materials: Map<RenderPassType, Material> = new Map();
 	private textures: Map<TextureLocation, GPUTexture> = new Map();
 
-	private prevFrameModelMatrix = mat4.create();
-
 	protected bufferUniformValues: StructuredView;
 
 	private _worldBoundingBox = new BoundingBox();
@@ -197,7 +195,9 @@ export default class Drawable extends Transform {
 	}
 
 	override preRender(renderEncoder: GPURenderPassEncoder): void {
-		renderEncoder.pushDebugGroup(`Render ${this.label}`);
+		if (RenderingContext.ENABLE_DEBUG_GROUPS) {
+			renderEncoder.pushDebugGroup(`Render ${this.label}`);
+		}
 
 		if (this.uploadModelBufferToGPU) {
 			this.bufferUniformValues.set({
@@ -209,12 +209,12 @@ export default class Drawable extends Transform {
 				metallic: this.materialProps.metallic,
 				roughness: this.materialProps.roughness,
 			});
+			this.uploadModelBufferToGPU = false;
 			RenderingContext.device.queue.writeBuffer(
 				this.modelBuffer,
 				0,
 				this.bufferUniformValues.arrayBuffer,
 			);
-			this.uploadModelBufferToGPU = false;
 		}
 
 		renderEncoder.setIndexBuffer(
@@ -256,10 +256,9 @@ export default class Drawable extends Transform {
 	}
 
 	override postRender(renderEncoder: GPURenderPassEncoder): void {
-		renderEncoder.popDebugGroup();
-
-		mat4.copy(this.modelMatrix, this.prevFrameModelMatrix);
-		this.uploadModelBufferToGPU = true;
+		if (RenderingContext.ENABLE_DEBUG_GROUPS) {
+			renderEncoder.popDebugGroup();
+		}
 	}
 
 	override render(renderEncoder: GPURenderPassEncoder): void {

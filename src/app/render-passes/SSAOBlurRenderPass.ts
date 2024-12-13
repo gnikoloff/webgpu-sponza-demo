@@ -77,6 +77,9 @@ export default class SSAOBlurRenderPass extends RenderPass {
 	}
 
 	protected override createRenderPassDescriptor(): GPURenderPassDescriptor {
+		if (this.renderPassDescriptor) {
+			return this.renderPassDescriptor;
+		}
 		const colorAttachments: GPURenderPassColorAttachment[] = [
 			{
 				loadOp: "load",
@@ -84,10 +87,12 @@ export default class SSAOBlurRenderPass extends RenderPass {
 				view: this.outTextureView,
 			},
 		];
-		return this.augmentRenderPassDescriptorWithTimestampQuery({
-			label: "SSAO Blur Render Pass Descriptor",
-			colorAttachments,
-		});
+		this.renderPassDescriptor =
+			this.augmentRenderPassDescriptorWithTimestampQuery({
+				label: "SSAO Blur Render Pass Descriptor",
+				colorAttachments,
+			});
+		return this.renderPassDescriptor;
 	}
 
 	public render(
@@ -114,13 +119,17 @@ export default class SSAOBlurRenderPass extends RenderPass {
 		const renderPass = commandEncoder.beginRenderPass(
 			this.createRenderPassDescriptor(),
 		);
-		renderPass.pushDebugGroup("Begin SSAO Blur");
+		if (RenderingContext.ENABLE_DEBUG_GROUPS) {
+			renderPass.pushDebugGroup("Begin SSAO Blur");
+		}
 
 		renderPass.setBindGroup(0, this.bindGroup);
 		renderPass.setPipeline(this.renderPSO);
 		renderPass.draw(3);
 
-		renderPass.popDebugGroup();
+		if (RenderingContext.ENABLE_DEBUG_GROUPS) {
+			renderPass.popDebugGroup();
+		}
 		renderPass.end();
 
 		return [this.outTexture];

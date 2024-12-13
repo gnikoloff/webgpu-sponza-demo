@@ -77,6 +77,10 @@ export default class GBufferRenderPass extends RenderPass {
 	}
 
 	protected override createRenderPassDescriptor(): GPURenderPassDescriptor {
+		if (this.renderPassDescriptor) {
+			return this.renderPassDescriptor;
+		}
+
 		const mainRenderPassColorAttachments: GPURenderPassColorAttachment[] = [
 			{
 				view: this.normalMetallicRoughnessTexture.createView(),
@@ -98,19 +102,21 @@ export default class GBufferRenderPass extends RenderPass {
 			},
 		];
 
-		return this.augmentRenderPassDescriptorWithTimestampQuery({
-			colorAttachments: mainRenderPassColorAttachments,
-			depthStencilAttachment: {
-				view: this.depthStencilTexture.createView(),
-				depthLoadOp: "clear",
-				depthStoreOp: "store",
-				depthClearValue: 1,
-				stencilLoadOp: "clear",
-				stencilStoreOp: "store",
-				stencilClearValue: 0,
-			},
-			label: "GBuffer Render Pass",
-		});
+		this.renderPassDescriptor =
+			this.augmentRenderPassDescriptorWithTimestampQuery({
+				colorAttachments: mainRenderPassColorAttachments,
+				depthStencilAttachment: {
+					view: this.depthStencilTexture.createView(),
+					depthLoadOp: "clear",
+					depthStoreOp: "store",
+					depthClearValue: 1,
+					stencilLoadOp: "clear",
+					stencilStoreOp: "store",
+					stencilClearValue: 0,
+				},
+				label: "GBuffer Render Pass",
+			});
+		return this.renderPassDescriptor;
 	}
 
 	public override render(
@@ -124,7 +130,9 @@ export default class GBufferRenderPass extends RenderPass {
 
 		RenderingContext.setActiveRenderPass(this.type, renderPassEncoder);
 
-		renderPassEncoder.pushDebugGroup("Render G-Buffer");
+		if (RenderingContext.ENABLE_DEBUG_GROUPS) {
+			renderPassEncoder.pushDebugGroup("Render G-Buffer");
+		}
 
 		renderPassEncoder.setBindGroup(
 			BIND_GROUP_LOCATIONS.CameraPlusOptionalLights,
@@ -135,7 +143,9 @@ export default class GBufferRenderPass extends RenderPass {
 
 		scene.renderOpaqueNodes(renderPassEncoder, this.camera);
 
-		renderPassEncoder.popDebugGroup();
+		if (RenderingContext.ENABLE_DEBUG_GROUPS) {
+			renderPassEncoder.popDebugGroup();
+		}
 		renderPassEncoder.end();
 
 		this.resolveTiming(commandEncoder);

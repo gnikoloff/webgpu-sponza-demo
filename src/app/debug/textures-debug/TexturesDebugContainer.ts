@@ -1,3 +1,4 @@
+import { TextureDebugMeshType } from "../../../types";
 import GBufferDebugSection from "./GBufferDebugSection";
 import ShadowDebugSection from "./ShadowDebugSection";
 
@@ -30,6 +31,18 @@ export default class TexturesDebugContainer {
 	public hide() {
 		this.open = false;
 		this.$root.classList.remove("open");
+	}
+
+	public setTextureGBufferSection(
+		type: TextureDebugMeshType,
+		texture: GPUTexture,
+		w = texture.width * 0.2,
+		h = texture.height * 0.2,
+	) {
+		if (!this.open) {
+			return;
+		}
+		this.gbufferDebugSection.setTextureFor(type, texture, w, h);
 	}
 
 	public render(commandEncoder: GPUCommandEncoder) {

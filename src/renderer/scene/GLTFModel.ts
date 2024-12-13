@@ -29,7 +29,6 @@ const GL_ARRAY_BUFFER = 34962;
 const SPONZA_FLOOR_TEX_ID = "5823059166183034438";
 
 export default class GLTFModel extends Transform {
-	private gltfDefinition: GLTFPostprocessed;
 	private nodeMaterialIds: Map<string, Drawable[]> = new Map([]);
 	private gpuSamplers: Map<string, GPUSampler> = new Map();
 	private gpuTextures: Map<string, Promise<GPUTexture>> = new Map();
@@ -99,13 +98,13 @@ export default class GLTFModel extends Transform {
 
 	public async load() {
 		const gltfWithBuffers = await load(this.url, GLTFLoader);
-		this.gltfDefinition = postProcessGLTF(gltfWithBuffers);
+		const gltfDefinition = postProcessGLTF(gltfWithBuffers);
 
-		this.initGPUTexturesFrom(this.gltfDefinition.textures);
-		this.initGPUSamplersFrom(this.gltfDefinition.samplers);
-		this.initGPUBuffersFrom(this.gltfDefinition.bufferViews);
-		this.initMaterialsFrom(this.gltfDefinition.materials);
-		this.initNodesFrom(this.gltfDefinition);
+		this.initGPUTexturesFrom(gltfDefinition.textures);
+		this.initGPUSamplersFrom(gltfDefinition.samplers);
+		this.initGPUBuffersFrom(gltfDefinition.bufferViews);
+		this.initMaterialsFrom(gltfDefinition.materials);
+		this.initNodesFrom(gltfDefinition);
 	}
 
 	private async initMaterialsFrom(materials: GLTFMaterialPostprocessed[]) {

@@ -1,6 +1,9 @@
+import Drawable from "../scene/Drawable";
 import { RenderPassType } from "../types";
 
 export default class RenderingContext {
+	public static readonly ENABLE_DEBUG_GROUPS = false;
+
 	public static $canvas: HTMLCanvasElement;
 	public static canvasContext: GPUCanvasContext;
 	public static device: GPUDevice;
@@ -9,7 +12,7 @@ export default class RenderingContext {
 	public static deltaTimeMs = 0;
 	public static pixelFormat: GPUTextureFormat;
 	public static readonly depthStencilFormat: GPUTextureFormat =
-		"depth32float-stencil8";
+		"depth24plus-stencil8";
 
 	protected static prevTimeMs = 0;
 

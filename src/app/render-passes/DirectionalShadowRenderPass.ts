@@ -6,7 +6,6 @@ import {
 import { Mat4, mat4, vec3, vec4 } from "wgpu-matrix";
 import Camera from "../../renderer/camera/Camera";
 import RenderPass from "../../renderer/core/RenderPass";
-import Transform from "../../renderer/scene/Transform";
 import { SHADER_CHUNKS } from "../../renderer/shader/chunks";
 import PipelineStates from "../../renderer/core/PipelineStates";
 
@@ -22,6 +21,8 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 	public static readonly TEXTURE_CASCADE_FAR_DISTANCES: number[] = [6, 22, 200];
 
 	private shadowTexture: GPUTexture;
+	private shadowTextureCascade0: GPUTextureView;
+	private shadowTextureCascade1: GPUTextureView;
 
 	public shadowCascadesBuffer: GPUBuffer;
 	private shadowCascadeView: StructuredView;
@@ -39,6 +40,18 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 		super(RenderPassType.Shadow);
 		this.type = RenderPassType.Shadow;
 
+		this.renderPassDescriptor =
+			this.augmentRenderPassDescriptorWithTimestampQuery({
+				colorAttachments: [],
+				depthStencilAttachment: {
+					view: null,
+					depthClearValue: 1,
+					depthLoadOp: "clear",
+					depthStoreOp: "store",
+				},
+				label: "Shadow Render Pass Cascade #0",
+			});
+
 		this.shadowTexture = RenderingContext.device.createTexture({
 			dimension: "2d",
 			format: "depth32float",
@@ -53,6 +66,18 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 
 			sampleCount: 1,
 			label: "Shadow Map Texture",
+		});
+
+		this.shadowTextureCascade0 = this.shadowTexture.createView({
+			baseArrayLayer: 0,
+			arrayLayerCount: 1,
+			dimension: "2d",
+		});
+
+		this.shadowTextureCascade1 = this.shadowTexture.createView({
+			baseArrayLayer: 1,
+			arrayLayerCount: 1,
+			dimension: "2d",
 		});
 
 		const cameraShaderDefs = makeShaderDataDefinitions(
@@ -224,22 +249,12 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 			this.shadowCameraCascade0BufferUniformValues.arrayBuffer,
 		);
 
-		const renderPassDescriptorCascade0: GPURenderPassDescriptor = {
-			colorAttachments: [],
-			depthStencilAttachment: {
-				view: this.shadowTexture.createView({
-					baseArrayLayer: 0,
-					arrayLayerCount: 1,
-					dimension: "2d",
-				}),
-				depthClearValue: 1,
-				depthLoadOp: "clear",
-				depthStoreOp: "store",
-			},
-			label: "Shadow Render Pass Cascade #0",
-		};
+		this.renderPassDescriptor.depthStencilAttachment.view =
+			this.shadowTextureCascade0;
+		this.renderPassDescriptor.label = "Shadow Render Pass Cascade #0";
+
 		const renderPassEncoderCascade0 = commandEncoder.beginRenderPass(
-			renderPassDescriptorCascade0,
+			this.renderPassDescriptor,
 		);
 
 		RenderingContext.setActiveRenderPass(this.type, renderPassEncoderCascade0);
@@ -248,12 +263,16 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 			BIND_GROUP_LOCATIONS.CameraPlusOptionalLights,
 			this.shadowCameraCascade0BindGroup,
 		);
-		renderPassEncoderCascade0.pushDebugGroup("Render Shadow Cascade #0");
+		if (RenderingContext.ENABLE_DEBUG_GROUPS) {
+			renderPassEncoderCascade0.pushDebugGroup("Render Shadow Cascade #0");
+		}
 
 		scene.renderOpaqueNodes(renderPassEncoderCascade0);
 		scene.renderTransparentNodes(renderPassEncoderCascade0);
 
-		renderPassEncoderCascade0.popDebugGroup();
+		if (RenderingContext.ENABLE_DEBUG_GROUPS) {
+			renderPassEncoderCascade0.popDebugGroup();
+		}
 		renderPassEncoderCascade0.end();
 
 		// Render Cascade #1
@@ -284,27 +303,19 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 			this.shadowCameraCascade1BufferUniformValues.arrayBuffer,
 		);
 
-		const renderPassDescriptorCascade1: GPURenderPassDescriptor = {
-			colorAttachments: [],
-			depthStencilAttachment: {
-				view: this.shadowTexture.createView({
-					baseArrayLayer: 1,
-					arrayLayerCount: 1,
-					dimension: "2d",
-				}),
-				depthClearValue: 1,
-				depthLoadOp: "clear",
-				depthStoreOp: "store",
-			},
-			label: "Shadow Render Pass Cascade #1",
-		};
+		this.renderPassDescriptor.depthStencilAttachment.view =
+			this.shadowTextureCascade1;
+		this.renderPassDescriptor.label = "Shadow Render Pass Cascade #1";
+
 		const renderPassEncoderCascade1 = commandEncoder.beginRenderPass(
-			renderPassDescriptorCascade1,
+			this.renderPassDescriptor,
 		);
 
 		RenderingContext.setActiveRenderPass(this.type, renderPassEncoderCascade1);
 
-		renderPassEncoderCascade1.pushDebugGroup("Render Shadow Cascade #1");
+		if (RenderingContext.ENABLE_DEBUG_GROUPS) {
+			renderPassEncoderCascade1.pushDebugGroup("Render Shadow Cascade #1");
+		}
 
 		renderPassEncoderCascade1.setBindGroup(
 			BIND_GROUP_LOCATIONS.CameraPlusOptionalLights,
@@ -314,8 +325,12 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 		scene.renderOpaqueNodes(renderPassEncoderCascade1);
 		scene.renderTransparentNodes(renderPassEncoderCascade1);
 
-		renderPassEncoderCascade1.popDebugGroup();
+		if (RenderingContext.ENABLE_DEBUG_GROUPS) {
+			renderPassEncoderCascade1.popDebugGroup();
+		}
 		renderPassEncoderCascade1.end();
+
+		this.resolveTiming(commandEncoder);
 
 		// Reset camera properties
 		this.camera.near = oldCameraNear;

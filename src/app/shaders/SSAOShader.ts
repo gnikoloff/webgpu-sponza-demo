@@ -43,7 +43,7 @@ const SSAOShaderSrc = /* wgsl */ `
 
     let screenSize = vec2i(textureDimensions(depthTexture).xy);
 
-    for (var i = 0u; i < 16; i++) {
+    for (var i = 0u; i < kernelSize; i++) {
       var viewSamplePos = TBN * kernelBuffer[i].xyz;
       viewSamplePos = viewSpacePos + viewSamplePos * radius;
 
@@ -63,7 +63,7 @@ const SSAOShaderSrc = /* wgsl */ `
       occlusion += select(0.0, 1.0, sampleDepth > viewSamplePos.z) * rangeCheck * NdotS;
     }
 
-    occlusion = 1 - (occlusion / f32(16));
+    occlusion = 1 - (occlusion / f32(kernelSize));
     let finalOcclusion = pow(occlusion, 2);
 
     return vec4f(finalOcclusion);

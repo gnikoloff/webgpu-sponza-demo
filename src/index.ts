@@ -11,17 +11,20 @@ const GUI_PARAMS: IGUIParams = {
 	"Enable TAA": true,
 	"Debug G-Buffer": true,
 	"Debug Shadow Map": false,
-	"Debug Shadow Cascade Index": false,
+	"Debug Shadow Cascades": false,
 	"Debug Point Lights Mask": false,
 	"SSR Enabled": true,
 	"SSR Method": "hi-z",
 	"SSR Max Iterations": 150,
-	"Auto-Rotate Sun": false,
+	"Sun Intensity": 2,
+	"Sun Position X": 0.1,
+	"Sun Position Y": 100,
+	"Sun Position Z": 0.1,
 	"Debug Skybox": true,
 	"Debug Bounding Boxes": false,
 };
 
-const gui = new dat.GUI({ width: 243 });
+const gui = new dat.GUI({ width: 270 });
 
 gui.add(GUI_PARAMS, "Play Animation").onChange((v: boolean) => {
 	renderer.enableAnimation = v;
@@ -34,9 +37,24 @@ gui.add(GUI_PARAMS, "Play Animation").onChange((v: boolean) => {
 
 const lightingFolder = gui.addFolder("Lighting");
 lightingFolder.open();
-lightingFolder.add(GUI_PARAMS, "Auto-Rotate Sun").onChange((v: boolean) => {
-	renderer.autoRotateSun = v;
+lightingFolder.add(GUI_PARAMS, "Sun Intensity", 0, 5).onChange((v: number) => {
+	renderer.sunIntensity = v;
 });
+lightingFolder
+	.add(GUI_PARAMS, "Sun Position X", -100, 100)
+	.onChange((v: number) => {
+		renderer.sunPositionZ = v;
+	});
+// lightingFolder
+// 	.add(GUI_PARAMS, "Sun Position Y", 20, 100)
+// 	.onChange((v: number) => {
+// 		renderer.sunPositionY = v;
+// 	});
+lightingFolder
+	.add(GUI_PARAMS, "Sun Position Z", -150, 150)
+	.onChange((v: number) => {
+		renderer.sunPositionX = v;
+	});
 
 const shadowFolder = gui.addFolder("Shadow");
 shadowFolder.open();
@@ -50,11 +68,9 @@ const debugShadowController = shadowFolder
 	});
 debugShadowController.listen();
 
-shadowFolder
-	.add(GUI_PARAMS, "Debug Shadow Cascade Index")
-	.onChange((v: boolean) => {
-		renderer.debugShadowCascadeIndex = v;
-	});
+shadowFolder.add(GUI_PARAMS, "Debug Shadow Cascades").onChange((v: boolean) => {
+	renderer.debugShadowCascadeIndex = v;
+});
 
 const deferredRendererFolder = gui.addFolder("Deferred Renderer");
 deferredRendererFolder.open();
@@ -133,8 +149,11 @@ function resize() {
 	renderer.enableTAA = GUI_PARAMS["Enable TAA"];
 	renderer.debugGBuffer = GUI_PARAMS["Debug G-Buffer"];
 	renderer.debugShadowMap = GUI_PARAMS["Debug Shadow Map"];
+	renderer.sunPositionX = GUI_PARAMS["Sun Position Z"];
+	renderer.sunPositionY = GUI_PARAMS["Sun Position Y"];
+	renderer.sunPositionZ = GUI_PARAMS["Sun Position X"];
+	renderer.sunIntensity = GUI_PARAMS["Sun Intensity"];
 	renderer.debugPointLights = GUI_PARAMS["Debug Point Lights Mask"];
-	renderer.autoRotateSun = GUI_PARAMS["Auto-Rotate Sun"];
 	renderer.toggleDebugCamera = GUI_PARAMS["Toggle Debug Camera"];
 	// renderer.debugSkybox = GUI_PARAMS["Debug Skybox"];
 }

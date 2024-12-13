@@ -188,13 +188,17 @@ export default class DebugTextureCanvas {
 		const renderPassEncoder = commandEncoder.beginRenderPass(
 			this.renderPassDescriptor,
 		);
-		renderPassEncoder.pushDebugGroup(`Display Debug Texture ${this.type}`);
+		if (RenderingContext.ENABLE_DEBUG_GROUPS) {
+			renderPassEncoder.pushDebugGroup(`Display Debug Texture ${this.type}`);
+		}
 
 		renderPassEncoder.setPipeline(this.renderPSO);
 		renderPassEncoder.setBindGroup(0, this.samplerTextureBindGroup);
 		renderPassEncoder.draw(3);
 
-		renderPassEncoder.popDebugGroup();
+		if (RenderingContext.ENABLE_DEBUG_GROUPS) {
+			renderPassEncoder.popDebugGroup();
+		}
 		renderPassEncoder.end();
 	}
 }

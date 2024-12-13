@@ -12,6 +12,9 @@ export default class SkyboxRenderPass extends RenderPass {
 	}
 
 	protected override createRenderPassDescriptor(): GPURenderPassDescriptor {
+		if (this.renderPassDescriptor) {
+			return this.renderPassDescriptor;
+		}
 		const renderPassColorAttachments: GPURenderPassColorAttachment[] = [
 			{
 				view: this.inputTextureViews[0],
@@ -19,19 +22,21 @@ export default class SkyboxRenderPass extends RenderPass {
 				storeOp: "store",
 			},
 		];
-		return this.augmentRenderPassDescriptorWithTimestampQuery({
-			label: "Skybox render Pass",
-			colorAttachments: renderPassColorAttachments,
-			depthStencilAttachment: {
-				// depthReadOnly: true,
-				stencilReadOnly: true,
-				view: this.inputTextureViews[1],
-				depthLoadOp: "load",
-				depthStoreOp: "store",
-				// stencilLoadOp: "load",
-				// stencilStoreOp: "discard",
-			},
-		});
+		this.renderPassDescriptor =
+			this.augmentRenderPassDescriptorWithTimestampQuery({
+				label: "Skybox render Pass",
+				colorAttachments: renderPassColorAttachments,
+				depthStencilAttachment: {
+					// depthReadOnly: true,
+					stencilReadOnly: true,
+					view: this.inputTextureViews[1],
+					depthLoadOp: "load",
+					depthStoreOp: "store",
+					// stencilLoadOp: "load",
+					// stencilStoreOp: "discard",
+				},
+			});
+		return this.renderPassDescriptor;
 	}
 
 	public override render(
@@ -50,7 +55,9 @@ export default class SkyboxRenderPass extends RenderPass {
 
 		RenderingContext.setActiveRenderPass(this.type, renderEncoder);
 
-		renderEncoder.pushDebugGroup("Begin Skybox");
+		if (RenderingContext.ENABLE_DEBUG_GROUPS) {
+			renderEncoder.pushDebugGroup("Begin Skybox");
+		}
 
 		renderEncoder.setBindGroup(
 			BIND_GROUP_LOCATIONS.CameraPlusOptionalLights,
@@ -59,7 +66,9 @@ export default class SkyboxRenderPass extends RenderPass {
 
 		scene.skybox?.render(renderEncoder);
 
-		renderEncoder.popDebugGroup();
+		if (RenderingContext.ENABLE_DEBUG_GROUPS) {
+			renderEncoder.popDebugGroup();
+		}
 		renderEncoder.end();
 
 		this.resolveTiming(commandEncoder);

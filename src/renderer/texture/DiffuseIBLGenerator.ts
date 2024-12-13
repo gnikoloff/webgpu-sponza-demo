@@ -124,7 +124,9 @@ export default class DiffuseIBLGenerator extends BaseUtilObject {
 		const diffuseIBLComputePass = commandEncoder.beginComputePass({
 			label: "Diffuse IBL Compute Pass",
 		});
-		diffuseIBLComputePass.pushDebugGroup("Begin Diffuse IBL");
+		if (RenderingContext.ENABLE_DEBUG_GROUPS) {
+			diffuseIBLComputePass.pushDebugGroup("Begin Diffuse IBL");
+		}
 
 		diffuseIBLComputePass.setPipeline(DiffuseIBLGenerator.computePSO);
 
@@ -177,7 +179,9 @@ export default class DiffuseIBLGenerator extends BaseUtilObject {
 			);
 		}
 
-		diffuseIBLComputePass.popDebugGroup();
+		if (RenderingContext.ENABLE_DEBUG_GROUPS) {
+			diffuseIBLComputePass.popDebugGroup();
+		}
 		diffuseIBLComputePass.end();
 		RenderingContext.device.queue.submit([commandEncoder.finish()]);
 

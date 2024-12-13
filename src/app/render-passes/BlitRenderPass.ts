@@ -69,6 +69,25 @@ export default class BlitRenderPass extends RenderPass {
 		this.renderPSO = PipelineStates.createRenderPipeline(renderPSODescriptor);
 	}
 
+	protected override createRenderPassDescriptor(): GPURenderPassDescriptor {
+		if (this.renderPassDescriptor) {
+			return this.renderPassDescriptor;
+		}
+		const renderPassColorAttachments: GPURenderPassColorAttachment[] = [
+			{
+				view: null,
+				loadOp: "load",
+				storeOp: "store",
+			},
+		];
+		this.renderPassDescriptor =
+			this.augmentRenderPassDescriptorWithTimestampQuery({
+				colorAttachments: renderPassColorAttachments,
+				label: "Blit Pass",
+			});
+		return this.renderPassDescriptor;
+	}
+
 	public override render(
 		commandEncoder: GPUCommandEncoder,
 		scene: Scene,
@@ -89,20 +108,11 @@ export default class BlitRenderPass extends RenderPass {
 			});
 		}
 
-		const renderPassColorAttachments: GPURenderPassColorAttachment[] = [
-			{
-				view: RenderingContext.canvasContext.getCurrentTexture().createView(),
-				loadOp: "load",
-				storeOp: "store",
-			},
-		];
-		const renderPassDescriptor: GPURenderPassDescriptor =
-			this.augmentRenderPassDescriptorWithTimestampQuery({
-				colorAttachments: renderPassColorAttachments,
-				label: "Blit Pass",
-			});
-		const renderPassEncoder =
-			commandEncoder.beginRenderPass(renderPassDescriptor);
+		const descriptor = this.createRenderPassDescriptor();
+		descriptor.colorAttachments[0].view = RenderingContext.canvasContext
+			.getCurrentTexture()
+			.createView();
+		const renderPassEncoder = commandEncoder.beginRenderPass(descriptor);
 
 		RenderingContext.setActiveRenderPass(this.type, renderPassEncoder);
 

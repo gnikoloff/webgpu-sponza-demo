@@ -56,7 +56,6 @@ export default class TextureController extends BaseUtilObject {
 
 		const textureMipViewsForEachFace: GPUTextureView[][] = [];
 		const textureMipSizesForEachFace: Vec2[][] = [];
-
 		for (let face = 0; face < 6; face++) {
 			const texMipViewForFace: GPUTextureView[] = [];
 			const texMipSizeForFace: Vec2[] = [

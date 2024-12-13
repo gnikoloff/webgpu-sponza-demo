@@ -21,6 +21,9 @@ export default class TransparentRenderPass extends RenderPass {
 	}
 
 	protected override createRenderPassDescriptor(): GPURenderPassDescriptor {
+		if (this.renderPassDescriptor) {
+			return this.renderPassDescriptor;
+		}
 		const renderPassColorAttachments: GPURenderPassColorAttachment[] = [
 			{
 				view: this.inputTextureViews[0],
@@ -28,16 +31,18 @@ export default class TransparentRenderPass extends RenderPass {
 				storeOp: "store",
 			},
 		];
-		return this.augmentRenderPassDescriptorWithTimestampQuery({
-			label: `Transparent Render Pass`,
-			colorAttachments: renderPassColorAttachments,
-			depthStencilAttachment: {
-				view: this.inputTextureViews[1],
-				depthLoadOp: "load",
-				depthStoreOp: "store",
-				stencilReadOnly: true,
-			},
-		});
+		this.renderPassDescriptor =
+			this.augmentRenderPassDescriptorWithTimestampQuery({
+				label: `Transparent Render Pass`,
+				colorAttachments: renderPassColorAttachments,
+				depthStencilAttachment: {
+					view: this.inputTextureViews[1],
+					depthLoadOp: "load",
+					depthStoreOp: "store",
+					stencilReadOnly: true,
+				},
+			});
+		return this.renderPassDescriptor;
 	}
 
 	public override render(
@@ -56,7 +61,9 @@ export default class TransparentRenderPass extends RenderPass {
 
 		RenderingContext.setActiveRenderPass(this.type, renderPassEncoder);
 
-		renderPassEncoder.pushDebugGroup("Render Transparent Nodes");
+		if (RenderingContext.ENABLE_DEBUG_GROUPS) {
+			renderPassEncoder.pushDebugGroup("Render Transparent Nodes");
+		}
 
 		this.cameraBindGroup = RenderingContext.device.createBindGroup({
 			label: `Camera Bind Group for: Transparent Pass`,
@@ -84,7 +91,9 @@ export default class TransparentRenderPass extends RenderPass {
 
 		scene.lightingManager.render(renderPassEncoder);
 
-		renderPassEncoder.popDebugGroup();
+		if (RenderingContext.ENABLE_DEBUG_GROUPS) {
+			renderPassEncoder.popDebugGroup();
+		}
 		renderPassEncoder.end();
 
 		this.resolveTiming(commandEncoder);

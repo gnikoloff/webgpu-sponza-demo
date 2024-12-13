@@ -149,6 +149,16 @@ export default class ReflectionComputePass extends RenderPass {
 		});
 	}
 
+	protected override createComputePassDescriptor(): GPUComputePassDescriptor {
+		if (this.computePassDescriptor) {
+			return this.computePassDescriptor;
+		}
+		this.computePassDescriptor = {
+			label: "Reflection Compute Pass Encoder",
+		};
+		return this.computePassDescriptor;
+	}
+
 	public override render(
 		commandEncoder: GPUCommandEncoder,
 		scene: Scene,
@@ -202,10 +212,12 @@ export default class ReflectionComputePass extends RenderPass {
 			});
 		}
 
-		const computeEncoder = commandEncoder.beginComputePass({
-			label: "Reflection Compute Pass Encoder",
-		});
-		computeEncoder.pushDebugGroup("Begin Reflection Compute Pass");
+		const computeEncoder = commandEncoder.beginComputePass(
+			this.createComputePassDescriptor(),
+		);
+		if (RenderingContext.ENABLE_DEBUG_GROUPS) {
+			computeEncoder.pushDebugGroup("Begin Reflection Compute Pass");
+		}
 
 		computeEncoder.setPipeline(this.computePSO);
 		computeEncoder.setBindGroup(0, this.bindGroup);
@@ -217,7 +229,9 @@ export default class ReflectionComputePass extends RenderPass {
 		);
 		computeEncoder.dispatchWorkgroups(workgroupCountX, workgroupCountY, 1);
 
-		computeEncoder.popDebugGroup();
+		if (RenderingContext.ENABLE_DEBUG_GROUPS) {
+			computeEncoder.popDebugGroup();
+		}
 		computeEncoder.end();
 
 		return [this.outTexture];

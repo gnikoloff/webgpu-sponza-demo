@@ -63,7 +63,9 @@ export default class BDRFLutGenerator extends BaseUtilObject {
 		const commandBuffer = RenderingContext.device.createCommandEncoder({
 			label: "BDRF LUT Generate Command Encoder",
 		});
-		commandBuffer.pushDebugGroup("BDRF LUT Generation");
+		if (RenderingContext.ENABLE_DEBUG_GROUPS) {
+			commandBuffer.pushDebugGroup("BDRF LUT Generation");
+		}
 
 		const computePass = commandBuffer.beginComputePass({
 			label: "BDRF LUT Generate Compute Pass",
@@ -99,7 +101,9 @@ export default class BDRFLutGenerator extends BaseUtilObject {
 		computePass.dispatchWorkgroups(workgroupCountX, workgroupCountY, 1);
 
 		computePass.end();
-		commandBuffer.popDebugGroup();
+		if (RenderingContext.ENABLE_DEBUG_GROUPS) {
+			commandBuffer.popDebugGroup();
+		}
 		RenderingContext.device.queue.submit([commandBuffer.finish()]);
 
 		return outTexture;

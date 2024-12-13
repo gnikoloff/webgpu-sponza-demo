@@ -46,6 +46,8 @@ interface TimingDisplay {
 }
 
 export default class DebugTimingContainer {
+	private static readonly NOT_AVAILABLE_STR = "N/A";
+
 	private $root: HTMLDivElement;
 
 	private $renderPassTimingDisplayEls: Map<DebugTimingType, TimingDisplay> =
@@ -86,7 +88,10 @@ export default class DebugTimingContainer {
 
 	public setDisplayValue(renderPass: DebugTimingType, value: number): this {
 		const displayEl = this.$renderPassTimingDisplayEls.get(renderPass);
-		displayEl.value.innerText = `${value.toFixed(1)}ms`;
+		displayEl.value.innerText =
+			value !== 0
+				? `${value.toFixed(1)}ms`
+				: DebugTimingContainer.NOT_AVAILABLE_STR;
 		return this;
 	}
 }

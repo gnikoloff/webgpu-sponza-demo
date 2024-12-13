@@ -64,7 +64,9 @@ export default class CubeTextureController extends BaseUtilObject {
 		);
 
 		const commandEncoder = RenderingContext.device.createCommandEncoder();
-		commandEncoder.pushDebugGroup("Texture View Copy");
+		if (RenderingContext.ENABLE_DEBUG_GROUPS) {
+			commandEncoder.pushDebugGroup("Texture View Copy");
+		}
 		const computeCopyPass = commandEncoder.beginComputePass();
 
 		let size = outTextureSize;
@@ -88,7 +90,9 @@ export default class CubeTextureController extends BaseUtilObject {
 
 		computeCopyPass.end();
 
-		commandEncoder.popDebugGroup();
+		if (RenderingContext.ENABLE_DEBUG_GROUPS) {
+			commandEncoder.popDebugGroup();
+		}
 		RenderingContext.device.queue.submit([commandEncoder.finish()]);
 
 		if (hasMips) {

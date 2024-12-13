@@ -74,6 +74,9 @@ export default class PointLightsNonCulledRenderPass extends LightRenderPass {
 	}
 
 	protected override createRenderPassDescriptor(): GPURenderPassDescriptor {
+		if (this.renderPassDescriptor) {
+			return this.renderPassDescriptor;
+		}
 		const renderPassColorAttachments: GPURenderPassColorAttachment[] = [
 			{
 				view: this.inputTextureViews[5],
@@ -81,15 +84,17 @@ export default class PointLightsNonCulledRenderPass extends LightRenderPass {
 				storeOp: "store",
 			},
 		];
-		return this.augmentRenderPassDescriptorWithTimestampQuery({
-			label: "Non-Instanced Non-Culled Point Lights Render Pass",
-			colorAttachments: renderPassColorAttachments,
-			depthStencilAttachment: {
-				depthReadOnly: true,
-				stencilReadOnly: true,
-				view: this.inputTextureViews[2],
-			},
-		});
+		this.renderPassDescriptor =
+			this.augmentRenderPassDescriptorWithTimestampQuery({
+				label: "Non-Instanced Non-Culled Point Lights Render Pass",
+				colorAttachments: renderPassColorAttachments,
+				depthStencilAttachment: {
+					depthReadOnly: true,
+					stencilReadOnly: true,
+					view: this.inputTextureViews[2],
+				},
+			});
+		return this.renderPassDescriptor;
 	}
 
 	public override render(

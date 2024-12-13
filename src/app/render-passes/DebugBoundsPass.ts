@@ -146,6 +146,9 @@ export default class DebugBoundsPass extends RenderPass {
 	}
 
 	protected override createRenderPassDescriptor(): GPURenderPassDescriptor {
+		if (this.renderPassDescriptor) {
+			return this.renderPassDescriptor;
+		}
 		const renderPassColorAttachments: GPURenderPassColorAttachment[] = [
 			{
 				view: this.inputTextureViews[0],
@@ -153,7 +156,7 @@ export default class DebugBoundsPass extends RenderPass {
 				storeOp: "store",
 			},
 		];
-		return {
+		this.renderPassDescriptor = {
 			label: `Debug Bounding Boxes Render Pass`,
 			colorAttachments: renderPassColorAttachments,
 			depthStencilAttachment: {
@@ -162,6 +165,7 @@ export default class DebugBoundsPass extends RenderPass {
 				stencilReadOnly: true,
 			},
 		};
+		return this.renderPassDescriptor;
 	}
 
 	public override render(
@@ -180,7 +184,9 @@ export default class DebugBoundsPass extends RenderPass {
 
 		RenderingContext.setActiveRenderPass(this.type, renderPassEncoder);
 
-		renderPassEncoder.pushDebugGroup("Render Bounding Boxes");
+		if (RenderingContext.ENABLE_DEBUG_GROUPS) {
+			renderPassEncoder.pushDebugGroup("Render Bounding Boxes");
+		}
 
 		renderPassEncoder.setPipeline(this.renderPSO);
 		renderPassEncoder.setBindGroup(
@@ -191,7 +197,9 @@ export default class DebugBoundsPass extends RenderPass {
 
 		renderPassEncoder.draw(2, this.scene.nodesCount * 12);
 
-		renderPassEncoder.popDebugGroup();
+		if (RenderingContext.ENABLE_DEBUG_GROUPS) {
+			renderPassEncoder.popDebugGroup();
+		}
 		renderPassEncoder.end();
 
 		return [inputs[0]];

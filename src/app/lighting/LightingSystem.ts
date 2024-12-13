@@ -41,6 +41,7 @@ export default class LightingSystem extends LightingManager {
 
 	private particlesGPUBuffer!: GPUBuffer;
 	private particles: LightParticle[] = [];
+	private particlesLength: number;
 
 	private computePSO: GPUComputePipeline;
 	private renderPSO: GPURenderPipeline;
@@ -51,6 +52,27 @@ export default class LightingSystem extends LightingManager {
 	private particlesSimSettingsArr = new Float32Array(2).fill(0);
 
 	public mainDirLight: DirectionalLight;
+
+	public set sunIntensity(v: number) {
+		this.mainDirLight.intensity = v;
+		RenderingContext.device.queue.writeBuffer(
+			this.gpuBuffer,
+			0,
+			this.mainDirLight.lightsStorageView.arrayBuffer,
+		);
+	}
+
+	public set sunPositionX(v: number) {
+		this.mainDirLight.setPositionX(v);
+	}
+
+	public set sunPositionY(v: number) {
+		this.mainDirLight.setPositionY(v);
+	}
+
+	public set sunPositionZ(v: number) {
+		this.mainDirLight.setPositionZ(v);
+	}
 
 	public addParticleLight(v: Light, pRadius = 0.05): this {
 		super.addLight(v);
@@ -117,6 +139,9 @@ export default class LightingSystem extends LightingManager {
 		}
 
 		this.particlesGPUBuffer.unmap();
+
+		this.particlesLength = this.particles.length;
+		this.particles = null;
 	}
 
 	constructor() {
@@ -350,7 +375,7 @@ export default class LightingSystem extends LightingManager {
 				},
 			},
 			depthStencil: {
-				format: "depth32float-stencil8",
+				format: RenderingContext.depthStencilFormat,
 				depthWriteEnabled: false,
 				depthCompare: "less",
 			},
@@ -401,6 +426,6 @@ export default class LightingSystem extends LightingManager {
 		renderPass.setBindGroup(1, this.renderBindGroup);
 		renderPass.setIndexBuffer(this.particleIndexBuffer, Drawable.INDEX_FORMAT);
 
-		renderPass.drawIndexed(6, this.particles.length);
+		renderPass.drawIndexed(6, this.particlesLength);
 	}
 }

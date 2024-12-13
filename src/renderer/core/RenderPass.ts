@@ -19,6 +19,9 @@ export default class RenderPass {
 
 	protected inputTextureViews: GPUTextureView[] = [];
 
+	protected renderPassDescriptor!: GPURenderPassDescriptor;
+	protected computePassDescriptor!: GPUComputePassDescriptor;
+
 	protected cameraBindGroup?: GPUBindGroup;
 	protected camera?: Camera;
 	protected debugCamera?: Camera;
@@ -81,6 +84,10 @@ export default class RenderPass {
 	}
 
 	protected createRenderPassDescriptor(): GPURenderPassDescriptor {
+		throw new Error("Needs implementation");
+	}
+
+	protected createComputePassDescriptor(): GPUComputePassDescriptor {
 		throw new Error("Needs implementation");
 	}
 

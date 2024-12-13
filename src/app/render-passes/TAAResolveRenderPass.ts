@@ -150,6 +150,9 @@ export default class TAAResolveRenderPass extends RenderPass {
 	}
 
 	protected override createRenderPassDescriptor(): GPURenderPassDescriptor {
+		if (this.renderPassDescriptor) {
+			return this.renderPassDescriptor;
+		}
 		const renderPassColorAttachments: GPURenderPassColorAttachment[] = [
 			{
 				view: this.outTextureView,
@@ -157,10 +160,12 @@ export default class TAAResolveRenderPass extends RenderPass {
 				storeOp: "store",
 			},
 		];
-		return this.augmentRenderPassDescriptorWithTimestampQuery({
-			label: "TAA Resolve Pass",
-			colorAttachments: renderPassColorAttachments,
-		});
+		this.renderPassDescriptor =
+			this.augmentRenderPassDescriptorWithTimestampQuery({
+				label: "TAA Resolve Pass",
+				colorAttachments: renderPassColorAttachments,
+			});
+		return this.renderPassDescriptor;
 	}
 
 	public override render(

@@ -166,6 +166,9 @@ export default class SSAORenderPass extends RenderPass {
 	}
 
 	protected override createRenderPassDescriptor(): GPURenderPassDescriptor {
+		if (this.renderPassDescriptor) {
+			return this.renderPassDescriptor;
+		}
 		const colorAttachments: GPURenderPassColorAttachment[] = [
 			{
 				loadOp: "load",
@@ -173,10 +176,12 @@ export default class SSAORenderPass extends RenderPass {
 				view: this.outTextureView,
 			},
 		];
-		return this.augmentRenderPassDescriptorWithTimestampQuery({
-			label: "SSAO Render Pass Descriptor",
-			colorAttachments,
-		});
+		this.renderPassDescriptor =
+			this.augmentRenderPassDescriptorWithTimestampQuery({
+				label: "SSAO Render Pass Descriptor",
+				colorAttachments,
+			});
+		return this.renderPassDescriptor;
 	}
 
 	public override render(
@@ -230,13 +235,17 @@ export default class SSAORenderPass extends RenderPass {
 
 		RenderingContext.setActiveRenderPass(this.type, renderPass);
 
-		renderPass.pushDebugGroup("Begin SSAO");
+		if (RenderingContext.ENABLE_DEBUG_GROUPS) {
+			renderPass.pushDebugGroup("Begin SSAO");
+		}
 
 		renderPass.setBindGroup(0, this.gbufferTexturesBindGroup);
 		RenderingContext.bindRenderPSO(this.renderPSO);
 		renderPass.draw(3);
 
-		renderPass.popDebugGroup();
+		if (RenderingContext.ENABLE_DEBUG_GROUPS) {
+			renderPass.popDebugGroup();
+		}
 		renderPass.end();
 
 		this.resolveTiming(commandEncoder);

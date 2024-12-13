@@ -65,6 +65,16 @@ export default class HiZDepthComputePass extends RenderPass {
 		});
 	}
 
+	protected override createComputePassDescriptor(): GPUComputePassDescriptor {
+		if (this.computePassDescriptor) {
+			return this.computePassDescriptor;
+		}
+		this.computePassDescriptor = {
+			label: "Hi-Z Depth Mip Compute Pass",
+		};
+		return this.computePassDescriptor;
+	}
+
 	public override render(
 		commandEncoder: GPUCommandEncoder,
 		scene: Scene,
@@ -111,9 +121,9 @@ export default class HiZDepthComputePass extends RenderPass {
 			},
 		];
 
-		const computePass = commandEncoder.beginComputePass({
-			label: "Hi-Z Depth Mip Compute Pass",
-		});
+		const computePass = commandEncoder.beginComputePass(
+			this.createComputePassDescriptor(),
+		);
 		computePass.setPipeline(this.computePSO);
 
 		for (let nextLevel = 1; nextLevel < mipsLevelCount; nextLevel++) {

@@ -6,8 +6,7 @@ import FullScreenVertexShaderUtils, {
 } from "../../renderer/shader/FullScreenVertexShaderUtils";
 import SamplerController from "../../renderer/texture/SamplerController";
 import TextureLoader from "../../renderer/texture/TextureLoader";
-import { LightType, RenderPassType } from "../../renderer/types";
-import DirectionalShadowRenderPass from "./DirectionalShadowRenderPass";
+import { RenderPassType } from "../../renderer/types";
 import LightRenderPass from "./LightRenderPass";
 import GetGBufferIntegrateShader, {
 	GBufferIntegrateShaderEntryFn,
@@ -218,6 +217,9 @@ export default class DirectionalAmbientLightRenderPass extends LightRenderPass {
 	}
 
 	protected override createRenderPassDescriptor(): GPURenderPassDescriptor {
+		if (this.renderPassDescriptor) {
+			return this.renderPassDescriptor;
+		}
 		const renderPassColorAttachments: GPURenderPassColorAttachment[] = [
 			{
 				view: this.outTextureView,
@@ -226,19 +228,21 @@ export default class DirectionalAmbientLightRenderPass extends LightRenderPass {
 				storeOp: "store",
 			},
 		];
-		return this.augmentRenderPassDescriptorWithTimestampQuery({
-			label: "Directional + Ambient Render Pass",
-			colorAttachments: renderPassColorAttachments,
-			depthStencilAttachment: {
-				depthReadOnly: true,
-				stencilReadOnly: false,
-				view: this.inputTextureViews[3],
-				// depthLoadOp: "load",
-				// depthStoreOp: "store",
-				stencilLoadOp: "load",
-				stencilStoreOp: "store",
-			},
-		});
+		this.renderPassDescriptor =
+			this.augmentRenderPassDescriptorWithTimestampQuery({
+				label: "Directional + Ambient Render Pass",
+				colorAttachments: renderPassColorAttachments,
+				depthStencilAttachment: {
+					depthReadOnly: true,
+					stencilReadOnly: false,
+					view: this.inputTextureViews[3],
+					// depthLoadOp: "load",
+					// depthStoreOp: "store",
+					stencilLoadOp: "load",
+					stencilStoreOp: "store",
+				},
+			});
+		return this.renderPassDescriptor;
 	}
 
 	private recreateDirLightShadowBindGroup() {
@@ -297,12 +301,16 @@ export default class DirectionalAmbientLightRenderPass extends LightRenderPass {
 
 		RenderingContext.setActiveRenderPass(this.type, renderPass);
 
-		renderPass.pushDebugGroup("Begin Directional + Ambient LightingSystem");
+		if (RenderingContext.ENABLE_DEBUG_GROUPS) {
+			renderPass.pushDebugGroup("Begin Directional + Ambient LightingSystem");
+		}
 		RenderingContext.bindRenderPSO(this.renderPSO);
 		renderPass.setBindGroup(0, this.gbufferTexturesBindGroup);
 		renderPass.setBindGroup(1, this.dirLightShadowBindGroup);
 		renderPass.draw(3);
-		renderPass.popDebugGroup();
+		if (RenderingContext.ENABLE_DEBUG_GROUPS) {
+			renderPass.popDebugGroup();
+		}
 		renderPass.end();
 
 		this.resolveTiming(commandEncoder);

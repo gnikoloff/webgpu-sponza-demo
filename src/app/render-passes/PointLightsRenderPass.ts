@@ -73,6 +73,9 @@ export default class PointLightsRenderPass extends LightRenderPass {
 	}
 
 	protected override createRenderPassDescriptor(): GPURenderPassDescriptor {
+		if (this.renderPassDescriptor) {
+			return this.renderPassDescriptor;
+		}
 		const renderPassColorAttachments: GPURenderPassColorAttachment[] = [
 			{
 				view: this.inputTextureViews[5],
@@ -80,19 +83,21 @@ export default class PointLightsRenderPass extends LightRenderPass {
 				storeOp: "store",
 			},
 		];
-		return this.augmentRenderPassDescriptorWithTimestampQuery({
-			label: "Point Lights Render Pass",
-			colorAttachments: renderPassColorAttachments,
-			depthStencilAttachment: {
-				depthReadOnly: true,
-				stencilReadOnly: false,
-				view: this.inputTextureViews[2],
-				// depthLoadOp: "load",
-				// depthStoreOp: "store",
-				stencilLoadOp: "load",
-				stencilStoreOp: "store",
-			},
-		});
+		this.renderPassDescriptor =
+			this.augmentRenderPassDescriptorWithTimestampQuery({
+				label: "Point Lights Render Pass",
+				colorAttachments: renderPassColorAttachments,
+				depthStencilAttachment: {
+					depthReadOnly: true,
+					stencilReadOnly: false,
+					view: this.inputTextureViews[2],
+					// depthLoadOp: "load",
+					// depthStoreOp: "store",
+					stencilLoadOp: "load",
+					stencilStoreOp: "store",
+				},
+			});
+		return this.renderPassDescriptor;
 	}
 
 	public override render(
@@ -135,7 +140,9 @@ export default class PointLightsRenderPass extends LightRenderPass {
 
 		RenderingContext.setActiveRenderPass(this.type, renderPass);
 
-		renderPass.pushDebugGroup("Begin Point LightingSystem");
+		if (RenderingContext.ENABLE_DEBUG_GROUPS) {
+			renderPass.pushDebugGroup("Begin Point LightingSystem");
+		}
 
 		RenderingContext.bindRenderPSO(this.renderPSO);
 		renderPass.setBindGroup(0, this.gbufferTexturesBindGroup);
@@ -152,7 +159,9 @@ export default class PointLightsRenderPass extends LightRenderPass {
 			scene.lightingManager.pointLightsCount,
 		);
 
-		renderPass.popDebugGroup();
+		if (RenderingContext.ENABLE_DEBUG_GROUPS) {
+			renderPass.popDebugGroup();
+		}
 		renderPass.end();
 
 		this.resolveTiming(commandEncoder);

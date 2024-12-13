@@ -130,7 +130,9 @@ export default class SpecularIBLGenerator extends BaseUtilObject {
 		let commandEncoder = RenderingContext.device.createCommandEncoder({
 			label: "Specular IBL Command Encoder",
 		});
-		commandEncoder.pushDebugGroup("Begin Specular IBL Generation");
+		if (RenderingContext.ENABLE_DEBUG_GROUPS) {
+			commandEncoder.pushDebugGroup("Begin Specular IBL Generation");
+		}
 
 		let computePass = commandEncoder.beginComputePass({
 			label: "Specular IBL Compute Pass",
@@ -209,7 +211,9 @@ export default class SpecularIBLGenerator extends BaseUtilObject {
 		}
 
 		computePass.end();
-		commandEncoder.popDebugGroup();
+		if (RenderingContext.ENABLE_DEBUG_GROUPS) {
+			commandEncoder.popDebugGroup();
+		}
 		RenderingContext.device.queue.submit([commandEncoder.finish()]);
 
 		return outTex;

@@ -13,6 +13,7 @@ export default class Transform {
 	private rotationMatrix = mat4.identity();
 	private cachedMatrix = mat4.create();
 	private worldMatrix = mat4.identity();
+	protected prevFrameModelMatrix = mat4.create();
 	private _customMatrix?: Mat4;
 
 	protected normalMatrix = mat3.create();
@@ -68,6 +69,7 @@ export default class Transform {
 	public updateWorldMatrix(): boolean {
 		const parentMatrix = this.parent?.worldMatrix ?? MAT4x4_IDENTITY_MATRIX;
 		if (!this.matrixNeedsUpdate) {
+			mat4.copy(this.worldMatrix, this.prevFrameModelMatrix);
 			mat4.mul(parentMatrix, this.cachedMatrix, this.worldMatrix);
 			this.updateNormalMatrix();
 			return false;
@@ -92,6 +94,7 @@ export default class Transform {
 			mat4.mul(this.translateMatrix, this.cachedMatrix, this.cachedMatrix);
 		}
 
+		mat4.copy(this.worldMatrix, this.prevFrameModelMatrix);
 		mat4.mul(parentMatrix, this.cachedMatrix, this.worldMatrix);
 		this.updateNormalMatrix();
 

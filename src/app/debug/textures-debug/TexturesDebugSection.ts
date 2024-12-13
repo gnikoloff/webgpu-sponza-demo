@@ -1,4 +1,5 @@
-import DebugTextureCanvas, { TextureDebugMeshType } from "./DebugTextureCanvas";
+import { TextureDebugMeshType } from "../../../types";
+import DebugTextureCanvas from "./DebugTextureCanvas";
 
 export enum DebugSectionType {
 	GBuffer,

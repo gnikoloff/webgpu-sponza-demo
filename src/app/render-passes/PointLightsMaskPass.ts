@@ -125,18 +125,23 @@ export default class PointLightsMaskPass extends LightRenderPass {
 	}
 
 	protected override createRenderPassDescriptor(): GPURenderPassDescriptor {
-		return this.augmentRenderPassDescriptorWithTimestampQuery({
-			label: "Point Lights Mask Stencil Pass",
-			colorAttachments: [],
-			depthStencilAttachment: {
-				view: this.inputTextureViews[0],
-				depthLoadOp: "load",
-				depthStoreOp: "store",
-				stencilLoadOp: "clear",
-				stencilStoreOp: "store",
-				stencilClearValue: 0,
-			},
-		});
+		if (this.renderPassDescriptor) {
+			return this.renderPassDescriptor;
+		}
+		this.renderPassDescriptor =
+			this.augmentRenderPassDescriptorWithTimestampQuery({
+				label: "Point Lights Mask Stencil Pass",
+				colorAttachments: [],
+				depthStencilAttachment: {
+					view: this.inputTextureViews[0],
+					depthLoadOp: "load",
+					depthStoreOp: "store",
+					stencilLoadOp: "clear",
+					stencilStoreOp: "store",
+					stencilClearValue: 0,
+				},
+			});
+		return this.renderPassDescriptor;
 	}
 
 	public override render(
@@ -153,7 +158,9 @@ export default class PointLightsMaskPass extends LightRenderPass {
 
 		RenderingContext.setActiveRenderPass(this.type, renderPass);
 
-		renderPass.pushDebugGroup("Point Lights Stencil Mask");
+		if (RenderingContext.ENABLE_DEBUG_GROUPS) {
+			renderPass.pushDebugGroup("Point Lights Stencil Mask");
+		}
 
 		RenderingContext.bindRenderPSO(this.renderPSO);
 		renderPass.setStencilReference(128);
@@ -171,7 +178,9 @@ export default class PointLightsMaskPass extends LightRenderPass {
 			scene.lightingManager.pointLightsCount,
 		);
 
-		renderPass.popDebugGroup();
+		if (RenderingContext.ENABLE_DEBUG_GROUPS) {
+			renderPass.popDebugGroup();
+		}
 		renderPass.end();
 
 		this.resolveTiming(commandEncoder);
