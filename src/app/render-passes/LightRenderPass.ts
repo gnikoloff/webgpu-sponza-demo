@@ -3,6 +3,7 @@ import RenderingContext from "../../renderer/core/RenderingContext";
 import SamplerController from "../../renderer/texture/SamplerController";
 import TextureLoader from "../../renderer/texture/TextureLoader";
 import { RenderPassType } from "../../renderer/types";
+import { LightPassType } from "../../types";
 
 export default class LightRenderPass extends RenderPass {
 	protected static readonly RENDER_TARGETS: GPUColorTargetState[] = [
@@ -23,52 +24,7 @@ export default class LightRenderPass extends RenderPass {
 		},
 	];
 
-	protected static readonly gbufferCommonBindGroupLayoutEntries: GPUBindGroupLayoutEntry[] =
-		[
-			{
-				binding: 0,
-				visibility: GPUShaderStage.FRAGMENT,
-				texture: {},
-			},
-			{
-				binding: 1,
-				visibility: GPUShaderStage.FRAGMENT,
-				texture: {},
-			},
-			{
-				binding: 2,
-				visibility: GPUShaderStage.FRAGMENT,
-				texture: {
-					sampleType: "depth",
-				},
-			},
-			{
-				binding: 3,
-				visibility: GPUShaderStage.FRAGMENT,
-				texture: {},
-			},
-			{
-				binding: 4,
-				visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-				buffer: {
-					type: "uniform",
-				},
-			},
-			{
-				binding: 5,
-				visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-				buffer: {
-					type: "read-only-storage",
-				},
-			},
-			{
-				binding: 6,
-				visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-				buffer: {
-					type: "uniform",
-				},
-			},
-		];
+	protected gbufferCommonBindGroupLayoutEntries: GPUBindGroupLayoutEntry[] = [];
 
 	protected gbufferCommonBindGroupLayout: GPUBindGroupLayout;
 	protected gbufferTexturesBindGroupEntries: GPUBindGroupEntry[] = [];
@@ -115,13 +71,64 @@ export default class LightRenderPass extends RenderPass {
 		});
 	}
 
-	constructor(type: RenderPassType) {
+	constructor(type: LightPassType) {
 		super(type);
+
+		this.gbufferCommonBindGroupLayoutEntries.push({
+			binding: 0,
+			visibility: GPUShaderStage.FRAGMENT,
+			texture: {},
+		});
+		this.gbufferCommonBindGroupLayoutEntries.push({
+			binding: 1,
+			visibility: GPUShaderStage.FRAGMENT,
+			texture: {},
+		});
+		this.gbufferCommonBindGroupLayoutEntries.push({
+			binding: 2,
+			visibility: GPUShaderStage.FRAGMENT,
+			texture: {
+				sampleType: "depth",
+			},
+		});
+		this.gbufferCommonBindGroupLayoutEntries.push({
+			binding: 3,
+			visibility: GPUShaderStage.FRAGMENT,
+			texture: {},
+		});
+		this.gbufferCommonBindGroupLayoutEntries.push({
+			binding: 4,
+			visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+			buffer: {
+				type: "uniform",
+			},
+		});
+
+		if (
+			type === RenderPassType.PointLightsLighting ||
+			type === RenderPassType.DirectionalAmbientLighting ||
+			type === RenderPassType.PointLightsStencilMask
+		) {
+			this.gbufferCommonBindGroupLayoutEntries.push({
+				binding: 5,
+				visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+				buffer: {
+					type: "read-only-storage",
+				},
+			});
+			this.gbufferCommonBindGroupLayoutEntries.push({
+				binding: 6,
+				visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+				buffer: {
+					type: "uniform",
+				},
+			});
+		}
 
 		this.gbufferCommonBindGroupLayout =
 			RenderingContext.device.createBindGroupLayout({
 				label: "GBuffer Textures Bind Group",
-				entries: LightRenderPass.gbufferCommonBindGroupLayoutEntries,
+				entries: this.gbufferCommonBindGroupLayoutEntries,
 			});
 
 		this.debugLightsBuffer = RenderingContext.device.createBuffer({
@@ -135,41 +142,46 @@ export default class LightRenderPass extends RenderPass {
 		);
 		this.debugLightsBuffer.unmap();
 
-		this.gbufferTexturesBindGroupEntries = [
-			{
-				binding: 0,
-				resource: null,
+		this.gbufferTexturesBindGroupEntries.push({
+			binding: 0,
+			resource: null,
+		});
+		this.gbufferTexturesBindGroupEntries.push({
+			binding: 1,
+			resource: null,
+		});
+		this.gbufferTexturesBindGroupEntries.push({
+			binding: 2,
+			resource: null,
+		});
+		this.gbufferTexturesBindGroupEntries.push({
+			binding: 3,
+			resource: null,
+		});
+		this.gbufferTexturesBindGroupEntries.push({
+			binding: 4,
+			resource: {
+				buffer: null,
 			},
-			{
-				binding: 1,
-				resource: null,
-			},
-			{
-				binding: 2,
-				resource: null,
-			},
-			{
-				binding: 3,
-				resource: null,
-			},
-			{
-				binding: 4,
-				resource: {
-					buffer: null,
-				},
-			},
-			{
+		});
+
+		if (
+			type === RenderPassType.DirectionalAmbientLighting ||
+			type === RenderPassType.PointLightsLighting ||
+			type === RenderPassType.PointLightsStencilMask
+		) {
+			this.gbufferTexturesBindGroupEntries.push({
 				binding: 5,
 				resource: {
 					buffer: null,
 				},
-			},
-			{
+			});
+			this.gbufferTexturesBindGroupEntries.push({
 				binding: 6,
 				resource: {
 					buffer: this.debugLightsBuffer,
 				},
-			},
-		];
+			});
+		}
 	}
 }

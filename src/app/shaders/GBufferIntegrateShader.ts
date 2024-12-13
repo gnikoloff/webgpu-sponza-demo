@@ -3,15 +3,15 @@ import { SHADER_CHUNKS } from "../../renderer/shader/chunks";
 import GetPBRLightingShaderUtils from "../../renderer/shader/PBRLightingShaderUtils";
 import CSMShadowShaderUtils from "../../renderer/shader/CSMShadowShaderUtils";
 import NormalEncoderShaderUtils from "../../renderer/shader/NormalEncoderShaderUtils";
-import GBufferCommonShaderBindings from "./GBufferCommonShaderBindings";
-import { LightType } from "../../renderer/types";
+import getGBufferCommonShaderBindings from "./GBufferCommonShaderBindings";
+import { LightPassType } from "../../types";
+import { RenderPassType } from "../../renderer/types";
+import DirectionalShadowRenderPass from "../render-passes/DirectionalShadowRenderPass";
 
 export const GBufferIntegrateShaderEntryFn = "integrateMain";
 
 const GetGBufferIntegrateShader = (
-	lightType: LightType,
-	shadowMapSize = 1024,
-	ligthSampleOffset = 0,
+	lightPassType: LightPassType,
 ): string => wgsl/* wgsl */ `
   ${SHADER_CHUNKS.VertexOutput}
   ${SHADER_CHUNKS.Light}
@@ -21,10 +21,7 @@ const GetGBufferIntegrateShader = (
   ${SHADER_CHUNKS.CommonHelpers}
   ${SHADER_CHUNKS.MathHelpers}
 
-  ${GetPBRLightingShaderUtils({
-		isDeferred: true,
-		hasIBL: lightType === LightType.Directional,
-	})}
+  ${GetPBRLightingShaderUtils(lightPassType)}
   ${CSMShadowShaderUtils}
   ${NormalEncoderShaderUtils}
 
@@ -33,10 +30,11 @@ const GetGBufferIntegrateShader = (
     debugShadowCascadeLayer: f32
   };
 
-  const SHADOW_MAP_SIZE: f32 = ${shadowMapSize};
+  #if ${lightPassType === RenderPassType.DirectionalAmbientLighting}
+  const SHADOW_MAP_SIZE: f32 = ${DirectionalShadowRenderPass.TEXTURE_SIZE};
+  #endif
 
-  ${GBufferCommonShaderBindings}
-
+  ${getGBufferCommonShaderBindings(lightPassType)}
 
   @fragment
   fn ${GBufferIntegrateShaderEntryFn}(
@@ -71,7 +69,7 @@ const GetGBufferIntegrateShader = (
     
     let V = normalize(-viewSpacePos);
 
-    #if ${lightType === LightType.Directional}
+    #if ${lightPassType === RenderPassType.DirectionalAmbientLighting}
     let shadowLayerIdx = ShadowLayerIdxCalculate(worldSpacePos, camera, shadowCascades);
     let r = select(0.0, 1.0, shadowLayerIdx == 0);
     let g = select(0.0, 1.0, shadowLayerIdx == 1);
@@ -108,7 +106,12 @@ const GetGBufferIntegrateShader = (
       V,
       shadow,
       opacity,
-      #if ${lightType == LightType.Directional}
+      #if ${lightPassType === RenderPassType.PointLightsNonCulledLighting}
+      cameraCulledPointLight.position,
+      cameraCulledPointLight.radius,
+      cameraCulledPointLight.color,
+      cameraCulledPointLight.intensity,
+      #elif ${lightPassType == RenderPassType.DirectionalAmbientLighting}
       diffuseIBLTexture,
       specularIBLTexture,
       bdrfLutTexture,
@@ -116,21 +119,12 @@ const GetGBufferIntegrateShader = (
       #endif
     );
 
-    // color += vec4f(bayerDitherOffset);
-
-    // color = color / (color + vec4f(vec3f(1.0), 0.0));
-    // // gamma correct
-    // color = pow(color, vec4f(vec3f(1.0/2.2), 1.0)); 
-
-    #if ${ligthSampleOffset !== 0}
+    #if ${lightPassType === RenderPassType.PointLightsLighting}
     let debugColor = vec4f(1.0, 0.0, 0.0, 1.0);
     return mix(color, debugColor, debugLightsInfo.debugLights);
-    // return color;
     #else
     return color;
     #endif
-    // return vec4f(f32(in.instanceId) / 4, 0, 0, 1);
-    // return vec4f(V, 1.0);
   }
 `;
 

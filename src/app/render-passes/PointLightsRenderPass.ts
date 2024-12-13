@@ -10,9 +10,7 @@ import GetGBufferIntegrateShader, {
 import GetGBufferVertexShader, {
 	GBufferVertexEntryFn,
 } from "../shaders/GBufferVertexShader";
-
 import GeometryCache from "../utils/GeometryCache";
-import DirectionalShadowRenderPass from "./DirectionalShadowRenderPass";
 import LightRenderPass from "./LightRenderPass";
 
 export default class PointLightsRenderPass extends LightRenderPass {
@@ -39,7 +37,7 @@ export default class PointLightsRenderPass extends LightRenderPass {
 			layout: pointLightRenderPSOLayout,
 			vertex: {
 				module: PipelineStates.createShaderModule(
-					GetGBufferVertexShader(1, false),
+					GetGBufferVertexShader(RenderPassType.PointLightsLighting),
 					"Point Light Render Pass Vertex Shader",
 				),
 				entryPoint: GBufferVertexEntryFn,
@@ -50,11 +48,8 @@ export default class PointLightsRenderPass extends LightRenderPass {
 			},
 			fragment: {
 				module: PipelineStates.createShaderModule(
-					GetGBufferIntegrateShader(
-						LightType.Point,
-						DirectionalShadowRenderPass.TEXTURE_SIZE,
-						1,
-					),
+					GetGBufferIntegrateShader(RenderPassType.PointLightsLighting),
+					"Point Light Render Pass Fragment Shader",
 				),
 				entryPoint: GBufferIntegrateShaderEntryFn,
 				targets: PointLightsRenderPass.RENDER_TARGETS,

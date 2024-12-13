@@ -43,43 +43,50 @@ export default class GLTFModel extends Transform {
 	public setMaterial(
 		material: Material,
 		renderPassType = RenderPassType.Deferred,
-	) {
+	): this {
 		this.traverse((node) => {
 			if (node instanceof Drawable) {
 				node.setMaterial(material, renderPassType);
 			}
 		});
+		return this;
 	}
 
-	public setIsReflective(v: boolean) {
+	public setIsReflective(v: boolean): this {
 		this.traverse((node) => {
 			if (node instanceof Drawable) {
 				node.materialProps.isReflective = v;
 			}
 		});
+		return this;
 	}
 
-	public setTextureForAll(texture: GPUTexture, location: TextureLocation = 1) {
+	public setTextureForAll(
+		texture: GPUTexture,
+		location: TextureLocation = 1,
+	): this {
 		this.traverse((node) => {
 			if (node instanceof Drawable) {
 				node.setTexture(texture, location);
 			}
 		});
+		return this;
 	}
 
-	public setSampler(sampler: GPUSampler) {
+	public setSampler(sampler: GPUSampler): this {
 		this.traverse((node) => {
 			if (node instanceof Drawable) {
 				node.setSampler(sampler);
 			}
 		});
+		return this;
 	}
 
 	public setTextureFor(
 		nodeName: string,
 		texture: GPUTexture,
 		location: TextureLocation = 1,
-	) {
+	): this {
 		const node = this.findChildByLabel(nodeName);
 		if (!(node instanceof Drawable)) {
 			console.error("Found child is not instance of a Drawable");
@@ -87,6 +94,7 @@ export default class GLTFModel extends Transform {
 		}
 
 		node.setTexture(texture, location);
+		return this;
 	}
 
 	public async load() {

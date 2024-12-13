@@ -42,7 +42,7 @@ export default class PointLightsMaskPass extends LightRenderPass {
 	}
 
 	constructor() {
-		super(RenderPassType.PointLightsStencilMask);
+		super(RenderPassType.PointLightsStencilMask, true);
 
 		this.lightsMaskBindGroupEntries = [
 			{
@@ -88,7 +88,7 @@ export default class PointLightsMaskPass extends LightRenderPass {
 			layout: renderPSOLayout,
 			vertex: {
 				module: PipelineStates.createShaderModule(
-					GetGBufferVertexShader(1, true),
+					GetGBufferVertexShader(RenderPassType.PointLightsStencilMask),
 					"Point Light Mask Pass Vertex Shader",
 				),
 				entryPoint: GBufferVertexEntryFn,

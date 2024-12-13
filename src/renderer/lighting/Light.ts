@@ -7,12 +7,7 @@ import Transform from "../scene/Transform";
 import { SHADER_CHUNKS } from "../shader/chunks";
 import { Vec3, vec3 } from "wgpu-matrix";
 import { LightType, UUIDString } from "../types";
-
-export const LightTypeToShaderType: Map<LightType, number> = new Map([
-	[LightType.Directional, 0],
-	[LightType.Point, 1],
-	[LightType.Ambient, 2],
-]);
+import { LightTypeToShaderType } from "../constants";
 
 const _lightShaderDefs = makeShaderDataDefinitions(SHADER_CHUNKS.Light);
 const _lightsStorageView = makeStructuredView(_lightShaderDefs.structs.Light);

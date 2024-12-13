@@ -1,15 +1,10 @@
 import { wgsl } from "wgsl-preprocessor/wgsl-preprocessor.js";
-import { LightType } from "../types";
+import { LightType, RenderPassType } from "../types";
+import { LightPassType } from "../../types";
 
-interface IPBRLightingShaderUtils {
-	isDeferred: boolean;
-	hasIBL: boolean;
-}
-
-const GetPBRLightingShaderUtils = ({
-	isDeferred,
-	hasIBL,
-}): IPBRLightingShaderUtils => wgsl/* wgsl */ `
+const GetPBRLightingShaderUtils = (
+	lightPassType: LightPassType,
+) => wgsl/* wgsl */ `
   @must_use
   fn DistributionGGX(viewSpaceNormal: vec3f, H: vec3f, roughness: f32) -> f32 {
     let a = roughness*roughness;
@@ -62,11 +57,16 @@ const GetPBRLightingShaderUtils = ({
     V: vec3f,
     shadow: f32,
     opacity: f32,
-    #if ${hasIBL}
+    #if ${lightPassType === RenderPassType.PointLightsNonCulledLighting}
+      lightPosition: vec3f,
+      lightRadius: f32,
+      lightColor: vec3f,
+      lightIntensity: f32,
+    #elif ${lightPassType === RenderPassType.DirectionalAmbientLighting}
       diffuseIBLTexture: texture_cube<f32>,
       specularIBLTexture: texture_cube<f32>,
       bdrfLutTexture: texture_2d<f32>,
-      envTexSampler: sampler
+      envTexSampler: sampler,
     #endif
   ) -> vec4f {
     let albedo = material.albedo;
@@ -81,30 +81,36 @@ const GetPBRLightingShaderUtils = ({
 
     let metallic = material.metallic;
 
+    #if ${
+			lightPassType === RenderPassType.DirectionalAmbientLighting ||
+			lightPassType === RenderPassType.PointLightsStencilMask ||
+			lightPassType === RenderPassType.PointLightsLighting
+		}
     let light = &lightsBuffer[instanceId];
     let isPointLight = light.lightType == ${LightType.Point};
     let lightViewSpacePos = (camera.viewMatrix * vec4f(light.position, select(0.0, 1.0, isPointLight))).xyz;
-    // let lightPos = light.position;
     let dist = lightViewSpacePos.xyz - viewSpacePos.xyz;
     let d = length(dist);
+    let pointLightAttenuation = 1 - smoothstep(0.0, light.radius, d);
+    let lightColor = light.color;
+    let lightIntensity = light.intensity;
+    #elif ${lightPassType === RenderPassType.PointLightsNonCulledLighting}
+    let lightViewSpacePos = (camera.viewMatrix * vec4f(lightPosition, 1)).xyz;
+    let dist = lightViewSpacePos.xyz - viewSpacePos.xyz;
+    let d = length(dist);
+    let isPointLight = true;
+    let pointLightAttenuation = 1 - smoothstep(0.0, lightRadius, d);
+    #endif
 
     let L = select(normalize(lightViewSpacePos), normalize(dist), isPointLight);
     let H = normalize(V + L);
-
-
-    // if (d > 1) {
-    //   return vec4f(ambient, 1);
-    // }
-
-    // var pointLightAttenuation = 1 - (d / (light.radius));
-    let pointLightAttenuation = 1 - smoothstep(0.0, light.radius, d);
 
     // pointLightAttenuation *= pointLightAttenuation;
     // let fade = max(0.0, 1.0 - d / 0.1);
     // pointLightAttenuation *= fade;
     var attenuation = select(1.0, pointLightAttenuation, isPointLight);
     attenuation *= attenuation;
-    let radiance = light.color * attenuation * light.intensity;
+    let radiance = lightColor * attenuation * lightIntensity;
 
     let NDF = DistributionGGX(viewSpaceNormal, H, roughnessQuad);
     let G = GeometrySmith(viewSpaceNormal, V, L, roughness);
@@ -132,7 +138,7 @@ const GetPBRLightingShaderUtils = ({
     // add to outgoing radiance Lo
     Lo += (kD * albedoOverPi + specular) * radiance * NdotL * shadow; // * light.opacity;  // note that we already multiplied the BRDF by the Fresnel
   
-    #if ${hasIBL}
+    #if ${lightPassType === RenderPassType.DirectionalAmbientLighting}
       let worldSpaceNorm = (camera.inverseViewMatrix * vec4f(viewSpaceNormal, 0)).xyz;
       let worldSpaceV = (camera.inverseViewMatrix * vec4f(V, 0)).xyz;
       let irradiance = textureSampleLevel(diffuseIBLTexture, envTexSampler, worldSpaceNorm, 0).rgb;

@@ -1,4 +1,5 @@
 import { Vec3 } from "wgpu-matrix";
+import { RenderPassType } from "./renderer/types";
 
 export type SSRMethod = "linear" | "hi-z";
 
@@ -38,3 +39,9 @@ export enum TextureDebugMeshType {
 	ShadowDepthCascade1,
 	BDRF,
 }
+
+export type LightPassType =
+	| RenderPassType.PointLightsStencilMask
+	| RenderPassType.PointLightsLighting
+	| RenderPassType.DirectionalAmbientLighting
+	| RenderPassType.PointLightsNonCulledLighting;

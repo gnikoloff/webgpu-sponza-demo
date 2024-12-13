@@ -17,11 +17,19 @@ import {
 	POINT_LIGHTS_SHADER_COMPUTE_ENTRY_FN,
 	POINT_LIGHTS_UPDATE_SHADER_SRC,
 } from "../shaders/PointLightsUpdateShader";
+import CameraFaceCulledPointLight from "../../renderer/lighting/CameraFaceCulledPointLight";
 
-const FIRE_SPAWN_POSITIONS: Vec3[] = [
-	vec3.create(3.9, 3, 0.6),
+const MAIN_LAMP_POINT_LIGHT_POSITIONS: Vec3[] = [
+	vec3.create(3.9, 3, 0.9),
+	vec3.create(3.9, 3, -1.5),
+	vec3.create(-4.95, 3, 0.9),
+	vec3.create(-4.95, 3, -1.5),
+];
+
+const FIRE_PARTICLE_EMITTER_POSITIONS: Vec3[] = [
+	vec3.create(3.9, 3, 1.15),
 	vec3.create(3.9, 3, -1.75),
-	vec3.create(-4.95, 3, 0.6),
+	vec3.create(-4.95, 3, 1.15),
 	vec3.create(-4.95, 3, -1.75),
 ];
 
@@ -122,35 +130,39 @@ export default class LightingSystem extends LightingManager {
 		this.mainDirLight = dirLight;
 
 		let r = 4;
-		let p = new PointLight();
+		let p = new CameraFaceCulledPointLight();
 		p.radius = r;
-		p.setPositionAsVec3(FIRE_SPAWN_POSITIONS[0]);
+		p.setPositionAsVec3(MAIN_LAMP_POINT_LIGHT_POSITIONS[0]);
 		p.setColorAsVec3(FIRE_PARTICLE_COLOR);
+		p.updateGPUBuffer();
 		this.addLight(p);
 
-		let p2 = new PointLight();
+		let p2 = new CameraFaceCulledPointLight();
 		p2.radius = r;
-		p2.setPositionAsVec3(FIRE_SPAWN_POSITIONS[1]);
+		p2.setPositionAsVec3(MAIN_LAMP_POINT_LIGHT_POSITIONS[1]);
 		p2.setColorAsVec3(FIRE_PARTICLE_COLOR);
+		p2.updateGPUBuffer();
 		this.addLight(p2);
 
-		let p3 = new PointLight();
+		let p3 = new CameraFaceCulledPointLight();
 		p3.radius = r;
-		p3.setPositionAsVec3(FIRE_SPAWN_POSITIONS[2]);
+		p3.setPositionAsVec3(MAIN_LAMP_POINT_LIGHT_POSITIONS[2]);
 		p3.setColorAsVec3(FIRE_PARTICLE_COLOR);
+		p3.updateGPUBuffer();
 		this.addLight(p3);
 
-		let p4 = new PointLight();
+		let p4 = new CameraFaceCulledPointLight();
 		p4.radius = r;
-		p4.setPositionAsVec3(FIRE_SPAWN_POSITIONS[3]);
+		p4.setPositionAsVec3(MAIN_LAMP_POINT_LIGHT_POSITIONS[3]);
 		p4.setColorAsVec3(FIRE_PARTICLE_COLOR);
+		p4.updateGPUBuffer();
 		this.addLight(p4);
 
 		for (let i = 0; i < 64; i++) {
 			for (let n = 0; n < 4; n++) {
 				let p = new PointLight();
 				const pos = vec3.add(
-					FIRE_SPAWN_POSITIONS[n],
+					FIRE_PARTICLE_EMITTER_POSITIONS[n],
 					vec3.create(
 						(Math.random() * 2 - 1) * 0.1,
 						0,
@@ -339,7 +351,7 @@ export default class LightingSystem extends LightingManager {
 			},
 			depthStencil: {
 				format: "depth32float-stencil8",
-				depthWriteEnabled: true,
+				depthWriteEnabled: false,
 				depthCompare: "less",
 			},
 		});

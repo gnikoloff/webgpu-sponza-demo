@@ -1,4 +1,14 @@
-import { DebugTimingType, RenderPassType } from "./types";
+import { DebugTimingType, LightType, RenderPassType } from "./types";
+
+export const SHADER_DIRECTIONAL_LIGHT_TYPE = 0;
+export const SHADER_POINT_LIGHT_TYPE = 1;
+export const SHADER_AMBIENT_LIGHT_TYPE = 2;
+
+export const LightTypeToShaderType: Map<LightType, number> = new Map([
+	[LightType.Directional, SHADER_DIRECTIONAL_LIGHT_TYPE],
+	[LightType.Point, SHADER_POINT_LIGHT_TYPE],
+	[LightType.Ambient, SHADER_AMBIENT_LIGHT_TYPE],
+]);
 
 export const AllRenderPassTypes: RenderPassType[] = [
 	RenderPassType.Deferred,

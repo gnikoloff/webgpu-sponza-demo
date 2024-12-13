@@ -1,10 +1,12 @@
 import RenderingContext from "../core/RenderingContext";
+import CameraFaceCulledPointLight from "./CameraFaceCulledPointLight";
 import DirectionalLight from "./DirectionalLight";
 import Light from "./Light";
 import PointLight from "./PointLight";
 
 export default class LightingManager {
 	public pointLights: PointLight[] = [];
+	public cameraFaceCulledPointLights: CameraFaceCulledPointLight[] = [];
 	public directionalLights: DirectionalLight[] = [];
 	public allLights: Light[] = [];
 
@@ -60,7 +62,9 @@ export default class LightingManager {
 	}
 
 	public addLight(v: Light): this {
-		if (v instanceof PointLight) {
+		if (v instanceof CameraFaceCulledPointLight) {
+			this.cameraFaceCulledPointLights.push(v);
+		} else if (v instanceof PointLight) {
 			this.pointLights.push(v);
 		} else if (v instanceof DirectionalLight) {
 			this.directionalLights.push(v);
@@ -71,7 +75,10 @@ export default class LightingManager {
 
 	public removeLight(v: Light): this {
 		const filterOut = (light: Light) => light.id !== v.id;
-		if (v instanceof PointLight) {
+		if (v instanceof CameraFaceCulledPointLight) {
+			this.cameraFaceCulledPointLights =
+				this.cameraFaceCulledPointLights.filter(filterOut);
+		} else if (v instanceof PointLight) {
 			this.pointLights = this.pointLights.filter(filterOut);
 		} else if (v instanceof DirectionalLight) {
 			this.directionalLights = this.directionalLights.filter(filterOut);

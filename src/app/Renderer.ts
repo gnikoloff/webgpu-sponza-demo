@@ -52,6 +52,7 @@ import HiZCopyDepthComputePass from "./render-passes/HiZCopyDepthComputePass";
 import DebugBoundsPass from "./render-passes/DebugBoundsPass";
 import LightingSystem from "./lighting/LightingSystem";
 import { TextureDebugMeshType } from "../types";
+import PointLightsNonCulledRenderPass from "./render-passes/PointLightsNonCulledRenderPass";
 // import EnvironmentProbePass from "./render-passes/EnvironmentProbePass";
 
 export default class Renderer extends RenderingContext {
@@ -271,6 +272,18 @@ export default class Renderer extends RenderingContext {
 				])
 				.addOutputTexture(RENDER_PASS_LIGHTING_RESULT_TEXTURE);
 
+		const pointLightsNonInstancedNonCulledRenderPass =
+			new PointLightsNonCulledRenderPass()
+				.setCamera(this.mainCamera)
+				.addInputTextures([
+					RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
+					RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
+					RENDER_PASS_DEPTH_STENCIL_TEXTURE,
+					RENDER_PASS_SSAO_BLUR_TEXTURE,
+					RENDER_PASS_LIGHTING_RESULT_TEXTURE,
+				])
+				.addOutputTexture(RENDER_PASS_LIGHTING_RESULT_TEXTURE);
+
 		const pointLightsStencilMaskPass = new PointLightsMaskPass()
 			.setCamera(this.mainCamera)
 			.addInputTextures([RENDER_PASS_DEPTH_STENCIL_TEXTURE])
@@ -361,6 +374,7 @@ export default class Renderer extends RenderingContext {
 			.addPass(ssaoRenderPass)
 			.addPass(ssaoBlurRenderPass)
 			.addPass(directionalAmbientLightRenderPass)
+			.addPass(pointLightsNonInstancedNonCulledRenderPass)
 			.addPass(pointLightsStencilMaskPass)
 			.addPass(pointLightsRenderPass)
 			.addPass(transparentRenderPass)
@@ -492,16 +506,17 @@ export default class Renderer extends RenderingContext {
 			.updateWorldMatrix();
 		a.load().then(() => {
 			// a.setIsReflective(false);
-			a.setMaterial(MaterialCache.defaultGLTFTexturedDeferredMaterial);
-
 			a.setMaterial(
-				MaterialCache.defaultGLTFTransparentPBRMaterial,
-				RenderPassType.Transparent,
-			);
-			a.setMaterial(
+				MaterialCache.defaultGLTFTexturedDeferredMaterial,
+			).setMaterial(
 				MaterialCache.defaultGLTFShadowMaterial,
 				RenderPassType.Shadow,
 			);
+
+			// a.setMaterial(
+			// 	MaterialCache.defaultGLTFTransparentPBRMaterial,
+			// 	RenderPassType.Transparent,
+			// );
 		});
 
 		// const mipTex = TextureLoader.generateMipsFor2DTextureWithComputePSO(

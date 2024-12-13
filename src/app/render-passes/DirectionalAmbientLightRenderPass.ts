@@ -183,11 +183,7 @@ export default class DirectionalAmbientLightRenderPass extends LightRenderPass {
 			},
 			fragment: {
 				module: PipelineStates.createShaderModule(
-					GetGBufferIntegrateShader(
-						LightType.Directional,
-						DirectionalShadowRenderPass.TEXTURE_SIZE,
-						0,
-					),
+					GetGBufferIntegrateShader(RenderPassType.DirectionalAmbientLighting),
 					"Directional Light Pass Shader Module",
 				),
 				entryPoint: GBufferIntegrateShaderEntryFn,
