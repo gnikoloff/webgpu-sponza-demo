@@ -116,8 +116,6 @@ const GetGBufferIntegrateShader = (
       #endif
     );
 
-    // let bayerDitherOffset = textureSample(bayerDitherTexture, bayerDitherSampler, vec2f(coord.xy) / 8).r / 32.0 - (1.0 / 128.0);
-
     // color += vec4f(bayerDitherOffset);
 
     // color = color / (color + vec4f(vec3f(1.0), 0.0));

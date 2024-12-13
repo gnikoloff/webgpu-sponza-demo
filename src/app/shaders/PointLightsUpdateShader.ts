@@ -58,7 +58,7 @@ export const POINT_LIGHTS_UPDATE_SHADER_SRC = /* wgsl */ `
     let time = 1.0;
     let turbulence = curlNoise(
       particle.position * 0.05 + 
-      vec3<f32>(0.0, simSettings.time * 0.1, 0.0)
+      vec3<f32>(0.0, simSettings.time * 0.05, 0.0)
     ) * 0.2;
 
     particle.life += particle.lifeSpeed;

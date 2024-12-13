@@ -19,11 +19,13 @@ import {
 } from "../shaders/PointLightsUpdateShader";
 
 const FIRE_SPAWN_POSITIONS: Vec3[] = [
-	vec3.create(3.9, 3, 1.15),
+	vec3.create(3.9, 3, 0.6),
 	vec3.create(3.9, 3, -1.75),
-	vec3.create(-4.95, 3, 1.1),
-	vec3.create(-4.95, 3, -1.3),
+	vec3.create(-4.95, 3, 0.6),
+	vec3.create(-4.95, 3, -1.75),
 ];
+
+const FIRE_PARTICLE_COLOR = vec3.create(1, 0, 0);
 
 export default class LightingSystem extends LightingManager {
 	private static readonly COMPUTE_WORKGROUP_SIZE_X = 8;
@@ -119,32 +121,32 @@ export default class LightingSystem extends LightingManager {
 		this.addLight(dirLight);
 		this.mainDirLight = dirLight;
 
-		let r = 1;
+		let r = 4;
 		let p = new PointLight();
 		p.radius = r;
 		p.setPositionAsVec3(FIRE_SPAWN_POSITIONS[0]);
-		p.setColor(1, 1, 0);
+		p.setColorAsVec3(FIRE_PARTICLE_COLOR);
 		this.addLight(p);
 
 		let p2 = new PointLight();
 		p2.radius = r;
 		p2.setPositionAsVec3(FIRE_SPAWN_POSITIONS[1]);
-		p2.setColor(1, 1, 0);
+		p2.setColorAsVec3(FIRE_PARTICLE_COLOR);
 		this.addLight(p2);
 
 		let p3 = new PointLight();
 		p3.radius = r;
 		p3.setPositionAsVec3(FIRE_SPAWN_POSITIONS[2]);
-		p3.setColor(1, 1, 0);
+		p3.setColorAsVec3(FIRE_PARTICLE_COLOR);
 		this.addLight(p3);
 
 		let p4 = new PointLight();
 		p4.radius = r;
 		p4.setPositionAsVec3(FIRE_SPAWN_POSITIONS[3]);
-		p4.setColor(1, 1, 0);
+		p4.setColorAsVec3(FIRE_PARTICLE_COLOR);
 		this.addLight(p4);
 
-		for (let i = 0; i < 32; i++) {
+		for (let i = 0; i < 64; i++) {
 			for (let n = 0; n < 4; n++) {
 				let p = new PointLight();
 				const pos = vec3.add(
@@ -157,8 +159,8 @@ export default class LightingSystem extends LightingManager {
 				);
 				p.radius = 0.5;
 				p.setPositionAsVec3(pos);
-				p.setColor(1, 1, 0);
-				this.addParticleLight(p, 0.1);
+				p.setColorAsVec3(FIRE_PARTICLE_COLOR);
+				this.addParticleLight(p, 0.025);
 			}
 		}
 
@@ -236,6 +238,13 @@ export default class LightingSystem extends LightingManager {
 					type: "read-only-storage",
 				},
 			},
+			{
+				binding: 1,
+				visibility: GPUShaderStage.FRAGMENT,
+				buffer: {
+					type: "read-only-storage",
+				},
+			},
 		];
 
 		const renderBindGroupLayout = RenderingContext.device.createBindGroupLayout(
@@ -250,6 +259,12 @@ export default class LightingSystem extends LightingManager {
 				binding: 0,
 				resource: {
 					buffer: this.particlesGPUBuffer,
+				},
+			},
+			{
+				binding: 1,
+				resource: {
+					buffer: this.gpuBuffer,
 				},
 			},
 		];
@@ -318,6 +333,9 @@ export default class LightingSystem extends LightingManager {
 				entryPoint: PARTICLES_SHADER_FRAGMENT_ENTRY_FN,
 				module: renderShaderModule,
 				targets: colorTargets,
+				constants: {
+					ANIMATED_PARTICLES_OFFSET_START: 5,
+				},
 			},
 			depthStencil: {
 				format: "depth32float-stencil8",

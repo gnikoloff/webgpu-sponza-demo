@@ -73,7 +73,6 @@ export default class LightRenderPass extends RenderPass {
 	protected gbufferCommonBindGroupLayout: GPUBindGroupLayout;
 	protected gbufferTexturesBindGroupEntries: GPUBindGroupEntry[] = [];
 	protected gbufferTexturesBindGroup: GPUBindGroup;
-	protected bayerDitherSampler: GPUSampler;
 	protected debugLightsBuffer: GPUBuffer;
 
 	private _debugLightsMask = false;
@@ -124,13 +123,6 @@ export default class LightRenderPass extends RenderPass {
 				label: "GBuffer Textures Bind Group",
 				entries: LightRenderPass.gbufferCommonBindGroupLayoutEntries,
 			});
-
-		this.bayerDitherSampler = SamplerController.createSampler({
-			addressModeU: "repeat",
-			addressModeV: "repeat",
-			minFilter: "nearest",
-			magFilter: "nearest",
-		});
 
 		this.debugLightsBuffer = RenderingContext.device.createBuffer({
 			label: "Debug Lights GPUBuffer",

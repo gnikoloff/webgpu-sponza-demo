@@ -56,6 +56,13 @@ export default class Light extends Transform {
 		});
 	}
 
+	public setColorAsVec3(v: Vec3) {
+		vec3.copy(v, this._color);
+		this.lightsStorageView.set({
+			color: this._color,
+		});
+	}
+
 	public getColor(): Vec3 {
 		return this._color;
 	}

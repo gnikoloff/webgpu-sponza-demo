@@ -26,14 +26,12 @@ const GetGBufferVertexShader = (
   @group(0) @binding(6) var<uniform> debugLights: f32;
   #endif
 
-  override ANIMATED_PARTICLES_OFFSET_START: u32;
-
   @vertex
   fn ${GBufferVertexEntryFn}(
     @builtin(instance_index) instanceId: u32,
     in: VertexInput
   ) -> VertexOutput {
-    let trueInstanceId = instanceId + ANIMATED_PARTICLES_OFFSET_START;
+    let trueInstanceId = instanceId;
     let light = lightsBuffer[trueInstanceId];
     // let pos = camera.projectionViewMatrix * lightTransforms[] * in.position;
     var position = in.position;

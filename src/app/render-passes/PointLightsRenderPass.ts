@@ -45,7 +45,7 @@ export default class PointLightsRenderPass extends LightRenderPass {
 				entryPoint: GBufferVertexEntryFn,
 				buffers: VertexDescriptor.defaultLayout,
 				constants: {
-					ANIMATED_PARTICLES_OFFSET_START: 5,
+					// ANIMATED_PARTICLES_OFFSET_START: 5,
 				},
 			},
 			fragment: {
