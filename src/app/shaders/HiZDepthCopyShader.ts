@@ -9,7 +9,9 @@ export const HI_Z_COPY_DEPTH_COMPUTE_SHADER_SRC = /* wgsl */ `
   override WORKGROUP_SIZE_Y: u32;
 
   @compute @workgroup_size(WORKGROUP_SIZE_X, WORKGROUP_SIZE_Y)
-  fn ${HI_Z_COPY_DEPTH_COMPUTE_SHADER_ENTRY_FN}(@builtin(global_invocation_id) pos : vec3u) {
+  fn ${HI_Z_COPY_DEPTH_COMPUTE_SHADER_ENTRY_FN}(
+    @builtin(global_invocation_id) pos : vec3u
+  ) {
     let texSize = textureDimensions(sourceDepth);
     
     if (any(pos.xy > texSize)) {

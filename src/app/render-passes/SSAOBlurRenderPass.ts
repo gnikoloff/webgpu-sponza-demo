@@ -10,6 +10,7 @@ import { RenderPassType } from "../../renderer/types";
 import SSAOBlurShaderSrc, {
 	SSSAOBlurShaderName,
 } from "../shaders/SSAOBlurShader";
+import SSAORenderPass from "./SSAORenderPass";
 
 export default class SSAOBlurRenderPass extends RenderPass {
 	private outTextureView: GPUTextureView;
@@ -31,7 +32,9 @@ export default class SSAOBlurRenderPass extends RenderPass {
 			{
 				binding: 0,
 				visibility: GPUShaderStage.FRAGMENT,
-				texture: {},
+				texture: {
+					sampleType: "unfilterable-float",
+				},
 			},
 		];
 
@@ -57,6 +60,8 @@ export default class SSAOBlurRenderPass extends RenderPass {
 			},
 		});
 
+		width *= SSAORenderPass.SSAO_SCALE_FACTOR;
+		height *= SSAORenderPass.SSAO_SCALE_FACTOR;
 		this.outTextures.push(
 			RenderingContext.device.createTexture({
 				dimension: "2d",

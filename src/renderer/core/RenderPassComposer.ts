@@ -63,4 +63,10 @@ export default class RenderPassComposer {
 			});
 		}
 	}
+
+	public onFrameEnd() {
+		for (const pass of this.passes) {
+			pass.onFrameEnd();
+		}
+	}
 }

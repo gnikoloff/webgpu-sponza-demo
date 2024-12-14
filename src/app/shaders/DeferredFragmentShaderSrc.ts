@@ -86,7 +86,6 @@ export const getDefaultDeferredPBRFragmentShader = ({
     
     out.color = vec4f(color, f32(model.isReflective));
     
-
     var oldPos = in.prevFrameClipPos;
     var newPos = in.currFrameClipPos;
     

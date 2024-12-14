@@ -243,6 +243,10 @@ export default class RenderPass {
 		this.resolveTiming(commandEncoder);
 	}
 
+	public onFrameEnd() {
+		// ...
+	}
+
 	public render(
 		commandEncoder: GPUCommandEncoder,
 		scene: Scene,

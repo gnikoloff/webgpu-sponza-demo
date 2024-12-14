@@ -1,7 +1,10 @@
 import RenderPass from "../../renderer/core/RenderPass";
 import RenderingContext from "../../renderer/core/RenderingContext";
 import Scene from "../../renderer/scene/Scene";
-import { BIND_GROUP_LOCATIONS } from "../../renderer/core/RendererBindings";
+import {
+	BIND_GROUP_LOCATIONS,
+	RENDER_TARGET_LOCATIONS,
+} from "../../renderer/core/RendererBindings";
 import { RenderPassType } from "../../renderer/types";
 import VRAMUsageTracker from "../../renderer/misc/VRAMUsageTracker";
 
@@ -12,13 +15,13 @@ export default class GBufferRenderPass extends RenderPass {
 		this.outTextures.push(
 			RenderingContext.device.createTexture({
 				dimension: "2d",
-				format: "rg16float",
+				format: "rgba16float",
 				mipLevelCount: 1,
 				sampleCount: 1,
 				size: { width, height, depthOrArrayLayers: 1 },
 				usage:
 					GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
-				label: "Velocity GBuffer Texture",
+				label: "Normal + Metallic + Roughness + GBuffer Texture",
 			}),
 		);
 
@@ -38,13 +41,13 @@ export default class GBufferRenderPass extends RenderPass {
 		this.outTextures.push(
 			RenderingContext.device.createTexture({
 				dimension: "2d",
-				format: "rgba16float",
+				format: "rg16float",
 				mipLevelCount: 1,
 				sampleCount: 1,
 				size: { width, height, depthOrArrayLayers: 1 },
 				usage:
 					GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
-				label: "Normal + Metallic + Roughness + GBuffer Texture",
+				label: "Velocity GBuffer Texture",
 			}),
 		);
 
@@ -73,19 +76,23 @@ export default class GBufferRenderPass extends RenderPass {
 
 		const mainRenderPassColorAttachments: GPURenderPassColorAttachment[] = [
 			{
-				view: this.outTextures[0].createView(),
+				view: this.outTextures[
+					RENDER_TARGET_LOCATIONS.NormalMetallicRoughness
+				].createView(),
 				loadOp: "clear",
 				clearValue: [0, 0, 0, 0],
 				storeOp: "store",
 			},
 			{
-				view: this.outTextures[1].createView(),
+				view: this.outTextures[
+					RENDER_TARGET_LOCATIONS.ColorReflectance
+				].createView(),
 				loadOp: "clear",
 				clearValue: [0, 0, 0, 0],
 				storeOp: "store",
 			},
 			{
-				view: this.outTextures[2].createView(),
+				view: this.outTextures[RENDER_TARGET_LOCATIONS.Velocity].createView(),
 				loadOp: "clear",
 				clearValue: [0, 0, 0, 0],
 				storeOp: "store",

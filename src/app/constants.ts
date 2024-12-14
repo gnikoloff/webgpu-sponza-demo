@@ -1,3 +1,5 @@
+import { RENDER_TARGET_LOCATIONS } from "../renderer/core/RendererBindings";
+
 export const MAIN_CAMERA_NEAR = 0.1;
 export const MAIN_CAMERA_FAR = 100;
 export const ORTHO_CAMERA_NEAR = 0.1;
@@ -21,14 +23,16 @@ export const RENDER_PASS_HI_Z_DEPTH_TEXTURE = "hi-z depth texture";
 export const RENDER_PASS_COMPUTED_REFLECTIONS_TEXTURE =
 	"computed reflections texture";
 
-export const GBUFFER_OUTPUT_TARGETS: GPUColorTargetState[] = [
-	{
-		format: "rg16float",
-	},
-	{
-		format: "bgra8unorm",
-	},
-	{
-		format: "rgba16float",
-	},
-];
+export const GBUFFER_OUTPUT_TARGETS: GPUColorTargetState[] = new Array(3);
+
+GBUFFER_OUTPUT_TARGETS[RENDER_TARGET_LOCATIONS.NormalMetallicRoughness] = {
+	format: "rgba16float",
+};
+
+GBUFFER_OUTPUT_TARGETS[RENDER_TARGET_LOCATIONS.ColorReflectance] = {
+	format: "bgra8unorm",
+};
+
+GBUFFER_OUTPUT_TARGETS[RENDER_TARGET_LOCATIONS.Velocity] = {
+	format: "rg16float",
+};

@@ -50,7 +50,8 @@ const GetGBufferIntegrateShader = (
     let albedo = textureLoad(colorTexture, pixelCoords, 0).xyz;
     let depth = textureLoad(depthTexture, pixelCoords, 0);
     
-    let ao = textureLoad(aoTexture, pixelCoords, 0).r;
+    let aoPixelCoords = vec2i(floor(coord.xy / 2));
+    let ao = textureLoad(aoTexture, aoPixelCoords, 0).r;
     // return vec4f(ao, ao, ao, 1);
 
     // return vec4f(viewSpaceNormal, 1.0);

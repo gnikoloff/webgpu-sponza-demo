@@ -10,22 +10,29 @@ const SSAOShaderSrc = /* wgsl */ `
 
   ${NormalEncoderShaderUtils}
 
+  struct Settings {
+    kernelSize: u32,
+    radius: f32,
+    strength: f32
+  };
+
   @group(0) @binding(0) var normalMetallicRoughnessTex: texture_2d<f32>;
   @group(0) @binding(1) var depthTexture: texture_depth_2d;
   @group(0) @binding(2) var noiseTexture: texture_2d<f32>;
   @group(0) @binding(3) var<storage, read> kernelBuffer: array<vec4f>;
   @group(0) @binding(4) var<uniform> camera: CameraUniform;
+  @group(0) @binding(5) var<uniform> settings: Settings; 
 
   @fragment
   fn ${SSAOShaderName}(
     in: VertexOutput
   ) -> @location(0) vec4f {
     let coord = in.position;
-    let pixelCoords = vec2i(floor(coord.xy));
+    let pixelCoords = vec2i(floor(coord.xy * 2));
     let encodedN = textureLoad(normalMetallicRoughnessTex, pixelCoords, 0).rg;
     let viewNormal = decodeNormal(encodedN); 
     let centerDepth = textureLoad(depthTexture, pixelCoords, 0);
-    let viewSpacePos = calcViewSpacePos(camera, coord.xy, centerDepth);
+    let viewSpacePos = calcViewSpacePos(camera, coord.xy * 2, centerDepth);
 
     let noiseScale = vec2i(textureDimensions(noiseTexture).xy);
     let sampleCoords = pixelCoords % noiseScale;
@@ -36,8 +43,8 @@ const SSAOShaderSrc = /* wgsl */ `
     let viewBitangent = cross(viewNormal, viewTangent);
     let TBN = mat3x3f(viewTangent, viewBitangent, viewNormal);
 
-    const kernelSize = 16u;
-    const radius = 0.2f;
+    let kernelSize = settings.kernelSize;
+    let radius = settings.radius;
 
     var occlusion = 0.0;
 
@@ -64,7 +71,7 @@ const SSAOShaderSrc = /* wgsl */ `
     }
 
     occlusion = 1 - (occlusion / f32(kernelSize));
-    let finalOcclusion = pow(occlusion, 2);
+    let finalOcclusion = pow(occlusion, settings.strength);
 
     return vec4f(finalOcclusion);
   }

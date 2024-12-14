@@ -13,7 +13,7 @@ const GUI_PARAMS: IGUIParams = {
 	"Debug Shadow Map": false,
 	"Debug Shadow Cascades": false,
 	"Debug Point Lights Mask": false,
-	"SSR Enabled": true,
+	"Enable SSR": true,
 	"SSR Method": "hi-z",
 	"SSR Max Iterations": 30,
 	"Sun Intensity": 2,
@@ -23,6 +23,9 @@ const GUI_PARAMS: IGUIParams = {
 	"Debug Skybox": true,
 	"Debug Bounding Boxes": false,
 	"Enable SSAO": true,
+	"SSAO Kernel Size": 16,
+	"SSAO Radius": 0.2,
+	"SSAO Strength": 3,
 };
 
 const gui = new dat.GUI({ width: 270 });
@@ -36,7 +39,7 @@ gui.add(GUI_PARAMS, "Play Animation").onChange((v: boolean) => {
 // 	renderer.debugSkybox = v;
 // });
 
-const lightingFolder = gui.addFolder("Lighting");
+const lightingFolder = gui.addFolder("Sun");
 lightingFolder.open();
 lightingFolder.add(GUI_PARAMS, "Sun Intensity", 0, 5).onChange((v: number) => {
 	renderer.sunIntensity = v;
@@ -51,8 +54,22 @@ lightingFolder
 	.onChange((v: number) => {
 		renderer.sunPositionX = v;
 	});
-lightingFolder.add(GUI_PARAMS, "Enable SSAO").onChange((v: boolean) => {
+
+const ssaoFolder = gui.addFolder("Screen space Ambient Occlusion");
+ssaoFolder.open();
+ssaoFolder.add(GUI_PARAMS, "Enable SSAO").onChange((v: boolean) => {
 	renderer.ssaoEnabled = v;
+});
+ssaoFolder
+	.add(GUI_PARAMS, "SSAO Kernel Size", 8, 128, 1)
+	.onChange((v: number) => {
+		renderer.ssaoKernelSize = v;
+	});
+ssaoFolder.add(GUI_PARAMS, "SSAO Radius", 0, 1).onChange((v: number) => {
+	renderer.ssaoRadius = v;
+});
+ssaoFolder.add(GUI_PARAMS, "SSAO Strength", 0, 5).onChange((v: number) => {
+	renderer.ssaoStrength = v;
 });
 
 const shadowFolder = gui.addFolder("Shadow");
@@ -90,11 +107,11 @@ deferredRendererFolder
 		renderer.debugLightsMask = v;
 	});
 
-const ssrFolder = gui.addFolder("Screenspace Reflections");
+const ssrFolder = gui.addFolder("Screen space Reflections");
 ssrFolder.open();
 
 const ssrEnabledController = ssrFolder
-	.add(GUI_PARAMS, "SSR Enabled")
+	.add(GUI_PARAMS, "Enable SSR")
 	.onChange((v: boolean) => {
 		renderer.ssrEnabled = v;
 	});
@@ -153,6 +170,9 @@ function resize() {
 	renderer.sunPositionZ = GUI_PARAMS["Sun Position X"];
 	renderer.sunIntensity = GUI_PARAMS["Sun Intensity"];
 	renderer.ssaoEnabled = GUI_PARAMS["Enable SSAO"];
+	// renderer.ssaoKernelSize = GUI_PARAMS["SSAO Kernel Size"];
+	// renderer.ssaoStrength = GUI_PARAMS["SSAO Strength"];
+	// renderer.ssaoRadius = GUI_PARAMS["SSAO Radius"];
 	// renderer.debugPointLights = GUI_PARAMS["Debug Point Lights Mask"];
 	// renderer.toggleDebugCamera = GUI_PARAMS["Toggle Debug Camera"];
 	// renderer.debugSkybox = GUI_PARAMS["Debug Skybox"];

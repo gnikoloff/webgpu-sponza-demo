@@ -13,6 +13,8 @@ import TextureLoader from "../../renderer/texture/TextureLoader";
 import VRAMUsageTracker from "../../renderer/misc/VRAMUsageTracker";
 
 export default class SSAORenderPass extends RenderPass {
+	public static readonly SSAO_SCALE_FACTOR = 0.5;
+
 	private outTextureView: GPUTextureView;
 
 	private gbufferCommonBindGroupLayout: GPUBindGroupLayout;
@@ -20,10 +22,62 @@ export default class SSAORenderPass extends RenderPass {
 	private gbufferTexturesBindGroup: GPUBindGroup;
 
 	private renderPSO: GPURenderPipeline;
-
 	private noiseTexture?: GPUTexture;
-
 	private kernelBuffer: GPUBuffer;
+	private settingsBuffer: GPUBuffer;
+
+	private startKernelSize = 16;
+
+	private _kernelSize = 128;
+	public get kernelSize(): number {
+		return this._kernelSize;
+	}
+	public set kernelSize(v: number) {
+		this._kernelSize = v;
+		this.updateSettingsBufferKernelSize();
+	}
+
+	private _radius = 0.2;
+	public get radius(): number {
+		return this._radius;
+	}
+	public set radius(v: number) {
+		this._radius = v;
+		this.updateSettingsBufferRadius();
+	}
+
+	private _strength = 2;
+	public get strength(): number {
+		return this._strength;
+	}
+	public set strength(v: number) {
+		this._strength = v;
+		this.updateSettingsBufferStrength();
+	}
+
+	private updateSettingsBufferKernelSize() {
+		RenderingContext.device.queue.writeBuffer(
+			this.settingsBuffer,
+			0,
+			new Uint32Array([this.kernelSize]),
+		);
+	}
+
+	private updateSettingsBufferRadius() {
+		RenderingContext.device.queue.writeBuffer(
+			this.settingsBuffer,
+			Uint32Array.BYTES_PER_ELEMENT,
+			new Float32Array([this.radius]),
+		);
+	}
+
+	private updateSettingsBufferStrength() {
+		RenderingContext.device.queue.writeBuffer(
+			this.settingsBuffer,
+			Uint32Array.BYTES_PER_ELEMENT + Float32Array.BYTES_PER_ELEMENT,
+			new Float32Array([this.strength]),
+		);
+	}
 
 	public override destroy(): void {
 		super.destroy();
@@ -35,9 +89,11 @@ export default class SSAORenderPass extends RenderPass {
 
 	constructor(width: number, height: number) {
 		super(RenderPassType.SSAO, width, height);
-		const kernel = new Float32Array(16 * 4);
 
-		for (let i = 0; i < 16; i++) {
+		const kernelSize = this.kernelSize;
+		const kernel = new Float32Array(kernelSize * 4);
+
+		for (let i = 0; i < kernelSize; i++) {
 			const sample = vec4.create(
 				Math.random() * 2 - 1,
 				Math.random() * 2 - 1,
@@ -46,7 +102,7 @@ export default class SSAORenderPass extends RenderPass {
 			);
 
 			// bias sampler closer to the origin
-			const scale = i / 16;
+			const scale = i / kernelSize;
 
 			vec4.scale(sample, lerp(0.1, 1, scale * scale), sample);
 
@@ -57,7 +113,7 @@ export default class SSAORenderPass extends RenderPass {
 		this.kernelBuffer = RenderingContext.device.createBuffer({
 			label: "SSAO Kernel Buffer",
 			mappedAtCreation: true,
-			size: 16 * 4 * Float32Array.BYTES_PER_ELEMENT,
+			size: kernelSize * 4 * Float32Array.BYTES_PER_ELEMENT,
 			usage: GPUBufferUsage.STORAGE,
 		});
 
@@ -65,6 +121,20 @@ export default class SSAORenderPass extends RenderPass {
 
 		new Float32Array(this.kernelBuffer.getMappedRange()).set(kernel);
 		this.kernelBuffer.unmap();
+
+		this.settingsBuffer = RenderingContext.device.createBuffer({
+			label: "SSAO Settings GPU Buffer",
+			size: 4 * Float32Array.BYTES_PER_ELEMENT,
+			usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM,
+			mappedAtCreation: true,
+		});
+		const settingsBuffContents = this.settingsBuffer.getMappedRange();
+		new Uint32Array(settingsBuffContents).set([this.startKernelSize]);
+		new Float32Array(settingsBuffContents).set([this.radius, this.strength], 1);
+
+		VRAMUsageTracker.addBufferBytes(this.settingsBuffer);
+
+		this.settingsBuffer.unmap();
 
 		const gbufferCommonBindGroupLayoutEntries: GPUBindGroupLayoutEntry[] = [
 			{
@@ -95,6 +165,13 @@ export default class SSAORenderPass extends RenderPass {
 			},
 			{
 				binding: 4,
+				visibility: GPUShaderStage.FRAGMENT,
+				buffer: {
+					type: "uniform",
+				},
+			},
+			{
+				binding: 5,
 				visibility: GPUShaderStage.FRAGMENT,
 				buffer: {
 					type: "uniform",
@@ -131,13 +208,16 @@ export default class SSAORenderPass extends RenderPass {
 			},
 		});
 
+		// Render SSAO at half res
+		width *= SSAORenderPass.SSAO_SCALE_FACTOR;
+		height *= SSAORenderPass.SSAO_SCALE_FACTOR;
 		this.outTextures.push(
 			RenderingContext.device.createTexture({
 				dimension: "2d",
 				format: "r16float",
 				mipLevelCount: 1,
 				sampleCount: 1,
-				size: { width, height, depthOrArrayLayers: 1 },
+				size: { width: width, height, depthOrArrayLayers: 1 },
 				usage:
 					GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT,
 				label: "SSAO Texture",
@@ -231,6 +311,12 @@ export default class SSAORenderPass extends RenderPass {
 					binding: 4,
 					resource: {
 						buffer: this.camera.gpuBuffer,
+					},
+				},
+				{
+					binding: 5,
+					resource: {
+						buffer: this.settingsBuffer,
 					},
 				},
 			];

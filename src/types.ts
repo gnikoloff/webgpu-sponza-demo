@@ -10,7 +10,7 @@ export interface IGUIParams {
 	"Debug Shadow Map": boolean;
 	"Debug Shadow Cascades": boolean;
 	"Debug Point Lights Mask": boolean;
-	"SSR Enabled": boolean;
+	"Enable SSR": boolean;
 	"SSR Method": SSRMethod;
 	"SSR Max Iterations": number;
 	"Sun Intensity": number;
@@ -20,6 +20,9 @@ export interface IGUIParams {
 	"Debug Skybox": boolean;
 	"Debug Bounding Boxes": boolean;
 	"Enable SSAO": boolean;
+	"SSAO Radius": number;
+	"SSAO Strength": number;
+	"SSAO Kernel Size": number;
 }
 
 export interface ILightParticle {
