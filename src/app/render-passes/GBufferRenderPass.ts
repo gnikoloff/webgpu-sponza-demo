@@ -124,6 +124,10 @@ export default class GBufferRenderPass extends RenderPass {
 		scene: Scene,
 		inputs: GPUTexture[],
 	): GPUTexture[] {
+		if (this.hasResized) {
+			this.hasResized = false;
+			return [];
+		}
 		const renderPassDescriptor = this.createRenderPassDescriptor();
 		const renderPassEncoder =
 			commandEncoder.beginRenderPass(renderPassDescriptor);
@@ -148,7 +152,7 @@ export default class GBufferRenderPass extends RenderPass {
 		}
 		renderPassEncoder.end();
 
-		this.resolveTiming(commandEncoder);
+		this.postRender(commandEncoder);
 
 		return [
 			this.normalMetallicRoughnessTexture,

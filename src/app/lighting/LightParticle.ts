@@ -36,13 +36,15 @@ export default class LightParticle {
 	public origPosition: Vec3;
 	public velocity: Vec3;
 	public lifeSpeed: number;
+	public life: number;
 
 	constructor(
-		{ radius, position, velocity, lifeSpeed }: ILightParticle = {
+		{ radius, position, velocity, lifeSpeed, life }: ILightParticle = {
 			radius: 1,
 			position: vec3.create(0, 3, 0),
 			velocity: vec3.create(0, 1, 0),
 			lifeSpeed: 1,
+			life: 0,
 		},
 	) {
 		this.radius = radius;
@@ -50,5 +52,6 @@ export default class LightParticle {
 		this.origPosition = position;
 		this.velocity = velocity;
 		this.lifeSpeed = lifeSpeed;
+		this.life = life;
 	}
 }

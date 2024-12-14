@@ -53,6 +53,9 @@ import DebugBoundsPass from "./render-passes/DebugBoundsPass";
 import LightingSystem from "./lighting/LightingSystem";
 import { TextureDebugMeshType } from "../types";
 import PointLightsNonCulledRenderPass from "./render-passes/PointLightsNonCulledRenderPass";
+import LineDebugDrawable from "./debug/LineDebugDrawable";
+import { vec3 } from "wgpu-matrix";
+import CatmullRomCurve3 from "../renderer/math/CatmullRomCurve3";
 // import EnvironmentProbePass from "./render-passes/EnvironmentProbePass";
 
 export default class Renderer extends RenderingContext {
@@ -105,11 +108,8 @@ export default class Renderer extends RenderingContext {
 		).enabled = v;
 	}
 
-	private lightingManager = new LightingSystem();
+	private lightingManager: LightingSystem;
 	private scene = new Scene();
-	private cube: Drawable;
-	private cube1: Drawable;
-	private sphere: Drawable;
 
 	private renderPassComposer: RenderPassComposer;
 
@@ -230,6 +230,43 @@ export default class Renderer extends RenderingContext {
 		this.debugCamera.setLookAt(0, 7, 0);
 		this.debugCamera.updateViewMatrix();
 
+		const curve = new CatmullRomCurve3(
+			[
+				vec3.create(5.5, 7.5, 3.25),
+				vec3.create(4, 6.5, 0.5),
+				vec3.create(2.5, 6.5, 3.25),
+				vec3.create(1, 7.5, 0.5),
+				vec3.create(-0.5, 7.5, 3.25),
+				vec3.create(-2, 6.5, 0.5),
+				vec3.create(-3.5, 6.5, 3.25),
+				vec3.create(-5, 7.5, 0.5),
+				vec3.create(-6.5, 7.5, 3.25),
+				vec3.create(-7.75, 6.5, 0.5),
+				vec3.create(-10.5, 7.5, -0.125),
+				vec3.create(-7.75, 7.5, -1),
+				vec3.create(-6.5, 6.5, -4),
+				vec3.create(-5, 6.5, -1),
+				vec3.create(-3.5, 7.5, -4),
+				vec3.create(-2, 7.5, -1),
+				vec3.create(-0.5, 6.5, -4),
+				vec3.create(1, 6.5, -1),
+				vec3.create(2.5, 7.5, -4),
+				vec3.create(4, 7.5, -1),
+				vec3.create(5.5, 6.5, -4),
+				vec3.create(6.5, 6.5, -1),
+				vec3.create(9, 6.5, -1),
+				vec3.create(9.5, 7.5, -0.125),
+				vec3.create(9, 6.5, 0.7),
+				vec3.create(6, 6.5, 1),
+				vec3.create(6, 7.5, 3.25),
+			],
+			true,
+		);
+		const movementCurvePoints = curve.getPoints(240);
+		// const debugLine = new LineDebugDrawable(movementCurvePoints);
+		// this.scene.addChild(debugLine);
+
+		this.lightingManager = new LightingSystem(movementCurvePoints);
 		this.scene.lightingManager = this.lightingManager;
 
 		this.renderPassComposer = new RenderPassComposer();
@@ -368,10 +405,6 @@ export default class Renderer extends RenderingContext {
 			RENDER_PASS_TAA_RESOLVE_TEXTURE,
 		);
 
-		// const ssrRenderPass = new ReflectionComputePass().addInputTexture(
-		// 	RENDER_PASS_TAA_RESOLVE_TEXTURE,
-		// );
-
 		this.renderPassComposer
 			.addPass(shadowRenderPass)
 			.addPass(gbufferRenderPass)
@@ -390,96 +423,10 @@ export default class Renderer extends RenderingContext {
 			.addPass(debugBBoxesPass)
 			.addPass(blitRenderPass);
 
-		// this.renderPassComposer.addPass(debugBBoxesPass);
-
-		// this.mainCameraCtrl = new CameraOrbitController(
-		// 	this.mainCamera,
-		// 	RenderingContext.$canvas,
-		// 	true,
-		// );
-		// this.mainCameraCtrl.setLookAt(0, 2, 0);
-		// this.mainCameraCtrl.startTick();
-
 		this.texturesDebugContainer = new TexturesDebugContainer();
 		this.timingDebugContainer = new DebugTimingContainer();
 
-		// this.ground = new GroundContainer();
-		// this.scene.addChild(this.ground);
-
-		this.cube = new Drawable(GeometryCache.unitCubeGeometry);
-		this.cube.label = "Cube 1";
-
-		this.cube.setPosition(0, 2, 0);
-		this.cube.updateWorldMatrix();
-		this.cube.setMaterial(
-			MaterialCache.defaultDeferredPBRMaterial,
-			RenderPassType.Deferred,
-		);
-		this.cube.setMaterial(
-			MaterialCache.defaultShadowMaterial,
-			RenderPassType.Shadow,
-		);
-		this.cube.materialProps.isReflective = false;
-		this.cube.materialProps.metallic = 0.2;
-		this.cube.materialProps.roughness = 0.7;
-		this.cube.materialProps.setColor(0.6, 0.6, 0.6);
-		this.scene.addChild(this.cube);
-
-		this.cube1 = new Drawable(new CubeGeometry(1, 1, 1));
-		this.cube1.label = "Cube 2";
-		this.cube1.setMaterial(
-			MaterialCache.defaultGLTFDeferredPBRMaterial,
-			RenderPassType.Deferred,
-		);
-		this.cube1.setMaterial(
-			MaterialCache.defaultGLTFShadowMaterial,
-			RenderPassType.Shadow,
-		);
-		this.cube1.materialProps.isReflective = false;
-		this.cube1.materialProps.setColor(0.1, 0.8, 0.2);
-		this.cube1.setPosition(2, 8, 9).setScale(5, 0.1, 0.1);
-		this.cube1.updateWorldMatrix();
-
-		this.sphere = new Drawable(new SphereGeometry());
-		this.sphere.label = "Sphere";
-		this.sphere.setMaterial(
-			MaterialCache.defaultDeferredPBRMaterial,
-			RenderPassType.Deferred,
-		);
-		this.sphere.setMaterial(
-			MaterialCache.defaultShadowMaterial,
-			RenderPassType.Shadow,
-		);
-		this.sphere.materialProps.setColor(0.8, 0.3, 0.3);
-		this.sphere.materialProps.metallic = 0.3;
-		this.sphere.materialProps.roughness = 0.96;
-		this.sphere.materialProps.isReflective = false;
-
-		this.scene.addChild(this.sphere);
-
-		// this.pbrSpheres = new PBRSpheres();
-		// this.scene.addChild(this.pbrSpheres);
-
-		// this.scene.addChild(this.cube);
-		// this.scene.addChild(this.cube1);
-		// this.scene.addChild(this.sphere);
-
-		// this.shadowPass = new DirectionalShadowRenderPass(
-		// 	this.scene,
-		// 	this.sceneDirectionalLight,
-		// );
-		// this.shadowPass.setCamera(this.mainCamera);
-
-		// this.environmentProbePass = new EnvironmentProbePass();
-
 		this.scene.skybox = new Skybox();
-
-		// TextureLoader.loadHDRImage("/cobblestone_street_night_2k.hdr").then();
-		// TextureLoader.loadHDREnvironmentAsCubeMapTexture(
-		// 	"/cobblestone_street_night_2k.hdr",
-		// ).then((cubeTex) => {
-		// 	this.skybox.setTexture(cubeTex);
-		// });
 
 		TextureLoader.load6SeparateHDRFacesAsCubeMapTexture(
 			["/px.hdr", "/nx.hdr", "/py.hdr", "/ny.hdr", "/pz.hdr", "/nz.hdr"],
@@ -522,12 +469,6 @@ export default class Renderer extends RenderingContext {
 			// 	RenderPassType.Transparent,
 			// );
 		});
-
-		// const mipTex = TextureLoader.generateMipsFor2DTextureWithComputePSO(
-		// 	TextureLoader.dummyTexture,
-		// 	"dummy tex mipmapped",
-		// );
-		// console.log({ mipTex });
 	}
 
 	public resize(w: number, h: number) {
@@ -556,22 +497,8 @@ export default class Renderer extends RenderingContext {
 		this.debugCamera.onFrameStart();
 		this.mainCamera.onFrameStart();
 
-		if (this.enableAnimation) {
-			this.cube
-				.setScale(0.5, 0.5, 0.5)
-				.setRotationY(RenderingContext.elapsedTimeMs)
-				.updateWorldMatrix();
-
-			this.sphere
-				.setScale(0.2, 0.2, 0.2)
-				.setPositionX(Math.cos(RenderingContext.elapsedTimeMs) * 1)
-				.setPositionZ(Math.sin(RenderingContext.elapsedTimeMs) * 1)
-				.setPositionY(4)
-				.updateWorldMatrix();
-		}
-
 		if (this.mainCamera.hasChangedSinceLastFrame) {
-			this.scene.sortTransparentNodesFrom(this.mainCamera);
+			// this.scene.sortTransparentNodesFrom(this.mainCamera);
 		}
 
 		const commandEncoder = RenderingContext.device.createCommandEncoder({
@@ -581,61 +508,61 @@ export default class Renderer extends RenderingContext {
 		this.lightingManager.update(commandEncoder);
 		this.renderPassComposer.render(commandEncoder);
 
-		this.texturesDebugContainer.setTextureGBufferSection(
-			TextureDebugMeshType.Albedo,
-			this.renderPassComposer.getTexture(
-				RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
-			),
-		);
-		this.texturesDebugContainer.setTextureGBufferSection(
-			TextureDebugMeshType.Normal,
-			this.renderPassComposer.getTexture(
-				RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
-			),
-		);
-		this.texturesDebugContainer.setTextureGBufferSection(
-			TextureDebugMeshType.Metallic,
-			this.renderPassComposer.getTexture(
-				RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
-			),
-		);
-		this.texturesDebugContainer.setTextureGBufferSection(
-			TextureDebugMeshType.Roughness,
-			this.renderPassComposer.getTexture(
-				RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
-			),
-		);
-		this.texturesDebugContainer.setTextureGBufferSection(
-			TextureDebugMeshType.AO,
-			this.renderPassComposer.getTexture(RENDER_PASS_SSAO_BLUR_TEXTURE),
-		);
-		this.texturesDebugContainer.setTextureGBufferSection(
-			TextureDebugMeshType.Reflectance,
-			this.renderPassComposer.getTexture(
-				RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
-			),
-		);
-		this.texturesDebugContainer.setTextureGBufferSection(
-			TextureDebugMeshType.Depth,
-			this.renderPassComposer.getTexture(RENDER_PASS_DEPTH_STENCIL_TEXTURE),
-		);
-		this.texturesDebugContainer.setTextureGBufferSection(
-			TextureDebugMeshType.Velocity,
-			this.renderPassComposer.getTexture(RENDER_PASS_VELOCITY_TEXTURE),
-		);
-		this.texturesDebugContainer.shadowDebugSection.setTextureFor(
-			TextureDebugMeshType.ShadowDepthCascade0,
-			this.renderPassComposer.getTexture(
-				RENDER_PASS_DIRECTIONAL_LIGHT_DEPTH_TEXTURE,
-			),
-		);
-		this.texturesDebugContainer.shadowDebugSection.setTextureFor(
-			TextureDebugMeshType.ShadowDepthCascade1,
-			this.renderPassComposer.getTexture(
-				RENDER_PASS_DIRECTIONAL_LIGHT_DEPTH_TEXTURE,
-			),
-		);
-		this.texturesDebugContainer.render(commandEncoder);
+		// this.texturesDebugContainer.setTextureGBufferSection(
+		// 	TextureDebugMeshType.Albedo,
+		// 	this.renderPassComposer.getTexture(
+		// 		RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
+		// 	),
+		// );
+		// this.texturesDebugContainer.setTextureGBufferSection(
+		// 	TextureDebugMeshType.Normal,
+		// 	this.renderPassComposer.getTexture(
+		// 		RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
+		// 	),
+		// );
+		// this.texturesDebugContainer.setTextureGBufferSection(
+		// 	TextureDebugMeshType.Metallic,
+		// 	this.renderPassComposer.getTexture(
+		// 		RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
+		// 	),
+		// );
+		// this.texturesDebugContainer.setTextureGBufferSection(
+		// 	TextureDebugMeshType.Roughness,
+		// 	this.renderPassComposer.getTexture(
+		// 		RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
+		// 	),
+		// );
+		// this.texturesDebugContainer.setTextureGBufferSection(
+		// 	TextureDebugMeshType.AO,
+		// 	this.renderPassComposer.getTexture(RENDER_PASS_SSAO_BLUR_TEXTURE),
+		// );
+		// this.texturesDebugContainer.setTextureGBufferSection(
+		// 	TextureDebugMeshType.Reflectance,
+		// 	this.renderPassComposer.getTexture(
+		// 		RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
+		// 	),
+		// );
+		// this.texturesDebugContainer.setTextureGBufferSection(
+		// 	TextureDebugMeshType.Depth,
+		// 	this.renderPassComposer.getTexture(RENDER_PASS_DEPTH_STENCIL_TEXTURE),
+		// );
+		// this.texturesDebugContainer.setTextureGBufferSection(
+		// 	TextureDebugMeshType.Velocity,
+		// 	this.renderPassComposer.getTexture(RENDER_PASS_VELOCITY_TEXTURE),
+		// );
+		// this.texturesDebugContainer.shadowDebugSection.setTextureFor(
+		// 	TextureDebugMeshType.ShadowDepthCascade0,
+		// 	this.renderPassComposer.getTexture(
+		// 		RENDER_PASS_DIRECTIONAL_LIGHT_DEPTH_TEXTURE,
+		// 	),
+		// );
+		// this.texturesDebugContainer.shadowDebugSection.setTextureFor(
+		// 	TextureDebugMeshType.ShadowDepthCascade1,
+		// 	this.renderPassComposer.getTexture(
+		// 		RENDER_PASS_DIRECTIONAL_LIGHT_DEPTH_TEXTURE,
+		// 	),
+		// );
+		// this.texturesDebugContainer.render(commandEncoder);
 
 		RenderingContext.device.queue.submit([commandEncoder.finish()]);
 
@@ -676,5 +603,7 @@ export default class Renderer extends RenderingContext {
 			.setDisplayValue(DebugTimingType.CPUTotal, this.cpuAverage.get())
 			.setDisplayValue(DebugTimingType.GPUTotal, this.gpuAverage.get())
 			.setDisplayValue(DebugTimingType.FPS, this.fpsDisplayAverage.get());
+
+		RenderingContext.frameIndex++;
 	}
 }

@@ -18,6 +18,7 @@ import {
 	POINT_LIGHTS_UPDATE_SHADER_SRC,
 } from "../shaders/PointLightsUpdateShader";
 import CameraFaceCulledPointLight from "../../renderer/lighting/CameraFaceCulledPointLight";
+import CatmullRomCurve3 from "../../renderer/math/CatmullRomCurve3";
 
 const MAIN_LAMP_POINT_LIGHT_POSITIONS: Vec3[] = [
 	vec3.create(3.9, 3, 0.9),
@@ -38,6 +39,9 @@ const FIRE_PARTICLE_COLOR = vec3.create(1, 0, 0);
 export default class LightingSystem extends LightingManager {
 	private static readonly COMPUTE_WORKGROUP_SIZE_X = 8;
 	private static readonly COMPUTE_WORKGROUP_SIZE_Y = 1;
+
+	private static readonly PARTICLES_PER_FIRE = 64;
+	private static readonly PARTICLES_PER_CURVE = 150;
 
 	private particlesGPUBuffer!: GPUBuffer;
 	private particles: LightParticle[] = [];
@@ -74,14 +78,21 @@ export default class LightingSystem extends LightingManager {
 		this.mainDirLight.setPositionZ(v);
 	}
 
-	public addParticleLight(v: Light, pRadius = 0.05): this {
+	public addParticleLight(
+		v: Light,
+		pRadius = 0.05,
+		pLife = 0,
+		pLifeSpeed = Math.random() * 0.01 + 0.002,
+		pVelocity = vec3.create(0, 0.5, 0),
+	): this {
 		super.addLight(v);
 
 		const p = new LightParticle({
-			radius: 0.05,
+			radius: pRadius,
 			position: v.position,
-			velocity: vec3.create(0, 0.5, 0),
-			lifeSpeed: Math.random() * 0.01 + 0.002,
+			velocity: pVelocity,
+			lifeSpeed: pLifeSpeed,
+			life: pLife,
 		});
 		this.particles.push(p);
 
@@ -131,7 +142,7 @@ export default class LightingSystem extends LightingManager {
 			particlesGPUBufferContents[velocityOffset + 2] =
 				this.particles[i].velocity[2];
 
-			particlesGPUBufferContents[lifeOffset] = 0;
+			particlesGPUBufferContents[lifeOffset] = this.particles[i].life;
 
 			particlesGPUBufferContents[lifeSpeedOffset] = this.particles[i].lifeSpeed;
 
@@ -144,7 +155,7 @@ export default class LightingSystem extends LightingManager {
 		this.particles = null;
 	}
 
-	constructor() {
+	constructor(curvePoints: Vec3[]) {
 		super();
 
 		const dirLight = new DirectionalLight();
@@ -183,9 +194,10 @@ export default class LightingSystem extends LightingManager {
 		p4.updateGPUBuffer();
 		this.addLight(p4);
 
-		for (let i = 0; i < 64; i++) {
+		// Fire Particles
+		for (let i = 0; i < LightingSystem.PARTICLES_PER_FIRE; i++) {
 			for (let n = 0; n < 4; n++) {
-				let p = new PointLight();
+				const p = new PointLight();
 				const pos = vec3.add(
 					FIRE_PARTICLE_EMITTER_POSITIONS[n],
 					vec3.create(
@@ -197,8 +209,44 @@ export default class LightingSystem extends LightingManager {
 				p.radius = 0.5;
 				p.setPositionAsVec3(pos);
 				p.setColorAsVec3(FIRE_PARTICLE_COLOR);
-				this.addParticleLight(p, 0.025);
+				this.addParticleLight(p, 0.05);
 			}
+		}
+
+		const curvePointsBuff = RenderingContext.device.createBuffer({
+			label: "Lighting System Curve Points GPU Buffer",
+			size: 4 * curvePoints.length * Float32Array.BYTES_PER_ELEMENT,
+			usage: GPUBufferUsage.STORAGE,
+			mappedAtCreation: true,
+		});
+		const curvePointsBuffContents = new Float32Array(
+			curvePointsBuff.getMappedRange(),
+		);
+
+		for (let i = 0; i < curvePoints.length; i++) {
+			curvePointsBuffContents[i * 4 + 0] = curvePoints[i][0];
+			curvePointsBuffContents[i * 4 + 1] = curvePoints[i][1];
+			curvePointsBuffContents[i * 4 + 2] = curvePoints[i][2];
+			curvePointsBuffContents[i * 4 + 3] = 1;
+		}
+
+		curvePointsBuff.unmap();
+
+		// Curve Particles
+		let zeroPos = vec3.create();
+		for (let i = 0; i < LightingSystem.PARTICLES_PER_CURVE; i++) {
+			const p = new PointLight();
+			p.setColor(
+				Math.random() * 0.5 + 0.3,
+				Math.random() * 0.5 + 0.3,
+				Math.random() * 0.5 + 0.3,
+			);
+			p.setPositionAsVec3(zeroPos);
+			p.radius = 2.5;
+			// p.intensity = 1;
+			const t = i / LightingSystem.PARTICLES_PER_CURVE;
+			// const t = Math.random();
+			this.addParticleLight(p, 0.025, t, 0.0001, vec3.random(0.25));
 		}
 
 		this.updateGPUBuffer();
@@ -232,6 +280,13 @@ export default class LightingSystem extends LightingManager {
 					type: "uniform",
 				},
 			},
+			{
+				binding: 3,
+				visibility: GPUShaderStage.COMPUTE,
+				buffer: {
+					type: "read-only-storage",
+				},
+			},
 		];
 
 		const computeBindGroupLayout =
@@ -257,6 +312,12 @@ export default class LightingSystem extends LightingManager {
 				binding: 2,
 				resource: {
 					buffer: this.particleSimSettingsBuffer,
+				},
+			},
+			{
+				binding: 3,
+				resource: {
+					buffer: curvePointsBuff,
 				},
 			},
 		];
@@ -327,6 +388,9 @@ export default class LightingSystem extends LightingManager {
 					WORKGROUP_SIZE_X: LightingSystem.COMPUTE_WORKGROUP_SIZE_X,
 					WORKGROUP_SIZE_Y: LightingSystem.COMPUTE_WORKGROUP_SIZE_Y,
 					ANIMATED_PARTICLES_OFFSET_START: 5,
+					FIREWORK_PARTICLES_OFFSET: 0,
+					CURVE_PARTICLES_OFFSET: 4 * LightingSystem.PARTICLES_PER_FIRE,
+					CURVE_POSITIONS_COUNT: curvePoints.length,
 				},
 			},
 		});
@@ -364,7 +428,9 @@ export default class LightingSystem extends LightingManager {
 			vertex: {
 				entryPoint: PARTICLES_SHADER_VERTEX_ENTRY_FN,
 				module: renderShaderModule,
-				constants: {},
+				constants: {
+					CURVE_PARTICLES_OFFSET: 4 * LightingSystem.PARTICLES_PER_FIRE,
+				},
 			},
 			fragment: {
 				entryPoint: PARTICLES_SHADER_FRAGMENT_ENTRY_FN,
@@ -372,11 +438,12 @@ export default class LightingSystem extends LightingManager {
 				targets: colorTargets,
 				constants: {
 					ANIMATED_PARTICLES_OFFSET_START: 5,
+					// CURVE_PARTICLES_OFFSET: 4 * LightingSystem.PARTICLES_PER_FIRE,
 				},
 			},
 			depthStencil: {
 				format: RenderingContext.depthStencilFormat,
-				depthWriteEnabled: false,
+				depthWriteEnabled: true,
 				depthCompare: "less",
 			},
 		});

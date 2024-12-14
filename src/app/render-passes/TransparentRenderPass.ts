@@ -50,6 +50,10 @@ export default class TransparentRenderPass extends RenderPass {
 		scene: Scene,
 		inputs: GPUTexture[],
 	): GPUTexture[] {
+		if (this.hasResized) {
+			this.hasResized = false;
+			return [];
+		}
 		if (!this.inputTextureViews.length) {
 			this.inputTextureViews.push(inputs[0].createView());
 			this.inputTextureViews.push(inputs[1].createView());
@@ -90,13 +94,14 @@ export default class TransparentRenderPass extends RenderPass {
 		);
 
 		scene.lightingManager.render(renderPassEncoder);
+		scene.renderDebugMeshes(renderPassEncoder);
 
 		if (RenderingContext.ENABLE_DEBUG_GROUPS) {
 			renderPassEncoder.popDebugGroup();
 		}
 		renderPassEncoder.end();
 
-		this.resolveTiming(commandEncoder);
+		this.postRender(commandEncoder);
 
 		return inputs;
 	}

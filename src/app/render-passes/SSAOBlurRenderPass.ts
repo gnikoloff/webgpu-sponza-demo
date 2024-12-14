@@ -100,6 +100,10 @@ export default class SSAOBlurRenderPass extends RenderPass {
 		scene: Scene,
 		inputs: GPUTexture[],
 	): GPUTexture[] {
+		if (this.hasResized) {
+			this.hasResized = false;
+			return [];
+		}
 		if (!this.inputTextureViews.length) {
 			this.inputTextureViews.push(inputs[0].createView());
 
@@ -131,6 +135,8 @@ export default class SSAOBlurRenderPass extends RenderPass {
 			renderPass.popDebugGroup();
 		}
 		renderPass.end();
+
+		this.postRender(commandEncoder);
 
 		return [this.outTexture];
 	}

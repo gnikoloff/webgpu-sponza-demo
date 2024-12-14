@@ -20,6 +20,7 @@ export const PARTICLES_RENDER_SHADER_SRC = /* wgsl */ `
   @group(1) @binding(1) var<storage, read> lights: array<Light>;
 
   override ANIMATED_PARTICLES_OFFSET_START: u32;
+  override CURVE_PARTICLES_OFFSET: u32;
 
   const positions = array<vec2f, 4>(
     vec2f(-1.0, -1.0), 
@@ -42,7 +43,8 @@ export const PARTICLES_RENDER_SHADER_SRC = /* wgsl */ `
   ) -> VertexOut {
     let p = particles[instanceId];
     let particlePosition = p.position;
-    let particleRadius = p.radius - p.radius * p.life;
+    let particleRadius = select(p.radius - p.radius * p.life, p.radius, instanceId > CURVE_PARTICLES_OFFSET);
+    // let particleRadius = p.radius;
     let uv = uvs[vertexId];
     var out: VertexOut;
     out.position = camera.projectionViewMatrix * vec4f(particlePosition, 1);
@@ -60,9 +62,9 @@ export const PARTICLES_RENDER_SHADER_SRC = /* wgsl */ `
     let light = &lights[in.instanceId + ANIMATED_PARTICLES_OFFSET_START];
     let d = distance(in.uv, vec2f(0.5));
     let mask = 1.0 - smoothstep(0.2, 0.5, d);
-    if (mask < 0.2) {
-      discard;
-    }
+    // if (mask < 0.2) {
+    //   discard;
+    // }
     return vec4f(light.color * mask * 0.8, 1);
   }
 `;

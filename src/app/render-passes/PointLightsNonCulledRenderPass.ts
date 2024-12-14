@@ -102,6 +102,10 @@ export default class PointLightsNonCulledRenderPass extends LightRenderPass {
 		scene: Scene,
 		inputs: GPUTexture[],
 	): GPUTexture[] {
+		if (this.hasResized) {
+			this.hasResized = false;
+			return [];
+		}
 		if (!this.inputTextureViews.length) {
 			this.inputTextureViews.push(inputs[0].createView());
 			this.inputTextureViews.push(inputs[1].createView());
@@ -163,6 +167,9 @@ export default class PointLightsNonCulledRenderPass extends LightRenderPass {
 			renderPass.drawIndexed(indexCount);
 		}
 		renderPass.end();
+
+		this.postRender(commandEncoder);
+
 		return [inputs[4]];
 	}
 }

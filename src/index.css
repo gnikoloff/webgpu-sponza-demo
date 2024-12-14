@@ -8,11 +8,11 @@
 }
 
 .dg .property-name {
-	width: 60% !important;
+	width: 55% !important;
 }
 
 .dg .c {
-	width: 40% !important;
+	width: 45% !important;
 }
 
 body {
@@ -80,8 +80,8 @@ body {
 
 #timings-debug-container {
 	position: fixed;
-	bottom: 0.5rem;
-	right: 0.5rem;
+	bottom: 3rem;
+	left: 1rem;
 }
 
 #timings-debug-container {

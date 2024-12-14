@@ -27,6 +27,7 @@ export interface ILightParticle {
 	position?: Vec3;
 	velocity?: Vec3;
 	lifeSpeed?: number;
+	life?: number;
 }
 
 export enum TextureDebugMeshType {

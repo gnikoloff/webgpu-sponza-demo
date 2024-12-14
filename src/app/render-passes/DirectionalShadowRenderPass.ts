@@ -330,12 +330,12 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 		}
 		renderPassEncoderCascade1.end();
 
-		this.resolveTiming(commandEncoder);
-
 		// Reset camera properties
 		this.camera.near = oldCameraNear;
 		this.camera.far = oldCameraFar;
 		this.camera.updateProjectionMatrix();
+
+		this.postRender(commandEncoder);
 
 		return [this.shadowTexture];
 	}

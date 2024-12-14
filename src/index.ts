@@ -15,7 +15,7 @@ const GUI_PARAMS: IGUIParams = {
 	"Debug Point Lights Mask": false,
 	"SSR Enabled": true,
 	"SSR Method": "hi-z",
-	"SSR Max Iterations": 150,
+	"SSR Max Iterations": 30,
 	"Sun Intensity": 2,
 	"Sun Position X": 0.1,
 	"Sun Position Y": 100,

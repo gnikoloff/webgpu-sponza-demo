@@ -1,3 +1,4 @@
+import LineDebugDrawable from "../../app/debug/LineDebugDrawable";
 import Camera from "../camera/Camera";
 import RenderingContext from "../core/RenderingContext";
 import DirectionalLight from "../lighting/DirectionalLight";
@@ -10,6 +11,7 @@ import Transform from "./Transform";
 export default class Scene extends Transform {
 	public skybox: Drawable;
 
+	public debugMeshes: Transform[] = [];
 	public opaqueMeshes: Drawable[] = [];
 	public transparentMeshes: Drawable[] = [];
 	public lightingManager: LightingManager;
@@ -32,6 +34,12 @@ export default class Scene extends Transform {
 
 	public addOnGraphChangedCallback(v: () => void) {
 		this.onGraphChangedCallbacks.push(v);
+	}
+
+	public renderDebugMeshes(renderPassEncoder: GPURenderPassEncoder) {
+		for (const debugMesh of this.debugMeshes) {
+			debugMesh.render(renderPassEncoder);
+		}
 	}
 
 	public renderOpaqueNodes(
@@ -126,6 +134,11 @@ export default class Scene extends Transform {
 				// );
 			}
 		}
+
+		if (child instanceof LineDebugDrawable) {
+			this.debugMeshes.push(child);
+		}
+
 		for (const callback of this.onGraphChangedCallbacks) {
 			callback();
 		}

@@ -93,6 +93,11 @@ export default class BlitRenderPass extends RenderPass {
 		scene: Scene,
 		inputs: GPUTexture[],
 	): GPUTexture[] {
+		if (this.hasResized) {
+			this.hasResized = false;
+			return [];
+		}
+
 		if (!this.inputTextureViews.length) {
 			this.inputTextureViews.push(inputs[0].createView());
 
@@ -122,7 +127,7 @@ export default class BlitRenderPass extends RenderPass {
 
 		renderPassEncoder.end();
 
-		this.resolveTiming(commandEncoder);
+		this.postRender(commandEncoder);
 
 		return [];
 	}

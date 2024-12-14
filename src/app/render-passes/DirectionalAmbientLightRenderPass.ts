@@ -259,6 +259,10 @@ export default class DirectionalAmbientLightRenderPass extends LightRenderPass {
 		scene: Scene,
 		inputs: GPUTexture[],
 	): GPUTexture[] {
+		if (this.hasResized) {
+			this.hasResized = false;
+			return [];
+		}
 		if (!this.inputTextureViews.length) {
 			this.inputTextureViews.push(inputs[0].createView());
 			this.inputTextureViews.push(inputs[1].createView());
@@ -313,7 +317,7 @@ export default class DirectionalAmbientLightRenderPass extends LightRenderPass {
 		}
 		renderPass.end();
 
-		this.resolveTiming(commandEncoder);
+		this.postRender(commandEncoder);
 
 		return [this.outTexture];
 	}

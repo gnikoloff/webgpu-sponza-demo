@@ -173,6 +173,10 @@ export default class DebugBoundsPass extends RenderPass {
 		_scene: Scene,
 		inputs: GPUTexture[],
 	): GPUTexture[] {
+		if (this.hasResized) {
+			this.hasResized = false;
+			return [];
+		}
 		if (!this.inputTextureViews.length) {
 			this.inputTextureViews.push(inputs[0].createView());
 			this.inputTextureViews.push(inputs[1].createView());
@@ -201,6 +205,8 @@ export default class DebugBoundsPass extends RenderPass {
 			renderPassEncoder.popDebugGroup();
 		}
 		renderPassEncoder.end();
+
+		this.postRender(commandEncoder);
 
 		return [inputs[0]];
 	}

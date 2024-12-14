@@ -10,6 +10,7 @@ export default class RenderingContext {
 	public static supportsGPUTimestampQuery: boolean;
 	public static elapsedTimeMs = 0;
 	public static deltaTimeMs = 0;
+	public static frameIndex = 0;
 	public static pixelFormat: GPUTextureFormat;
 	public static readonly depthStencilFormat: GPUTextureFormat =
 		"depth24plus-stencil8";

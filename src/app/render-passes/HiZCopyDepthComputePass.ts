@@ -10,8 +10,8 @@ import {
 } from "../shaders/HiZDepthCopyShader";
 
 export default class HiZCopyDepthComputePass extends RenderPass {
-	private static readonly COMPUTE_WORKGROUP_SIZE_X = 16;
-	private static readonly COMPUTE_WORKGROUP_SIZE_Y = 16;
+	private static readonly COMPUTE_WORKGROUP_SIZE_X = 8;
+	private static readonly COMPUTE_WORKGROUP_SIZE_Y = 8;
 
 	private outTexture: GPUTexture;
 
@@ -95,6 +95,10 @@ export default class HiZCopyDepthComputePass extends RenderPass {
 		scene: Scene,
 		inputs: GPUTexture[],
 	): GPUTexture[] {
+		if (this.hasResized) {
+			this.hasResized = false;
+			return [];
+		}
 		if (!this.inputTextureViews.length) {
 			this.inputTextureViews.push(
 				inputs[0].createView({ aspect: "depth-only" }),
@@ -137,6 +141,8 @@ export default class HiZCopyDepthComputePass extends RenderPass {
 		computePass.dispatchWorkgroups(workgroupCountX, workgroupCountY, 1);
 
 		computePass.end();
+
+		this.postRender(commandEncoder);
 
 		return [this.outTexture];
 	}

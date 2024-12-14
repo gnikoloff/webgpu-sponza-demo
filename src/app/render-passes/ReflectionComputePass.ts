@@ -10,8 +10,8 @@ import {
 } from "../shaders/ReflectionShader";
 
 export default class ReflectionComputePass extends RenderPass {
-	private static readonly COMPUTE_WORKGROUP_SIZE_X = 16;
-	private static readonly COMPUTE_WORKGROUP_SIZE_Y = 16;
+	private static readonly COMPUTE_WORKGROUP_SIZE_X = 8;
+	private static readonly COMPUTE_WORKGROUP_SIZE_Y = 8;
 
 	private outTexture: GPUTexture;
 	private computePSO: GPUComputePipeline;
@@ -164,6 +164,10 @@ export default class ReflectionComputePass extends RenderPass {
 		scene: Scene,
 		inputs: GPUTexture[],
 	): GPUTexture[] {
+		if (this.hasResized) {
+			this.hasResized = false;
+			return [];
+		}
 		if (!this.inputTextureViews.length) {
 			this.inputTextureViews.push(inputs[0].createView());
 			this.inputTextureViews.push(inputs[1].createView());
@@ -233,6 +237,8 @@ export default class ReflectionComputePass extends RenderPass {
 			computeEncoder.popDebugGroup();
 		}
 		computeEncoder.end();
+
+		this.postRender(commandEncoder);
 
 		return [this.outTexture];
 	}

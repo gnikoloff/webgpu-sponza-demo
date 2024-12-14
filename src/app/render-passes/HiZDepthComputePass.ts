@@ -10,8 +10,8 @@ import {
 } from "../shaders/HiZDepthShader";
 
 export default class HiZDepthComputePass extends RenderPass {
-	private static readonly COMPUTE_WORKGROUP_SIZE_X = 16;
-	private static readonly COMPUTE_WORKGROUP_SIZE_Y = 16;
+	private static readonly COMPUTE_WORKGROUP_SIZE_X = 8;
+	private static readonly COMPUTE_WORKGROUP_SIZE_Y = 8;
 
 	private computePSO: GPUComputePipeline;
 	private bindGroupLayout: GPUBindGroupLayout;
@@ -80,6 +80,10 @@ export default class HiZDepthComputePass extends RenderPass {
 		scene: Scene,
 		inputs: GPUTexture[],
 	): GPUTexture[] {
+		if (this.hasResized) {
+			this.hasResized = false;
+			return [];
+		}
 		const mipsLevelCount = inputs[0].mipLevelCount;
 
 		const origWidth = inputs[0].width;
@@ -148,6 +152,8 @@ export default class HiZDepthComputePass extends RenderPass {
 		}
 
 		computePass.end();
+
+		this.postRender(commandEncoder);
 
 		return inputs;
 	}

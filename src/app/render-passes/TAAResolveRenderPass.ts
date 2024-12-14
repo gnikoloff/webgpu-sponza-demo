@@ -173,6 +173,10 @@ export default class TAAResolveRenderPass extends RenderPass {
 		_scene: Scene,
 		inputs: GPUTexture[],
 	): GPUTexture[] {
+		if (this.hasResized) {
+			this.hasResized = false;
+			return [];
+		}
 		if (!this.inputTextureViews.length) {
 			this.inputTextureViews.push(inputs[0].createView());
 			this.inputTextureViews.push(inputs[1].createView());
@@ -214,7 +218,7 @@ export default class TAAResolveRenderPass extends RenderPass {
 			this.copyTextureExtend,
 		);
 
-		this.resolveTiming(commandEncoder);
+		this.postRender(commandEncoder);
 
 		return [this.outTexture];
 	}
