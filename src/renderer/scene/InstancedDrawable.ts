@@ -5,6 +5,7 @@ import Geometry from "../geometry/Geometry";
 import PipelineStates from "../core/PipelineStates";
 import { BIND_GROUP_LOCATIONS } from "../core/RendererBindings";
 import RenderingContext from "../core/RenderingContext";
+import VRAMUsageTracker from "../misc/VRAMUsageTracker";
 
 interface InstanceValue {
 	worldMatrix: Mat4;
@@ -67,6 +68,8 @@ export default class InstancedDrawable extends Drawable {
 				size: this.instanceCount * 20 * Float32Array.BYTES_PER_ELEMENT,
 				usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
 			});
+
+			VRAMUsageTracker.addBufferBytes(this.instanceBuffer);
 
 			const instanceMatricesBindGroupEntries: GPUBindGroupEntry[] = [
 				{

@@ -9,6 +9,7 @@ import Drawable from "../scene/Drawable";
 import Plane from "../math/Plane";
 import Transform from "../scene/Transform";
 import RenderingContext from "../core/RenderingContext";
+import VRAMUsageTracker from "../misc/VRAMUsageTracker";
 
 const HAMILTON_SEQUENCE = [
 	[0.5, 0.333333],
@@ -88,6 +89,8 @@ export default class Camera extends Transform {
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 			label: "Camera GPUBuffer",
 		});
+
+		VRAMUsageTracker.addBufferBytes(this.gpuBuffer);
 
 		for (let i = 0; i < 6; i++) {
 			this.frustumPlanes.push(new Plane(vec3.create(), 0));

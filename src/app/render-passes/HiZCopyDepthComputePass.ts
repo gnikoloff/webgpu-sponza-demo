@@ -2,6 +2,7 @@ import PipelineStates from "../../renderer/core/PipelineStates";
 import RenderPass from "../../renderer/core/RenderPass";
 import RenderingContext from "../../renderer/core/RenderingContext";
 import { numMipLevelsForSize } from "../../renderer/math/math";
+import VRAMUsageTracker from "../../renderer/misc/VRAMUsageTracker";
 import Scene from "../../renderer/scene/Scene";
 import { RenderPassType } from "../../renderer/types";
 import {
@@ -73,6 +74,8 @@ export default class HiZCopyDepthComputePass extends RenderPass {
 				mipLevelCount: numMipLevelsForSize(width, height),
 			}),
 		);
+
+		VRAMUsageTracker.addTextureBytes(this.outTextures[0]);
 	}
 
 	protected override createComputePassDescriptor(): GPUComputePassDescriptor {

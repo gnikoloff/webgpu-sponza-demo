@@ -4,6 +4,7 @@ import RenderPass from "../../renderer/core/RenderPass";
 import { BIND_GROUP_LOCATIONS } from "../../renderer/core/RendererBindings";
 import RenderingContext from "../../renderer/core/RenderingContext";
 import BoundingBox from "../../renderer/math/BoundingBox";
+import VRAMUsageTracker from "../../renderer/misc/VRAMUsageTracker";
 import Drawable from "../../renderer/scene/Drawable";
 import Scene from "../../renderer/scene/Scene";
 import DebugBoundingBoxesShaderUtils, {
@@ -102,6 +103,7 @@ export default class DebugBoundsPass extends RenderPass {
 			});
 
 			if (newNodesAdded && this.worldBBoxesBuffer) {
+				VRAMUsageTracker.removeBufferBytes(this.worldBBoxesBuffer);
 				this.worldBBoxesBuffer.destroy();
 			}
 
@@ -111,6 +113,9 @@ export default class DebugBoundsPass extends RenderPass {
 				mappedAtCreation: true,
 				usage: GPUBufferUsage.STORAGE,
 			});
+
+			VRAMUsageTracker.addBufferBytes(this.worldBBoxesBuffer);
+
 			const worldBBoxesBuffContents = new Float32Array(
 				this.worldBBoxesBuffer.getMappedRange(),
 			);

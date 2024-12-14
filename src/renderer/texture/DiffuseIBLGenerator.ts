@@ -1,6 +1,7 @@
 import BaseUtilObject from "../core/BaseUtilObject";
 import PipelineStates from "../core/PipelineStates";
 import RenderingContext from "../core/RenderingContext";
+import VRAMUsageTracker from "../misc/VRAMUsageTracker";
 import DiffuseIBLShaderUtils, {
 	DiffuseIBLShaderEntryFn,
 } from "../shader/DiffuseIBLShaderUtils";
@@ -141,6 +142,9 @@ export default class DiffuseIBLGenerator extends BaseUtilObject {
 				usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 				mappedAtCreation: true,
 			});
+
+			VRAMUsageTracker.addBufferBytes(faceBuffer);
+
 			new Uint32Array(faceBuffer.getMappedRange()).set(new Uint32Array([i]));
 			faceBuffer.unmap();
 
@@ -184,6 +188,8 @@ export default class DiffuseIBLGenerator extends BaseUtilObject {
 		}
 		diffuseIBLComputePass.end();
 		RenderingContext.device.queue.submit([commandEncoder.finish()]);
+
+		VRAMUsageTracker.addTextureBytes(outTex);
 
 		return outTex;
 	};

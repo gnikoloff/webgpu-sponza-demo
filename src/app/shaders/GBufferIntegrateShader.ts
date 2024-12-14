@@ -62,7 +62,10 @@ const GetGBufferIntegrateShader = (
     // return vec4f(vec3f(1 - metallic), 1);
     material.metallic = metallic;
     // material.ambientOcclusion = select(1.0, ao, pixelCoords.x > i32(textureDimensions(normalTexture).x / 2));
-    material.ambientOcclusion = ao;
+
+    #if ${lightPassType === RenderPassType.DirectionalAmbientLighting}
+    material.ambientOcclusion = mix(1.0, ao, ssaoMixFactor);
+    #endif
     
     let viewSpacePos = calcViewSpacePos(camera, coord.xy, depth);
     let worldSpacePos = calcWorldPos(camera, coord.xy, depth);

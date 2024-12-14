@@ -22,6 +22,7 @@ const GUI_PARAMS: IGUIParams = {
 	"Sun Position Z": 0.1,
 	"Debug Skybox": true,
 	"Debug Bounding Boxes": false,
+	"Enable SSAO": true,
 };
 
 const gui = new dat.GUI({ width: 270 });
@@ -45,16 +46,14 @@ lightingFolder
 	.onChange((v: number) => {
 		renderer.sunPositionZ = v;
 	});
-// lightingFolder
-// 	.add(GUI_PARAMS, "Sun Position Y", 20, 100)
-// 	.onChange((v: number) => {
-// 		renderer.sunPositionY = v;
-// 	});
 lightingFolder
 	.add(GUI_PARAMS, "Sun Position Z", -150, 150)
 	.onChange((v: number) => {
 		renderer.sunPositionX = v;
 	});
+lightingFolder.add(GUI_PARAMS, "Enable SSAO").onChange((v: boolean) => {
+	renderer.ssaoEnabled = v;
+});
 
 const shadowFolder = gui.addFolder("Shadow");
 shadowFolder.open();
@@ -153,7 +152,8 @@ function resize() {
 	renderer.sunPositionY = GUI_PARAMS["Sun Position Y"];
 	renderer.sunPositionZ = GUI_PARAMS["Sun Position X"];
 	renderer.sunIntensity = GUI_PARAMS["Sun Intensity"];
-	renderer.debugPointLights = GUI_PARAMS["Debug Point Lights Mask"];
-	renderer.toggleDebugCamera = GUI_PARAMS["Toggle Debug Camera"];
+	renderer.ssaoEnabled = GUI_PARAMS["Enable SSAO"];
+	// renderer.debugPointLights = GUI_PARAMS["Debug Point Lights Mask"];
+	// renderer.toggleDebugCamera = GUI_PARAMS["Toggle Debug Camera"];
 	// renderer.debugSkybox = GUI_PARAMS["Debug Skybox"];
 }

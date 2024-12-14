@@ -11,6 +11,7 @@ import LightRenderPass from "./LightRenderPass";
 import GetGBufferIntegrateShader, {
 	GBufferIntegrateShaderEntryFn,
 } from "../shaders/GBufferIntegrateShader";
+import VRAMUsageTracker from "../../renderer/misc/VRAMUsageTracker";
 
 export default class DirectionalAmbientLightRenderPass extends LightRenderPass {
 	private outTextureView: GPUTextureView;
@@ -23,6 +24,16 @@ export default class DirectionalAmbientLightRenderPass extends LightRenderPass {
 
 	private dirLightShadowBindGroup: GPUBindGroup;
 	private dirLightShadowBindGroupEntries: GPUBindGroupEntry[] = [];
+
+	private ssaoMixBuffer: GPUBuffer;
+
+	public set ssaoMixFactor(v: number) {
+		RenderingContext.device.queue.writeBuffer(
+			this.ssaoMixBuffer,
+			0,
+			new Float32Array([v]),
+		);
+	}
 
 	public setDiffuseIBLTexture(texture: GPUTexture): this {
 		this.dirLightShadowBindGroupEntries[3].resource = texture.createView({
@@ -66,6 +77,18 @@ export default class DirectionalAmbientLightRenderPass extends LightRenderPass {
 			magFilter: "linear",
 			mipmapFilter: "linear",
 		});
+
+		this.ssaoMixBuffer = RenderingContext.device.createBuffer({
+			label: "Ambient SSAO Mix Factor Buffer",
+			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+			size: 1 * Float32Array.BYTES_PER_ELEMENT,
+			mappedAtCreation: true,
+		});
+		VRAMUsageTracker.addBufferBytes(this.ssaoMixBuffer);
+
+		new Float32Array(this.ssaoMixBuffer.getMappedRange()).set([1]);
+
+		this.ssaoMixBuffer.unmap();
 
 		const dirLightShadowBindGroupLayoutEntries: GPUBindGroupLayoutEntry[] = [
 			{
@@ -116,6 +139,13 @@ export default class DirectionalAmbientLightRenderPass extends LightRenderPass {
 				visibility: GPUShaderStage.FRAGMENT,
 				sampler: {
 					type: "filtering",
+				},
+			},
+			{
+				binding: 7,
+				visibility: GPUShaderStage.FRAGMENT,
+				buffer: {
+					type: "uniform",
 				},
 			},
 		];
@@ -171,6 +201,12 @@ export default class DirectionalAmbientLightRenderPass extends LightRenderPass {
 				binding: 6,
 				resource: this.envSampler,
 			},
+			{
+				binding: 7,
+				resource: {
+					buffer: this.ssaoMixBuffer,
+				},
+			},
 		];
 
 		const renderPSODescriptor: GPURenderPipelineDescriptor = {
@@ -212,6 +248,9 @@ export default class DirectionalAmbientLightRenderPass extends LightRenderPass {
 				label: "GBuffer Result Texture",
 			}),
 		);
+
+		VRAMUsageTracker.addTextureBytes(this.outTextures[0]);
+
 		this.outTextureView = this.outTextures[0].createView();
 	}
 

@@ -1,6 +1,7 @@
 import PipelineStates from "../../renderer/core/PipelineStates";
 import RenderPass from "../../renderer/core/RenderPass";
 import RenderingContext from "../../renderer/core/RenderingContext";
+import VRAMUsageTracker from "../../renderer/misc/VRAMUsageTracker";
 import Scene from "../../renderer/scene/Scene";
 import FullScreenVertexShaderUtils, {
 	FullScreenVertexShaderEntryFn,
@@ -68,6 +69,9 @@ export default class SSAOBlurRenderPass extends RenderPass {
 				label: "SSAO Blurred Texture",
 			}),
 		);
+
+		VRAMUsageTracker.addTextureBytes(this.outTextures[0]);
+
 		this.outTextureView = this.outTextures[0].createView();
 	}
 

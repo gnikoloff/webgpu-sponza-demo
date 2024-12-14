@@ -3,6 +3,7 @@ import RenderingContext from "../../renderer/core/RenderingContext";
 import Scene from "../../renderer/scene/Scene";
 import { BIND_GROUP_LOCATIONS } from "../../renderer/core/RendererBindings";
 import { RenderPassType } from "../../renderer/types";
+import VRAMUsageTracker from "../../renderer/misc/VRAMUsageTracker";
 
 export default class GBufferRenderPass extends RenderPass {
 	constructor(width: number, height: number) {
@@ -59,6 +60,10 @@ export default class GBufferRenderPass extends RenderPass {
 				label: "Depth + Stencil GBuffer Texture",
 			}),
 		);
+
+		for (const tex of this.outTextures) {
+			VRAMUsageTracker.addTextureBytes(tex);
+		}
 	}
 
 	protected override createRenderPassDescriptor(): GPURenderPassDescriptor {

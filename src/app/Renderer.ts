@@ -36,8 +36,8 @@ import TransparentRenderPass from "./render-passes/TransparentRenderPass";
 import CameraFlyController from "../renderer/camera/CameraFlyController";
 import SSAORenderPass from "./render-passes/SSAORenderPass";
 import RollingAverage from "../renderer/math/RollingAverage";
-import DebugTimingContainer from "./debug/timings-debug/DebugTimingContainer";
-import { DebugTimingType, RenderPassType } from "../renderer/types";
+import DebugStatsContainer from "./debug/timings-debug/DebugStatsContainer";
+import { DebugStatType, RenderPassType } from "../renderer/types";
 import RenderPassComposer from "../renderer/core/RenderPassComposer";
 import BlitRenderPass from "./render-passes/BlitRenderPass";
 import DirectionalAmbientLightRenderPass from "./render-passes/DirectionalAmbientLightRenderPass";
@@ -56,6 +56,7 @@ import PointLightsNonCulledRenderPass from "./render-passes/PointLightsNonCulled
 import LineDebugDrawable from "./debug/LineDebugDrawable";
 import { vec3 } from "wgpu-matrix";
 import CatmullRomCurve3 from "../renderer/math/CatmullRomCurve3";
+import VRAMUsageTracker from "../renderer/misc/VRAMUsageTracker";
 // import EnvironmentProbePass from "./render-passes/EnvironmentProbePass";
 
 export default class Renderer extends RenderingContext {
@@ -121,7 +122,7 @@ export default class Renderer extends RenderingContext {
 	private fpsDisplayAverage = new RollingAverage();
 
 	private texturesDebugContainer: TexturesDebugContainer;
-	private timingDebugContainer: DebugTimingContainer;
+	private timingDebugContainer: DebugStatsContainer;
 
 	public set sunPositionX(v: number) {
 		this.lightingManager.sunPositionX = v;
@@ -137,6 +138,14 @@ export default class Renderer extends RenderingContext {
 
 	public set sunIntensity(v: number) {
 		this.lightingManager.sunIntensity = v;
+	}
+
+	public set ssaoEnabled(v: boolean) {
+		(
+			this.renderPassComposer.getPass(
+				RenderPassType.DirectionalAmbientLighting,
+			) as DirectionalAmbientLightRenderPass
+		).ssaoMixFactor = v ? 1 : 0;
 	}
 
 	public set enableTAA(v: boolean) {
@@ -273,7 +282,7 @@ export default class Renderer extends RenderingContext {
 		this.scene.lightingManager = this.lightingManager;
 
 		this.texturesDebugContainer = new TexturesDebugContainer();
-		this.timingDebugContainer = new DebugTimingContainer();
+		this.timingDebugContainer = new DebugStatsContainer();
 
 		this.scene.skybox = new Skybox();
 
@@ -298,6 +307,9 @@ export default class Renderer extends RenderingContext {
 				.setDiffuseIBLTexture(this.envDiffuseTexture)
 				.setSpecularIBLTexture(this.envSpecularTexture)
 				.setBDRFLutTexture(this.envBdrfLutTexture);
+
+			VRAMUsageTracker.removeTextureBytes(texture);
+			texture.destroy();
 		});
 
 		const a = new GLTFModel("/sponza/Sponza.gltf");
@@ -612,10 +624,24 @@ export default class Renderer extends RenderingContext {
 		this.fpsDisplayAverage.addSample(1 / deltaDiff);
 		this.gpuAverage.addSample(totalGPUTime);
 
+		const cpuAverageStat = this.cpuAverage.get();
+		const fpsAverageStat = this.fpsDisplayAverage.get();
+		const gpuAverageStat = this.gpuAverage.get();
+
 		this.timingDebugContainer
-			.setDisplayValue(DebugTimingType.CPUTotal, this.cpuAverage.get())
-			.setDisplayValue(DebugTimingType.GPUTotal, this.gpuAverage.get())
-			.setDisplayValue(DebugTimingType.FPS, this.fpsDisplayAverage.get());
+			.setDisplayValue(
+				DebugStatType.CPUTotal,
+				cpuAverageStat !== 0 ? `${cpuAverageStat.toFixed(1)}ms` : "N/A",
+			)
+			.setDisplayValue(
+				DebugStatType.GPUTotal,
+				gpuAverageStat !== 0 ? `${gpuAverageStat.toFixed(1)}ms` : "N/A",
+			)
+			.setDisplayValue(
+				DebugStatType.FPS,
+				fpsAverageStat !== 0 ? `${fpsAverageStat.toFixed(1)}ms` : "N/A",
+			)
+			.setDisplayValue(DebugStatType.VRAM, VRAMUsageTracker.getFormattedSize());
 
 		RenderingContext.frameIndex++;
 	}

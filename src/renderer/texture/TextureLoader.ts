@@ -5,6 +5,7 @@ import { numMipLevelsForSize } from "../math/math";
 import BaseUtilObject from "../core/BaseUtilObject";
 import { HDRImageResult } from "../types";
 import RenderingContext from "../core/RenderingContext";
+import VRAMUsageTracker from "../misc/VRAMUsageTracker";
 
 // prettier-ignore
 const BAYERN_PATTERN = new Uint8Array([
@@ -197,15 +198,8 @@ export default class TextureLoader extends BaseUtilObject {
 			usage,
 			debugLabel,
 		);
+		VRAMUsageTracker.addTextureBytes(hdrTexture);
 		return hdrTexture;
-	};
-
-	public static loadHDREnvironmentAsCubeMapTexture = async (
-		url: string,
-		outSize = 512,
-	): Promise<GPUTexture> => {
-		const hdrTexture = await TextureLoader.loadHDRTexture(url);
-		return await CubeTextureController.cubeTextureFromHDR(hdrTexture, outSize);
 	};
 
 	public static load6SeparateHDRFacesAsCubeMapTexture = async (
@@ -221,12 +215,14 @@ export default class TextureLoader extends BaseUtilObject {
 		const hdrTextures = await Promise.all(
 			faceUrls.map((url) => TextureLoader.loadHDRTexture(url)),
 		);
-		return CubeTextureController.cubeTextureFromIndividualHDRTextures(
+		const tex = CubeTextureController.cubeTextureFromIndividualHDRTextures(
 			hdrTextures,
 			debugLabel,
 			outTextureSize,
 			hasMips,
 		);
+		VRAMUsageTracker.addTextureBytes(tex);
+		return tex;
 	};
 
 	public static loadTextureFromData = async (
@@ -282,9 +278,12 @@ export default class TextureLoader extends BaseUtilObject {
 		);
 
 		if (!generateMips) {
+			VRAMUsageTracker.addTextureBytes(texture);
 			return texture;
 		}
 		TextureController.generateMipsFor2DTextureWithComputePSO(texture);
+
+		VRAMUsageTracker.addTextureBytes(texture);
 
 		const debugCavas = document.createElement("canvas");
 		const ctx = debugCavas.getContext("2d");

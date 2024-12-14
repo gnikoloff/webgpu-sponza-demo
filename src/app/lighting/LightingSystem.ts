@@ -19,6 +19,7 @@ import {
 } from "../shaders/PointLightsUpdateShader";
 import CameraFaceCulledPointLight from "../../renderer/lighting/CameraFaceCulledPointLight";
 import CatmullRomCurve3 from "../../renderer/math/CatmullRomCurve3";
+import VRAMUsageTracker from "../../renderer/misc/VRAMUsageTracker";
 
 const MAIN_LAMP_POINT_LIGHT_POSITIONS: Vec3[] = [
 	vec3.create(3.9, 3, 0.9),
@@ -101,6 +102,7 @@ export default class LightingSystem extends LightingManager {
 
 	public updateParticlesBuffer() {
 		if (this.particlesGPUBuffer) {
+			VRAMUsageTracker.removeBufferBytes(this.particlesGPUBuffer);
 			this.particlesGPUBuffer.destroy();
 		}
 
@@ -110,6 +112,7 @@ export default class LightingSystem extends LightingManager {
 			mappedAtCreation: true,
 			usage: GPUBufferUsage.STORAGE,
 		});
+		VRAMUsageTracker.addBufferBytes(this.particlesGPUBuffer);
 
 		const particlesGPUBufferContents = new Float32Array(
 			this.particlesGPUBuffer.getMappedRange(),
@@ -165,7 +168,7 @@ export default class LightingSystem extends LightingManager {
 		this.addLight(dirLight);
 		this.mainDirLight = dirLight;
 
-		let r = 4;
+		let r = 3;
 		let p = new CameraFaceCulledPointLight();
 		p.radius = r;
 		p.setPositionAsVec3(MAIN_LAMP_POINT_LIGHT_POSITIONS[0]);
@@ -219,6 +222,9 @@ export default class LightingSystem extends LightingManager {
 			usage: GPUBufferUsage.STORAGE,
 			mappedAtCreation: true,
 		});
+
+		VRAMUsageTracker.addBufferBytes(curvePointsBuff);
+
 		const curvePointsBuffContents = new Float32Array(
 			curvePointsBuff.getMappedRange(),
 		);
@@ -237,12 +243,12 @@ export default class LightingSystem extends LightingManager {
 		for (let i = 0; i < LightingSystem.PARTICLES_PER_CURVE; i++) {
 			const p = new PointLight();
 			p.setColor(
-				Math.random() * 0.5 + 0.3,
-				Math.random() * 0.5 + 0.3,
-				Math.random() * 0.5 + 0.3,
+				Math.random() * 0.7 + 0.3,
+				Math.random() * 0.7 + 0.3,
+				Math.random() * 0.7 + 0.3,
 			);
 			p.setPositionAsVec3(zeroPos);
-			p.radius = 2.5;
+			p.radius = 2;
 			// p.intensity = 1;
 			const t = i / LightingSystem.PARTICLES_PER_CURVE;
 			// const t = Math.random();
@@ -257,6 +263,8 @@ export default class LightingSystem extends LightingManager {
 			size: 2 * Float32Array.BYTES_PER_ELEMENT,
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 		});
+
+		VRAMUsageTracker.addBufferBytes(this.particleSimSettingsBuffer);
 
 		const computeBindGroupLayoutEntries: GPUBindGroupLayoutEntry[] = [
 			{
@@ -454,6 +462,8 @@ export default class LightingSystem extends LightingManager {
 			usage: GPUBufferUsage.INDEX,
 			mappedAtCreation: true,
 		});
+
+		VRAMUsageTracker.addBufferBytes(this.particleIndexBuffer);
 
 		// prettier-ignore
 		new Uint16Array(this.particleIndexBuffer.getMappedRange()).set([

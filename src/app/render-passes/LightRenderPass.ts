@@ -1,5 +1,6 @@
 import RenderPass from "../../renderer/core/RenderPass";
 import RenderingContext from "../../renderer/core/RenderingContext";
+import VRAMUsageTracker from "../../renderer/misc/VRAMUsageTracker";
 import SamplerController from "../../renderer/texture/SamplerController";
 import TextureLoader from "../../renderer/texture/TextureLoader";
 import { RenderPassType } from "../../renderer/types";
@@ -137,6 +138,9 @@ export default class LightRenderPass extends RenderPass {
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 			mappedAtCreation: true,
 		});
+
+		VRAMUsageTracker.addBufferBytes(this.debugLightsBuffer);
+
 		new Float32Array(this.debugLightsBuffer.getMappedRange()).set(
 			new Float32Array([0, 0]),
 		);

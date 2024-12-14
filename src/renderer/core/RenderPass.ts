@@ -10,6 +10,7 @@ import { RenderPassNames } from "../constants";
 import RollingAverage from "../math/RollingAverage";
 import Scene from "../scene/Scene";
 import RenderingContext from "./RenderingContext";
+import VRAMUsageTracker from "../misc/VRAMUsageTracker";
 
 export default class RenderPass {
 	public name: string;
@@ -35,14 +36,17 @@ export default class RenderPass {
 
 	public destroy() {
 		for (const tex of this.outTextures) {
+			VRAMUsageTracker.removeTextureBytes(tex);
 			tex.destroy();
 		}
 		this.inputTextureViews.length = 0;
 		this.querySet?.destroy();
+		VRAMUsageTracker.removeBufferBytes(this.resolveBuffer);
 		this.resolveBuffer?.destroy();
 		this.inputTextureNames.length = 0;
 		this.inputTextureViews.length = 0;
 		for (const buff of this.resultBuffers) {
+			VRAMUsageTracker.removeBufferBytes(buff);
 			buff.destroy();
 		}
 	}
@@ -66,6 +70,8 @@ export default class RenderPass {
 				size: 2 * 8,
 				usage: GPUBufferUsage.QUERY_RESOLVE | GPUBufferUsage.COPY_SRC,
 			});
+
+			VRAMUsageTracker.addBufferBytes(this.resolveBuffer);
 		}
 	}
 
@@ -128,13 +134,18 @@ export default class RenderPass {
 
 		this.state = "wait for result";
 
-		this.resultBuffer =
-			this.resultBuffers.pop() ||
-			RenderingContext.device.createBuffer({
+		const buff = this.resultBuffers.pop();
+
+		if (buff) {
+			this.resultBuffer = buff;
+		} else {
+			this.resultBuffer = RenderingContext.device.createBuffer({
 				label: `Timestamp Query Result Buffer for render pass: ${this.name}`,
 				size: this.resolveBuffer.size,
 				usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
 			});
+			VRAMUsageTracker.addBufferBytes(this.resultBuffer);
+		}
 
 		commandEncoder.resolveQuerySet(
 			this.querySet,
@@ -158,10 +169,6 @@ export default class RenderPass {
 		}
 
 		const resultBuffer = this.resultBuffer;
-
-		if (!resultBuffer) {
-			return [0, 0];
-		}
 
 		this.state = "free";
 

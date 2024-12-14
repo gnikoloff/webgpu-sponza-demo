@@ -10,6 +10,7 @@ import { lerp } from "../../renderer/math/math";
 import { RenderPassType } from "../../renderer/types";
 import RenderingContext from "../../renderer/core/RenderingContext";
 import TextureLoader from "../../renderer/texture/TextureLoader";
+import VRAMUsageTracker from "../../renderer/misc/VRAMUsageTracker";
 
 export default class SSAORenderPass extends RenderPass {
 	private outTextureView: GPUTextureView;
@@ -26,6 +27,8 @@ export default class SSAORenderPass extends RenderPass {
 
 	public override destroy(): void {
 		super.destroy();
+		VRAMUsageTracker.removeTextureBytes(this.noiseTexture);
+		VRAMUsageTracker.removeBufferBytes(this.kernelBuffer);
 		this.noiseTexture?.destroy();
 		this.kernelBuffer.destroy();
 	}
@@ -57,6 +60,9 @@ export default class SSAORenderPass extends RenderPass {
 			size: 16 * 4 * Float32Array.BYTES_PER_ELEMENT,
 			usage: GPUBufferUsage.STORAGE,
 		});
+
+		VRAMUsageTracker.addBufferBytes(this.kernelBuffer);
+
 		new Float32Array(this.kernelBuffer.getMappedRange()).set(kernel);
 		this.kernelBuffer.unmap();
 
@@ -138,6 +144,8 @@ export default class SSAORenderPass extends RenderPass {
 			}),
 		);
 		this.outTextureView = this.outTextures[0].createView();
+
+		VRAMUsageTracker.addTextureBytes(this.outTextures[0]);
 
 		this.loadBlueNoiseTexture();
 	}

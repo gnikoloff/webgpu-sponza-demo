@@ -18,6 +18,7 @@ import TextureController from "./TextureController";
 import BaseUtilObject from "../core/BaseUtilObject";
 import VertexDescriptor from "../core/VertexDescriptor";
 import RenderingContext from "../core/RenderingContext";
+import VRAMUsageTracker from "../misc/VRAMUsageTracker";
 
 let _emptyCubeTexCounters = 0;
 
@@ -129,6 +130,8 @@ export default class CubeTextureController extends BaseUtilObject {
 			size: 16 * Float32Array.BYTES_PER_ELEMENT,
 			usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM,
 		});
+
+		VRAMUsageTracker.addBufferBytes(cameraViewProjMatrixBuffer);
 
 		const cameraBindGroupLayoutEntries: GPUBindGroupLayoutEntry[] = [
 			{

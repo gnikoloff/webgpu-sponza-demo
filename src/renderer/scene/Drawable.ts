@@ -22,6 +22,7 @@ import {
 } from "../core/RendererBindings";
 import { RenderPassType, TextureLocation } from "../types";
 import RenderingContext from "../core/RenderingContext";
+import VRAMUsageTracker from "../misc/VRAMUsageTracker";
 
 export default class Drawable extends Transform {
 	public static readonly INDEX_FORMAT: GPUIndexFormat = "uint16";
@@ -129,6 +130,8 @@ export default class Drawable extends Transform {
 			size: this.bufferUniformValues.arrayBuffer.byteLength,
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 		});
+
+		VRAMUsageTracker.addBufferBytes(this.modelBuffer);
 
 		const modelBindGroupEntries: GPUBindGroupEntry[] = [
 			{

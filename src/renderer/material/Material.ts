@@ -20,7 +20,7 @@ export default class Material {
 		constants = {},
 		targets = [],
 		depthStencilState = {
-			format: "depth32float",
+			format: "depth24plus",
 			depthWriteEnabled: true,
 			depthCompare: "less",
 		},

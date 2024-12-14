@@ -10,6 +10,7 @@ import {
 } from "../../renderer/math/math";
 import { RenderPassType } from "../../renderer/types";
 import RenderingContext from "../../renderer/core/RenderingContext";
+import VRAMUsageTracker from "../../renderer/misc/VRAMUsageTracker";
 
 export default class EnvironmentProbePass extends RenderPass {
 	private static readonly ENVIRONMENT_TEXTURE_SIZE = 512;
@@ -74,11 +75,15 @@ export default class EnvironmentProbePass extends RenderPass {
 			usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
 		});
 
+		VRAMUsageTracker.addBufferBytes(this.cameraViewProjMatrixBuffer);
+
 		this.cameraCurrentFaceRenderBuffer = RenderingContext.device.createBuffer({
 			label: "Environment Probe Camera Current Face Index Buffer",
 			size: Uint32Array.BYTES_PER_ELEMENT,
 			usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM,
 		});
+
+		VRAMUsageTracker.addBufferBytes(this.cameraCurrentFaceRenderBuffer);
 
 		const cameraBindGroupLayoutEntries: GPUBindGroupLayoutEntry[] = [
 			{

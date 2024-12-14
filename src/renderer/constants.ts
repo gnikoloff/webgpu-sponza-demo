@@ -1,4 +1,4 @@
-import { DebugTimingType, LightType, RenderPassType } from "./types";
+import { DebugStatType, LightType, RenderPassType } from "./types";
 
 export const SHADER_DIRECTIONAL_LIGHT_TYPE = 0;
 export const SHADER_POINT_LIGHT_TYPE = 1;
@@ -21,20 +21,21 @@ export const AllRenderPassTypes: RenderPassType[] = [
 	RenderPassType.Blit,
 ];
 
-export const AllDebugTimingTypes: DebugTimingType[] = [
-	DebugTimingType.CPUTotal,
-	DebugTimingType.GPUTotal,
-	DebugTimingType.FPS,
-	// DebugTimingType.DeferredRenderPass,
-	// DebugTimingType.SSAORenderPass,
-	// DebugTimingType.DirectionalAmbientLightingRenderPass,
-	// DebugTimingType.PointLightsStencilMask,
-	// DebugTimingType.PointLightsLighting,
-	// DebugTimingType.TransparentRenderPass,
-	// DebugTimingType.ShadowRenderPass,
-	// DebugTimingType.TAAResolveRenderPass,
-	// DebugTimingType.ReflectionRenderPass,
-	// DebugTimingType.BlitRenderPass,
+export const AllDebugStatTypes: DebugStatType[] = [
+	DebugStatType.CPUTotal,
+	DebugStatType.GPUTotal,
+	DebugStatType.FPS,
+	DebugStatType.VRAM,
+	// DebugStatType.DeferredRenderPass,
+	// DebugStatType.SSAORenderPass,
+	// DebugStatType.DirectionalAmbientLightingRenderPass,
+	// DebugStatType.PointLightsStencilMask,
+	// DebugStatType.PointLightsLighting,
+	// DebugStatType.TransparentRenderPass,
+	// DebugStatType.ShadowRenderPass,
+	// DebugStatType.TAAResolveRenderPass,
+	// DebugStatType.ReflectionRenderPass,
+	// DebugStatType.BlitRenderPass,
 ];
 
 export const RenderPassNames: Map<RenderPassType, string> = new Map([

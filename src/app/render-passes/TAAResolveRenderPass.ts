@@ -1,6 +1,7 @@
 import PipelineStates from "../../renderer/core/PipelineStates";
 import RenderPass from "../../renderer/core/RenderPass";
 import RenderingContext from "../../renderer/core/RenderingContext";
+import VRAMUsageTracker from "../../renderer/misc/VRAMUsageTracker";
 import Scene from "../../renderer/scene/Scene";
 import { RenderPassType } from "../../renderer/types";
 
@@ -104,6 +105,8 @@ export default class TAAResolveRenderPass extends RenderPass {
 		);
 		this.outTextureView = this.outTextures[0].createView();
 
+		VRAMUsageTracker.addTextureBytes(this.outTextures[0]);
+
 		this.sourceCopyTextureInfo = {
 			texture: this.outTextures[0],
 			mipLevel: 0,
@@ -125,6 +128,8 @@ export default class TAAResolveRenderPass extends RenderPass {
 			}),
 		);
 		this.historyTextureView = this.outTextures[1].createView();
+
+		VRAMUsageTracker.addTextureBytes(this.outTextures[1]);
 
 		this.destCopyTextureInfo = {
 			texture: this.outTextures[1],

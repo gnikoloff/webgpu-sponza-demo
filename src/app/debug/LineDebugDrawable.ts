@@ -7,6 +7,7 @@ import {
 	LINE_DEBUG_SHADER_SRC,
 	LINE_DEBUG_VERTEX_SHADER_ENTRY_FN,
 } from "../shaders/LineDebugShader";
+import VRAMUsageTracker from "../../renderer/misc/VRAMUsageTracker";
 
 export default class LineDebugDrawable extends Transform {
 	private renderPSO: GPURenderPipeline;
@@ -22,6 +23,7 @@ export default class LineDebugDrawable extends Transform {
 			usage: GPUBufferUsage.STORAGE,
 			mappedAtCreation: true,
 		});
+		VRAMUsageTracker.addBufferBytes(this.pointsGPUBuffer);
 
 		const buffContents = new Float32Array(
 			this.pointsGPUBuffer.getMappedRange(),

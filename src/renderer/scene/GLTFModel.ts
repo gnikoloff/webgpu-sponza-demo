@@ -21,6 +21,7 @@ import { PBR_TEXTURES_LOCATIONS } from "../core/RendererBindings";
 import SamplerController from "../texture/SamplerController";
 import { RenderPassType, TextureLocation } from "../types";
 import RenderingContext from "../core/RenderingContext";
+import VRAMUsageTracker from "../misc/VRAMUsageTracker";
 
 const GL_ELEMENT_ARRAY_BUFFER = 34963;
 const GL_ARRAY_BUFFER = 34962;
@@ -185,6 +186,9 @@ export default class GLTFModel extends Transform {
 				size: alignedLength,
 				usage,
 			});
+
+			VRAMUsageTracker.addBufferBytes(gpuBuffer);
+
 			new Uint8Array(gpuBuffer.getMappedRange()).set(
 				new Uint8Array(
 					buffView.buffer.arrayBuffer,

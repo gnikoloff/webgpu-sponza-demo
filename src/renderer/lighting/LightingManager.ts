@@ -1,4 +1,5 @@
 import RenderingContext from "../core/RenderingContext";
+import VRAMUsageTracker from "../misc/VRAMUsageTracker";
 import CameraFaceCulledPointLight from "./CameraFaceCulledPointLight";
 import DirectionalLight from "./DirectionalLight";
 import Light from "./Light";
@@ -31,6 +32,7 @@ export default class LightingManager {
 		}
 
 		if (this.gpuBuffer) {
+			VRAMUsageTracker.removeBufferBytes(this.gpuBuffer);
 			this.gpuBuffer.destroy();
 		}
 		this.gpuBuffer = RenderingContext.device.createBuffer({
@@ -38,6 +40,8 @@ export default class LightingManager {
 			size: Light.STRUCT_BYTE_SIZE * this.allLights.length,
 			usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
 		});
+
+		VRAMUsageTracker.addBufferBytes(this.gpuBuffer);
 
 		// TODO: this can be better done by mapping the buffer at creation
 		let lightIdx = 0;

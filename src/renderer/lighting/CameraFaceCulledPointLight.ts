@@ -3,6 +3,7 @@ import Light from "./Light";
 import PointLight from "./PointLight";
 import { SHADER_POINT_LIGHT_TYPE } from "../constants";
 import { vec3 } from "wgpu-matrix";
+import VRAMUsageTracker from "../misc/VRAMUsageTracker";
 
 export default class CameraFaceCulledPointLight extends PointLight {
 	private static _bindGroupLayout: GPUBindGroupLayout;
@@ -43,6 +44,8 @@ export default class CameraFaceCulledPointLight extends PointLight {
 			size: Light.STRUCT_BYTE_SIZE,
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 		});
+
+		VRAMUsageTracker.addBufferBytes(this.gpuBuffer);
 
 		this.lightsStorageView.set({
 			type: SHADER_POINT_LIGHT_TYPE,

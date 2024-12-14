@@ -14,6 +14,7 @@ import { BIND_GROUP_LOCATIONS } from "../../renderer/core/RendererBindings";
 import Scene from "../../renderer/scene/Scene";
 import { RenderPassType } from "../../renderer/types";
 import RenderingContext from "../../renderer/core/RenderingContext";
+import VRAMUsageTracker from "../../renderer/misc/VRAMUsageTracker";
 
 export default class DirectionalShadowRenderPass extends RenderPass {
 	public static readonly TEXTURE_SIZE = 2048;
@@ -37,6 +38,9 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 
 	public override destroy(): void {
 		super.destroy();
+		VRAMUsageTracker.removeBufferBytes(this.shadowCascadesBuffer);
+		VRAMUsageTracker.removeBufferBytes(this.shadowCameraCascade0GPUBuffer);
+		VRAMUsageTracker.removeBufferBytes(this.shadowCameraCascade1GPUBuffer);
 		this.shadowCascadesBuffer.destroy();
 		this.shadowCameraCascade0GPUBuffer.destroy();
 		this.shadowCameraCascade1GPUBuffer.destroy();
@@ -65,7 +69,7 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 		this.outTextures.push(
 			RenderingContext.device.createTexture({
 				dimension: "2d",
-				format: "depth32float",
+				format: "depth24plus",
 				size: {
 					width: DirectionalShadowRenderPass.TEXTURE_SIZE,
 					height: DirectionalShadowRenderPass.TEXTURE_SIZE,
@@ -80,6 +84,8 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 				label: "Shadow Map Texture",
 			}),
 		);
+
+		VRAMUsageTracker.addTextureBytes(this.outTextures[0]);
 
 		this.shadowTextureCascade0 = this.outTextures[0].createView({
 			baseArrayLayer: 0,
@@ -109,11 +115,15 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 		});
 
+		VRAMUsageTracker.addBufferBytes(this.shadowCameraCascade0GPUBuffer);
+
 		this.shadowCameraCascade1GPUBuffer = RenderingContext.device.createBuffer({
 			label: "Shadow Camera GPU Buffer Cascade #1",
 			size: this.shadowCameraCascade1BufferUniformValues.arrayBuffer.byteLength,
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 		});
+
+		VRAMUsageTracker.addBufferBytes(this.shadowCameraCascade1GPUBuffer);
 
 		this.shadowCameraCascade0BindGroup =
 			RenderingContext.device.createBindGroup({
@@ -157,6 +167,8 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 				this.shadowCascadeView.arrayBuffer.byteLength,
 			usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
 		});
+
+		VRAMUsageTracker.addBufferBytes(this.shadowCascadesBuffer);
 	}
 
 	public override setCamera(camera: Camera): this {

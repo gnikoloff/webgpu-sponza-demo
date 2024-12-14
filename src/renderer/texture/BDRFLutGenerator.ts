@@ -1,6 +1,7 @@
 import BaseUtilObject from "../core/BaseUtilObject";
 import PipelineStates from "../core/PipelineStates";
 import RenderingContext from "../core/RenderingContext";
+import VRAMUsageTracker from "../misc/VRAMUsageTracker";
 import BDRFLutShaderUtils, {
 	BDRFLutShaderEntryFn,
 } from "../shader/BDRFLutShaderUtils";
@@ -105,6 +106,8 @@ export default class BDRFLutGenerator extends BaseUtilObject {
 			commandBuffer.popDebugGroup();
 		}
 		RenderingContext.device.queue.submit([commandBuffer.finish()]);
+
+		VRAMUsageTracker.addTextureBytes(outTexture);
 
 		return outTexture;
 	};

@@ -2,6 +2,7 @@ import Camera from "../../renderer/camera/Camera";
 import PipelineStates from "../../renderer/core/PipelineStates";
 import RenderPass from "../../renderer/core/RenderPass";
 import RenderingContext from "../../renderer/core/RenderingContext";
+import VRAMUsageTracker from "../../renderer/misc/VRAMUsageTracker";
 import Scene from "../../renderer/scene/Scene";
 import { RenderPassType } from "../../renderer/types";
 import {
@@ -47,6 +48,7 @@ export default class ReflectionComputePass extends RenderPass {
 
 	public override destroy(): void {
 		super.destroy();
+		VRAMUsageTracker.removeBufferBytes(this.settingsBuffer);
 		this.settingsBuffer.destroy();
 	}
 
@@ -129,6 +131,9 @@ export default class ReflectionComputePass extends RenderPass {
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 			mappedAtCreation: true,
 		});
+
+		VRAMUsageTracker.addBufferBytes(this.settingsBuffer);
+
 		new Int32Array(this.settingsBuffer.getMappedRange()).set(
 			new Int32Array([this.isHiZ ? 1 : 0, this.maxIterations]),
 		);
@@ -143,6 +148,8 @@ export default class ReflectionComputePass extends RenderPass {
 					GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.STORAGE_BINDING,
 			}),
 		);
+
+		VRAMUsageTracker.addTextureBytes(this.outTextures[0]);
 	}
 
 	public override setCamera(camera: Camera): this {

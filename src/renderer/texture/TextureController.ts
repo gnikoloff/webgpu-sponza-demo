@@ -11,6 +11,7 @@ import {
 	GetMipComputeGeneratorShaderUtils,
 	MipComputeGeneratorShaderEntryFn,
 } from "../shader/MipComputeGeneratorShaderUtils";
+import VRAMUsageTracker from "../misc/VRAMUsageTracker";
 
 function initBindGroup(
 	nextMipLevel: number,
@@ -270,6 +271,7 @@ export default class TextureController extends BaseUtilObject {
 			usage: GPUBufferUsage.UNIFORM,
 			mappedAtCreation: true,
 		});
+		VRAMUsageTracker.addBufferBytes(inOutTextureScaleFactorBuffer);
 
 		const scaleMultiplier = origTexWidth / texWidth;
 

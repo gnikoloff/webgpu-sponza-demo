@@ -2,6 +2,7 @@ import { GLTFMeshPrimitivePostprocessed } from "@loaders.gl/gltf";
 
 import Geometry from "./Geometry";
 import RenderingContext from "../core/RenderingContext";
+import VRAMUsageTracker from "../misc/VRAMUsageTracker";
 
 export default class GLTFGeometry extends Geometry {
 	public firstIndex = 0;
@@ -30,6 +31,8 @@ export default class GLTFGeometry extends Geometry {
 						usage: GPUBufferUsage.VERTEX,
 					});
 					this.vertexBufferOffsets.set(buffer, [0, 1]);
+
+					VRAMUsageTracker.addBufferBytes(buffer);
 
 					this.vertexBuffers.push(buffer);
 					return;

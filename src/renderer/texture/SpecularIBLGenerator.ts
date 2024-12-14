@@ -7,6 +7,7 @@ import { numMipLevelsForSize } from "../math/math";
 import CubeTextureController from "./CubeTextureController";
 import SamplerController from "./SamplerController";
 import RenderingContext from "../core/RenderingContext";
+import VRAMUsageTracker from "../misc/VRAMUsageTracker";
 
 let _computePSO: GPUComputePipeline;
 
@@ -157,6 +158,9 @@ export default class SpecularIBLGenerator extends BaseUtilObject {
 				size: Float32Array.BYTES_PER_ELEMENT,
 				usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 			});
+
+			VRAMUsageTracker.addBufferBytes(roughnessBuffer);
+
 			new Float32Array(roughnessBuffer.getMappedRange()).set(
 				new Float32Array([roughness]),
 			);
@@ -173,6 +177,9 @@ export default class SpecularIBLGenerator extends BaseUtilObject {
 					size: Uint32Array.BYTES_PER_ELEMENT,
 					usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 				});
+
+				VRAMUsageTracker.addBufferBytes(faceBuffer);
+
 				new Uint32Array(faceBuffer.getMappedRange()).set(
 					new Uint32Array([face]),
 				);
@@ -215,6 +222,8 @@ export default class SpecularIBLGenerator extends BaseUtilObject {
 			commandEncoder.popDebugGroup();
 		}
 		RenderingContext.device.queue.submit([commandEncoder.finish()]);
+
+		VRAMUsageTracker.addTextureBytes(outTex);
 
 		return outTex;
 	};

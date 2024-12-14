@@ -3,6 +3,7 @@ import Face from "./Face";
 import VertexDescriptor from "../core/VertexDescriptor";
 import BoundingBox from "../math/BoundingBox";
 import RenderingContext from "../core/RenderingContext";
+import VRAMUsageTracker from "../misc/VRAMUsageTracker";
 
 export default class Geometry {
 	public faces: Face[] = [];
@@ -137,6 +138,9 @@ export default class Geometry {
 			usage: GPUBufferUsage.VERTEX,
 			label: "Mesh Interleaved Vertex GPUBuffer",
 		});
+
+		VRAMUsageTracker.addBufferBytes(vertexBuffer);
+
 		const data = new Float32Array(vertexBuffer.getMappedRange());
 		data.set(interleavedArray, 0);
 		vertexBuffer.unmap();
@@ -150,6 +154,9 @@ export default class Geometry {
 			usage: GPUBufferUsage.INDEX,
 			label: "Mesh Index GPUBuffer",
 		});
+
+		VRAMUsageTracker.addBufferBytes(this.indexBuffer);
+
 		const indexData = new Uint16Array(this.indexBuffer.getMappedRange());
 		indexData.set(indices);
 		this.indexBuffer.unmap();

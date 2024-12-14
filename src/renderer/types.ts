@@ -20,10 +20,11 @@ export enum RenderPassType {
 	Blit,
 }
 
-export enum DebugTimingType {
+export enum DebugStatType {
 	CPUTotal,
 	GPUTotal,
 	FPS,
+	VRAM,
 	DeferredRenderPass,
 	DirectionalAmbientLightingRenderPass,
 	PointLightsStencilMask,

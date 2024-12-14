@@ -32,6 +32,7 @@ const getGBufferCommonShaderBindings = (
   @group(1) @binding(4) var specularIBLTexture: texture_cube<f32>;
   @group(1) @binding(5) var bdrfLutTexture: texture_2d<f32>;
   @group(1) @binding(6) var envTexSampler: sampler;
+  @group(1) @binding(7) var<uniform> ssaoMixFactor: f32;
   #endif
 `;
 
