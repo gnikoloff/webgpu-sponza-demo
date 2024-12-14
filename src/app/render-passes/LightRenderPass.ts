@@ -71,8 +71,8 @@ export default class LightRenderPass extends RenderPass {
 		});
 	}
 
-	constructor(type: LightPassType) {
-		super(type);
+	constructor(type: LightPassType, width: number, height: number) {
+		super(type, width, height);
 
 		this.gbufferCommonBindGroupLayoutEntries.push({
 			binding: 0,

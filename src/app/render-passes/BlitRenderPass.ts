@@ -18,8 +18,8 @@ export default class BlitRenderPass extends RenderPass {
 
 	private textureBindGroup: GPUBindGroup;
 
-	constructor() {
-		super(RenderPassType.Blit);
+	constructor(width: number, height: number) {
+		super(RenderPassType.Blit, width, height);
 		const vertexShaderModule = PipelineStates.createShaderModule(
 			FULLSCREEN_TRIANGLE_VERTEX_SHADER_SRC,
 		);
@@ -93,11 +93,6 @@ export default class BlitRenderPass extends RenderPass {
 		scene: Scene,
 		inputs: GPUTexture[],
 	): GPUTexture[] {
-		if (this.hasResized) {
-			this.hasResized = false;
-			return [];
-		}
-
 		if (!this.inputTextureViews.length) {
 			this.inputTextureViews.push(inputs[0].createView());
 

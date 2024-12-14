@@ -7,8 +7,8 @@ import { RenderPassType } from "../../renderer/types";
 import Renderer from "../Renderer";
 
 export default class SkyboxRenderPass extends RenderPass {
-	constructor() {
-		super(RenderPassType.Skybox);
+	constructor(width: number, height: number) {
+		super(RenderPassType.Skybox, width, height);
 	}
 
 	protected override createRenderPassDescriptor(): GPURenderPassDescriptor {
@@ -44,10 +44,6 @@ export default class SkyboxRenderPass extends RenderPass {
 		scene: Scene,
 		inputs: GPUTexture[],
 	): GPUTexture[] {
-		if (this.hasResized) {
-			this.hasResized = false;
-			return [];
-		}
 		if (!this.inputTextureViews.length) {
 			this.inputTextureViews.push(inputs[0].createView());
 			this.inputTextureViews.push(inputs[1].createView());

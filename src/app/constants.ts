@@ -23,12 +23,12 @@ export const RENDER_PASS_COMPUTED_REFLECTIONS_TEXTURE =
 
 export const GBUFFER_OUTPUT_TARGETS: GPUColorTargetState[] = [
 	{
-		format: "rgba16float",
+		format: "rg16float",
 	},
 	{
 		format: "bgra8unorm",
 	},
 	{
-		format: "rg16float",
+		format: "rgba16float",
 	},
 ];

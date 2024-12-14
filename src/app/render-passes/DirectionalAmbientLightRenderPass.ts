@@ -13,7 +13,6 @@ import GetGBufferIntegrateShader, {
 } from "../shaders/GBufferIntegrateShader";
 
 export default class DirectionalAmbientLightRenderPass extends LightRenderPass {
-	private outTexture: GPUTexture;
 	private outTextureView: GPUTextureView;
 
 	private renderPSO: GPURenderPipeline;
@@ -49,8 +48,12 @@ export default class DirectionalAmbientLightRenderPass extends LightRenderPass {
 		return this;
 	}
 
-	constructor(protected shadowCascadesBuffer: GPUBuffer) {
-		super(RenderPassType.DirectionalAmbientLighting);
+	constructor(
+		protected shadowCascadesBuffer: GPUBuffer,
+		width: number,
+		height: number,
+	) {
+		super(RenderPassType.DirectionalAmbientLighting, width, height);
 
 		this.shadowSampler = SamplerController.createSampler({
 			addressModeU: "clamp-to-edge",
@@ -194,26 +197,22 @@ export default class DirectionalAmbientLightRenderPass extends LightRenderPass {
 			},
 		};
 		this.renderPSO = PipelineStates.createRenderPipeline(renderPSODescriptor);
-	}
 
-	public override onResize(width: number, height: number): void {
-		super.onResize(width, height);
-		if (this.outTexture) {
-			this.outTexture.destroy();
-		}
-		this.outTexture = RenderingContext.device.createTexture({
-			dimension: "2d",
-			format: "rgba16float",
-			mipLevelCount: 1,
-			sampleCount: 1,
-			size: { width, height, depthOrArrayLayers: 1 },
-			usage:
-				GPUTextureUsage.STORAGE_BINDING |
-				GPUTextureUsage.RENDER_ATTACHMENT |
-				GPUTextureUsage.TEXTURE_BINDING,
-			label: "GBuffer Result Texture",
-		});
-		this.outTextureView = this.outTexture.createView();
+		this.outTextures.push(
+			RenderingContext.device.createTexture({
+				dimension: "2d",
+				format: "rgba16float",
+				mipLevelCount: 1,
+				sampleCount: 1,
+				size: { width, height, depthOrArrayLayers: 1 },
+				usage:
+					GPUTextureUsage.STORAGE_BINDING |
+					GPUTextureUsage.RENDER_ATTACHMENT |
+					GPUTextureUsage.TEXTURE_BINDING,
+				label: "GBuffer Result Texture",
+			}),
+		);
+		this.outTextureView = this.outTextures[0].createView();
 	}
 
 	protected override createRenderPassDescriptor(): GPURenderPassDescriptor {
@@ -259,10 +258,6 @@ export default class DirectionalAmbientLightRenderPass extends LightRenderPass {
 		scene: Scene,
 		inputs: GPUTexture[],
 	): GPUTexture[] {
-		if (this.hasResized) {
-			this.hasResized = false;
-			return [];
-		}
 		if (!this.inputTextureViews.length) {
 			this.inputTextureViews.push(inputs[0].createView());
 			this.inputTextureViews.push(inputs[1].createView());
@@ -319,6 +314,6 @@ export default class DirectionalAmbientLightRenderPass extends LightRenderPass {
 
 		this.postRender(commandEncoder);
 
-		return [this.outTexture];
+		return this.outTextures;
 	}
 }

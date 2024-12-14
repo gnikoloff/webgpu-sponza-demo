@@ -7,8 +7,8 @@ import Scene from "../../renderer/scene/Scene";
 import { RenderPassType } from "../../renderer/types";
 
 export default class TransparentRenderPass extends RenderPass {
-	constructor() {
-		super(RenderPassType.Transparent);
+	constructor(width: number, height: number) {
+		super(RenderPassType.Transparent, width, height);
 	}
 
 	public override toggleDebugCamera(v: boolean) {
@@ -50,10 +50,6 @@ export default class TransparentRenderPass extends RenderPass {
 		scene: Scene,
 		inputs: GPUTexture[],
 	): GPUTexture[] {
-		if (this.hasResized) {
-			this.hasResized = false;
-			return [];
-		}
 		if (!this.inputTextureViews.length) {
 			this.inputTextureViews.push(inputs[0].createView());
 			this.inputTextureViews.push(inputs[1].createView());

@@ -24,8 +24,8 @@ export default class PointLightsNonCulledRenderPass extends LightRenderPass {
 	private frontFaceCullRenderPSO: GPURenderPipeline;
 	private backFaceCullRenderPSO: GPURenderPipeline;
 
-	constructor() {
-		super(RenderPassType.PointLightsNonCulledLighting);
+	constructor(width: number, height: number) {
+		super(RenderPassType.PointLightsNonCulledLighting, width, height);
 
 		const renderPSOLayout = RenderingContext.device.createPipelineLayout({
 			label: "Render Non-Instanced Non-Culled Point Lights PSO Layout",
@@ -102,10 +102,6 @@ export default class PointLightsNonCulledRenderPass extends LightRenderPass {
 		scene: Scene,
 		inputs: GPUTexture[],
 	): GPUTexture[] {
-		if (this.hasResized) {
-			this.hasResized = false;
-			return [];
-		}
 		if (!this.inputTextureViews.length) {
 			this.inputTextureViews.push(inputs[0].createView());
 			this.inputTextureViews.push(inputs[1].createView());

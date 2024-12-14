@@ -15,12 +15,11 @@ export default class HiZDepthComputePass extends RenderPass {
 
 	private computePSO: GPUComputePipeline;
 	private bindGroupLayout: GPUBindGroupLayout;
-	private bindGroups: GPUBindGroup[] = [];
 	private mipTexSizes: Vec2[] = [];
 	private mipTexViews: GPUTextureView[] = [];
 
-	constructor() {
-		super(RenderPassType.HiZ);
+	constructor(width: number, height: number) {
+		super(RenderPassType.HiZ, width, height);
 
 		const bindGroupLayoutEntries: GPUBindGroupLayoutEntry[] = [
 			{
@@ -80,10 +79,6 @@ export default class HiZDepthComputePass extends RenderPass {
 		scene: Scene,
 		inputs: GPUTexture[],
 	): GPUTexture[] {
-		if (this.hasResized) {
-			this.hasResized = false;
-			return [];
-		}
 		const mipsLevelCount = inputs[0].mipLevelCount;
 
 		const origWidth = inputs[0].width;

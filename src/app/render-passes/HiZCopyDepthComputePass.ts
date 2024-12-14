@@ -13,14 +13,12 @@ export default class HiZCopyDepthComputePass extends RenderPass {
 	private static readonly COMPUTE_WORKGROUP_SIZE_X = 8;
 	private static readonly COMPUTE_WORKGROUP_SIZE_Y = 8;
 
-	private outTexture: GPUTexture;
-
 	private computePSO: GPUComputePipeline;
 	private bindGroupLayout: GPUBindGroupLayout;
 	private bindGroup: GPUBindGroup;
 
-	constructor() {
-		super(RenderPassType.CopyDepthForHiZ);
+	constructor(width: number, height: number) {
+		super(RenderPassType.CopyDepthForHiZ, width, height);
 
 		const bindGroupLayoutEntries: GPUBindGroupLayoutEntry[] = [
 			{
@@ -64,20 +62,17 @@ export default class HiZCopyDepthComputePass extends RenderPass {
 				},
 			},
 		});
-	}
 
-	public override onResize(width: number, height: number): void {
-		super.onResize(width, height);
-		if (this.outTexture) {
-			this.outTexture.destroy();
-		}
-		this.outTexture = RenderingContext.device.createTexture({
-			label: "Hi-Z Depth Texture",
-			size: { width, height },
-			usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.STORAGE_BINDING,
-			format: "r32float",
-			mipLevelCount: numMipLevelsForSize(width, height),
-		});
+		this.outTextures.push(
+			RenderingContext.device.createTexture({
+				label: "Hi-Z Depth Texture",
+				size: { width, height },
+				usage:
+					GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.STORAGE_BINDING,
+				format: "r32float",
+				mipLevelCount: numMipLevelsForSize(width, height),
+			}),
+		);
 	}
 
 	protected override createComputePassDescriptor(): GPUComputePassDescriptor {
@@ -95,10 +90,6 @@ export default class HiZCopyDepthComputePass extends RenderPass {
 		scene: Scene,
 		inputs: GPUTexture[],
 	): GPUTexture[] {
-		if (this.hasResized) {
-			this.hasResized = false;
-			return [];
-		}
 		if (!this.inputTextureViews.length) {
 			this.inputTextureViews.push(
 				inputs[0].createView({ aspect: "depth-only" }),
@@ -111,7 +102,7 @@ export default class HiZCopyDepthComputePass extends RenderPass {
 				},
 				{
 					binding: 1,
-					resource: this.outTexture.createView({
+					resource: this.outTextures[0].createView({
 						baseMipLevel: 0,
 						mipLevelCount: 1,
 					}),
@@ -133,10 +124,12 @@ export default class HiZCopyDepthComputePass extends RenderPass {
 		computePass.setBindGroup(0, this.bindGroup);
 
 		const workgroupCountX = Math.ceil(
-			this.outTexture.width / HiZCopyDepthComputePass.COMPUTE_WORKGROUP_SIZE_X,
+			this.outTextures[0].width /
+				HiZCopyDepthComputePass.COMPUTE_WORKGROUP_SIZE_X,
 		);
 		const workgroupCountY = Math.ceil(
-			this.outTexture.height / HiZCopyDepthComputePass.COMPUTE_WORKGROUP_SIZE_Y,
+			this.outTextures[0].height /
+				HiZCopyDepthComputePass.COMPUTE_WORKGROUP_SIZE_Y,
 		);
 		computePass.dispatchWorkgroups(workgroupCountX, workgroupCountY, 1);
 
@@ -144,6 +137,6 @@ export default class HiZCopyDepthComputePass extends RenderPass {
 
 		this.postRender(commandEncoder);
 
-		return [this.outTexture];
+		return this.outTextures;
 	}
 }

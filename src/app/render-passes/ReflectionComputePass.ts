@@ -13,7 +13,6 @@ export default class ReflectionComputePass extends RenderPass {
 	private static readonly COMPUTE_WORKGROUP_SIZE_X = 8;
 	private static readonly COMPUTE_WORKGROUP_SIZE_Y = 8;
 
-	private outTexture: GPUTexture;
 	private computePSO: GPUComputePipeline;
 	private bindGroupLayout: GPUBindGroupLayout;
 	private bindGroup!: GPUBindGroup;
@@ -46,8 +45,8 @@ export default class ReflectionComputePass extends RenderPass {
 		);
 	}
 
-	constructor() {
-		super(RenderPassType.Reflection);
+	constructor(width: number, height: number) {
+		super(RenderPassType.Reflection, width, height);
 
 		const bindGroupLayoutEntries: GPUBindGroupLayoutEntry[] = [
 			{
@@ -129,24 +128,21 @@ export default class ReflectionComputePass extends RenderPass {
 			new Int32Array([this.isHiZ ? 1 : 0, this.maxIterations]),
 		);
 		this.settingsBuffer.unmap();
+
+		this.outTextures.push(
+			RenderingContext.device.createTexture({
+				label: "Reflection Texture",
+				size: { width, height, depthOrArrayLayers: 1 },
+				format: "rgba16float",
+				usage:
+					GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.STORAGE_BINDING,
+			}),
+		);
 	}
 
 	public override setCamera(camera: Camera): this {
 		this.camera = camera;
 		return this;
-	}
-
-	public override onResize(width: number, height: number): void {
-		super.onResize(width, height);
-		if (this.outTexture) {
-			this.outTexture.destroy();
-		}
-		this.outTexture = RenderingContext.device.createTexture({
-			label: "Reflection Texture",
-			size: { width, height, depthOrArrayLayers: 1 },
-			format: "rgba16float",
-			usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.STORAGE_BINDING,
-		});
 	}
 
 	protected override createComputePassDescriptor(): GPUComputePassDescriptor {
@@ -164,10 +160,6 @@ export default class ReflectionComputePass extends RenderPass {
 		scene: Scene,
 		inputs: GPUTexture[],
 	): GPUTexture[] {
-		if (this.hasResized) {
-			this.hasResized = false;
-			return [];
-		}
 		if (!this.inputTextureViews.length) {
 			this.inputTextureViews.push(inputs[0].createView());
 			this.inputTextureViews.push(inputs[1].createView());
@@ -193,7 +185,7 @@ export default class ReflectionComputePass extends RenderPass {
 				},
 				{
 					binding: 4,
-					resource: this.outTexture.createView(),
+					resource: this.outTextures[0].createView(),
 				},
 				{
 					binding: 5,
@@ -226,10 +218,12 @@ export default class ReflectionComputePass extends RenderPass {
 		computeEncoder.setPipeline(this.computePSO);
 		computeEncoder.setBindGroup(0, this.bindGroup);
 		const workgroupCountX = Math.ceil(
-			this.outTexture.width / ReflectionComputePass.COMPUTE_WORKGROUP_SIZE_X,
+			this.outTextures[0].width /
+				ReflectionComputePass.COMPUTE_WORKGROUP_SIZE_X,
 		);
 		const workgroupCountY = Math.ceil(
-			this.outTexture.height / ReflectionComputePass.COMPUTE_WORKGROUP_SIZE_Y,
+			this.outTextures[0].height /
+				ReflectionComputePass.COMPUTE_WORKGROUP_SIZE_Y,
 		);
 		computeEncoder.dispatchWorkgroups(workgroupCountX, workgroupCountY, 1);
 
@@ -240,6 +234,6 @@ export default class ReflectionComputePass extends RenderPass {
 
 		this.postRender(commandEncoder);
 
-		return [this.outTexture];
+		return this.outTextures;
 	}
 }

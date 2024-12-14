@@ -17,13 +17,10 @@ export default class RenderPass {
 	public inputTextureNames: string[] = [];
 	public outputTextureNames: string[] = [];
 
+	protected outTextures: GPUTexture[] = [];
 	protected inputTextureViews: GPUTextureView[] = [];
-
-	protected hasResized = true;
-
 	protected renderPassDescriptor!: GPURenderPassDescriptor;
 	protected computePassDescriptor!: GPUComputePassDescriptor;
-
 	protected cameraBindGroup?: GPUBindGroup;
 	protected camera?: Camera;
 	protected debugCamera?: Camera;
@@ -36,7 +33,25 @@ export default class RenderPass {
 
 	protected gpuTimingAverage = new RollingAverage();
 
-	constructor(public type: RenderPassType) {
+	public destroy() {
+		for (const tex of this.outTextures) {
+			tex.destroy();
+		}
+		this.inputTextureViews.length = 0;
+		this.querySet?.destroy();
+		this.resolveBuffer?.destroy();
+		this.inputTextureNames.length = 0;
+		this.inputTextureViews.length = 0;
+		for (const buff of this.resultBuffers) {
+			buff.destroy();
+		}
+	}
+
+	constructor(
+		public type: RenderPassType,
+		public width: number,
+		public height: number,
+	) {
 		this.name = RenderPassNames.get(type);
 
 		if (RenderingContext.supportsGPUTimestampQuery) {
@@ -138,28 +153,27 @@ export default class RenderPass {
 	}
 
 	public async getStartAndEndTimings(): Promise<RenderPassTimingRange> {
-		return [0, 0];
-		// if (!RenderingContext.supportsGPUTimestampQuery) {
-		// 	return [0, 0];
-		// }
+		if (!RenderingContext.supportsGPUTimestampQuery) {
+			return [0, 0];
+		}
 
-		// const resultBuffer = this.resultBuffer;
+		const resultBuffer = this.resultBuffer;
 
-		// if (!resultBuffer) {
-		// 	return [0, 0];
-		// }
+		if (!resultBuffer) {
+			return [0, 0];
+		}
 
-		// this.state = "free";
+		this.state = "free";
 
-		// await resultBuffer.mapAsync(GPUMapMode.READ);
-		// const times = new BigInt64Array(resultBuffer.getMappedRange());
-		// const timeOffsets: RenderPassTimingRange = [
-		// 	Number(times[0]),
-		// 	Number(times[1]),
-		// ];
-		// resultBuffer.unmap();
-		// this.resultBuffers.push(resultBuffer);
-		// return timeOffsets;
+		await resultBuffer.mapAsync(GPUMapMode.READ);
+		const times = new BigInt64Array(resultBuffer.getMappedRange());
+		const timeOffsets: RenderPassTimingRange = [
+			Number(times[0]),
+			Number(times[1]),
+		];
+		resultBuffer.unmap();
+		this.resultBuffers.push(resultBuffer);
+		return timeOffsets;
 	}
 
 	public async getTimingResult(): Promise<RenderPassTiming> {
@@ -218,13 +232,7 @@ export default class RenderPass {
 		return this;
 	}
 
-	public onResize(width: number, height: number) {
-		this.inputTextureViews.length = 0;
-		this.hasResized = true;
-	}
-
 	protected postRender(commandEncoder: GPUCommandEncoder) {
-		this.hasResized = false;
 		this.resolveTiming(commandEncoder);
 	}
 

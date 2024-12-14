@@ -14,10 +14,7 @@ import {
 } from "../shaders/VertexShader";
 
 export default class TAAResolveRenderPass extends RenderPass {
-	private outTexture: GPUTexture;
 	private outTextureView: GPUTextureView;
-
-	private historyTexture: GPUTexture;
 	private historyTextureView: GPUTextureView;
 
 	private sourceCopyTextureInfo: GPUTexelCopyTextureInfo;
@@ -29,8 +26,8 @@ export default class TAAResolveRenderPass extends RenderPass {
 
 	private textureBindGroup: GPUBindGroup;
 
-	constructor() {
-		super(RenderPassType.TAAResolve);
+	constructor(width: number, height: number) {
+		super(RenderPassType.TAAResolve, width, height);
 
 		const vertexShaderModule = PipelineStates.createShaderModule(
 			FULLSCREEN_TRIANGLE_VERTEX_SHADER_SRC,
@@ -89,55 +86,48 @@ export default class TAAResolveRenderPass extends RenderPass {
 		};
 
 		this.renderPSO = PipelineStates.createRenderPipeline(renderPSODescriptor);
-	}
 
-	public override onResize(width: number, height: number): void {
-		super.onResize(width, height);
-		if (this.outTexture) {
-			this.outTexture.destroy();
-		}
-
-		this.outTexture = RenderingContext.device.createTexture({
-			dimension: "2d",
-			format: "rgba16float",
-			mipLevelCount: 1,
-			sampleCount: 1,
-			size: { width, height, depthOrArrayLayers: 1 },
-			usage:
-				GPUTextureUsage.RENDER_ATTACHMENT |
-				GPUTextureUsage.TEXTURE_BINDING |
-				GPUTextureUsage.STORAGE_BINDING |
-				GPUTextureUsage.COPY_SRC,
-			label: "TAA Resolve Texture",
-		});
-		this.outTextureView = this.outTexture.createView();
+		this.outTextures.push(
+			RenderingContext.device.createTexture({
+				dimension: "2d",
+				format: "rgba16float",
+				mipLevelCount: 1,
+				sampleCount: 1,
+				size: { width, height, depthOrArrayLayers: 1 },
+				usage:
+					GPUTextureUsage.RENDER_ATTACHMENT |
+					GPUTextureUsage.TEXTURE_BINDING |
+					GPUTextureUsage.STORAGE_BINDING |
+					GPUTextureUsage.COPY_SRC,
+				label: "TAA Resolve Texture",
+			}),
+		);
+		this.outTextureView = this.outTextures[0].createView();
 
 		this.sourceCopyTextureInfo = {
-			texture: this.outTexture,
+			texture: this.outTextures[0],
 			mipLevel: 0,
 			origin: { x: 0, y: 0, z: 0 },
 		};
 
-		if (this.historyTexture) {
-			this.historyTexture.destroy();
-		}
-
-		this.historyTexture = RenderingContext.device.createTexture({
-			dimension: "2d",
-			format: "rgba16float",
-			mipLevelCount: 1,
-			sampleCount: 1,
-			size: { width, height, depthOrArrayLayers: 1 },
-			usage:
-				GPUTextureUsage.RENDER_ATTACHMENT |
-				GPUTextureUsage.TEXTURE_BINDING |
-				GPUTextureUsage.COPY_DST,
-			label: "TAA Resolve Texture",
-		});
-		this.historyTextureView = this.historyTexture.createView();
+		this.outTextures.push(
+			RenderingContext.device.createTexture({
+				dimension: "2d",
+				format: "rgba16float",
+				mipLevelCount: 1,
+				sampleCount: 1,
+				size: { width, height, depthOrArrayLayers: 1 },
+				usage:
+					GPUTextureUsage.RENDER_ATTACHMENT |
+					GPUTextureUsage.TEXTURE_BINDING |
+					GPUTextureUsage.COPY_DST,
+				label: "TAA Resolve Texture",
+			}),
+		);
+		this.historyTextureView = this.outTextures[1].createView();
 
 		this.destCopyTextureInfo = {
-			texture: this.historyTexture,
+			texture: this.outTextures[1],
 			mipLevel: 0,
 			origin: { x: 0, y: 0, z: 0 },
 		};
@@ -173,10 +163,6 @@ export default class TAAResolveRenderPass extends RenderPass {
 		_scene: Scene,
 		inputs: GPUTexture[],
 	): GPUTexture[] {
-		if (this.hasResized) {
-			this.hasResized = false;
-			return [];
-		}
 		if (!this.inputTextureViews.length) {
 			this.inputTextureViews.push(inputs[0].createView());
 			this.inputTextureViews.push(inputs[1].createView());
@@ -220,6 +206,6 @@ export default class TAAResolveRenderPass extends RenderPass {
 
 		this.postRender(commandEncoder);
 
-		return [this.outTexture];
+		return this.outTextures;
 	}
 }

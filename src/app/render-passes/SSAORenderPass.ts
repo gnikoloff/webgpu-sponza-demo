@@ -12,7 +12,6 @@ import RenderingContext from "../../renderer/core/RenderingContext";
 import TextureLoader from "../../renderer/texture/TextureLoader";
 
 export default class SSAORenderPass extends RenderPass {
-	private outTexture: GPUTexture;
 	private outTextureView: GPUTextureView;
 
 	private gbufferCommonBindGroupLayout: GPUBindGroupLayout;
@@ -25,8 +24,8 @@ export default class SSAORenderPass extends RenderPass {
 
 	private kernelBuffer: GPUBuffer;
 
-	constructor() {
-		super(RenderPassType.SSAO);
+	constructor(width: number, height: number) {
+		super(RenderPassType.SSAO, width, height);
 		const kernel = new Float32Array(16 * 4);
 
 		for (let i = 0; i < 16; i++) {
@@ -119,6 +118,20 @@ export default class SSAORenderPass extends RenderPass {
 				targets: renderTargets,
 			},
 		});
+
+		this.outTextures.push(
+			RenderingContext.device.createTexture({
+				dimension: "2d",
+				format: "r16float",
+				mipLevelCount: 1,
+				sampleCount: 1,
+				size: { width, height, depthOrArrayLayers: 1 },
+				usage:
+					GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT,
+				label: "SSAO Texture",
+			}),
+		);
+		this.outTextureView = this.outTextures[0].createView();
 	}
 
 	private async loadBlueNoiseTexture() {
@@ -147,24 +160,6 @@ export default class SSAORenderPass extends RenderPass {
 		imageBitmap.close();
 	}
 
-	public override onResize(width: number, height: number): void {
-		super.onResize(width, height);
-		if (this.outTexture) {
-			this.outTexture.destroy();
-		}
-		this.outTexture = RenderingContext.device.createTexture({
-			dimension: "2d",
-			format: "r16float",
-			mipLevelCount: 1,
-			sampleCount: 1,
-			size: { width, height, depthOrArrayLayers: 1 },
-			usage:
-				GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT,
-			label: "SSAO Texture",
-		});
-		this.outTextureView = this.outTexture.createView();
-	}
-
 	protected override createRenderPassDescriptor(): GPURenderPassDescriptor {
 		if (this.renderPassDescriptor) {
 			return this.renderPassDescriptor;
@@ -189,10 +184,6 @@ export default class SSAORenderPass extends RenderPass {
 		scene: Scene,
 		inputs: GPUTexture[],
 	): GPUTexture[] {
-		if (this.hasResized) {
-			this.hasResized = false;
-			return [];
-		}
 		if (!this.inputTextureViews.length) {
 			this.inputTextureViews.push(inputs[0].createView());
 			this.inputTextureViews.push(
@@ -254,6 +245,6 @@ export default class SSAORenderPass extends RenderPass {
 
 		this.postRender(commandEncoder);
 
-		return [this.outTexture];
+		return this.outTextures;
 	}
 }

@@ -11,15 +11,14 @@ import SSAOBlurShaderSrc, {
 } from "../shaders/SSAOBlurShader";
 
 export default class SSAOBlurRenderPass extends RenderPass {
-	private outTexture: GPUTexture;
 	private outTextureView: GPUTextureView;
 
 	private renderPSO: GPURenderPipeline;
 	private bindGroupLayout: GPUBindGroupLayout;
 	private bindGroup!: GPUBindGroup;
 
-	constructor() {
-		super(RenderPassType.SSAOBlur);
+	constructor(width: number, height: number) {
+		super(RenderPassType.SSAOBlur, width, height);
 
 		const renderTargets: GPUColorTargetState[] = [
 			{
@@ -56,24 +55,20 @@ export default class SSAOBlurRenderPass extends RenderPass {
 				targets: renderTargets,
 			},
 		});
-	}
 
-	public override onResize(width: number, height: number): void {
-		super.onResize(width, height);
-		if (this.outTexture) {
-			this.outTexture.destroy();
-		}
-		this.outTexture = RenderingContext.device.createTexture({
-			dimension: "2d",
-			format: "r16float",
-			mipLevelCount: 1,
-			sampleCount: 1,
-			size: { width, height, depthOrArrayLayers: 1 },
-			usage:
-				GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT,
-			label: "SSAO Blurred Texture",
-		});
-		this.outTextureView = this.outTexture.createView();
+		this.outTextures.push(
+			RenderingContext.device.createTexture({
+				dimension: "2d",
+				format: "r16float",
+				mipLevelCount: 1,
+				sampleCount: 1,
+				size: { width, height, depthOrArrayLayers: 1 },
+				usage:
+					GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT,
+				label: "SSAO Blurred Texture",
+			}),
+		);
+		this.outTextureView = this.outTextures[0].createView();
 	}
 
 	protected override createRenderPassDescriptor(): GPURenderPassDescriptor {
@@ -100,10 +95,6 @@ export default class SSAOBlurRenderPass extends RenderPass {
 		scene: Scene,
 		inputs: GPUTexture[],
 	): GPUTexture[] {
-		if (this.hasResized) {
-			this.hasResized = false;
-			return [];
-		}
 		if (!this.inputTextureViews.length) {
 			this.inputTextureViews.push(inputs[0].createView());
 
@@ -138,6 +129,6 @@ export default class SSAOBlurRenderPass extends RenderPass {
 
 		this.postRender(commandEncoder);
 
-		return [this.outTexture];
+		return this.outTextures;
 	}
 }

@@ -111,7 +111,10 @@ export default class Renderer extends RenderingContext {
 	private lightingManager: LightingSystem;
 	private scene = new Scene();
 
-	private renderPassComposer: RenderPassComposer;
+	private envDiffuseTexture: GPUTexture;
+	private envSpecularTexture: GPUTexture;
+	private envBdrfLutTexture: GPUTexture;
+	private renderPassComposer!: RenderPassComposer;
 
 	private cpuAverage = new RollingAverage();
 	private gpuAverage = new RollingAverage();
@@ -269,160 +272,6 @@ export default class Renderer extends RenderingContext {
 		this.lightingManager = new LightingSystem(movementCurvePoints);
 		this.scene.lightingManager = this.lightingManager;
 
-		this.renderPassComposer = new RenderPassComposer();
-		this.renderPassComposer.setScene(this.scene);
-
-		const shadowRenderPass = new DirectionalShadowRenderPass(
-			this.lightingManager.mainDirLight,
-		)
-			.addOutputTexture(RENDER_PASS_DIRECTIONAL_LIGHT_DEPTH_TEXTURE)
-			.setCamera(this.mainCamera);
-
-		const gbufferRenderPass = new GBufferRenderPass()
-			.setCamera(this.mainCamera)
-			.addOutputTextures([
-				RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
-				RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
-				RENDER_PASS_VELOCITY_TEXTURE,
-				RENDER_PASS_DEPTH_STENCIL_TEXTURE,
-			]);
-
-		const ssaoRenderPass = new SSAORenderPass()
-			.setCamera(this.mainCamera)
-			.addInputTextures([
-				RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
-				RENDER_PASS_DEPTH_STENCIL_TEXTURE,
-			])
-			.addOutputTexture(RENDER_PASS_SSAO_TEXTURE);
-
-		const ssaoBlurRenderPass = new SSAOBlurRenderPass()
-			.addInputTexture(RENDER_PASS_SSAO_TEXTURE)
-			.addOutputTexture(RENDER_PASS_SSAO_BLUR_TEXTURE);
-
-		const directionalAmbientLightRenderPass =
-			new DirectionalAmbientLightRenderPass(
-				shadowRenderPass.shadowCascadesBuffer,
-			)
-				.setCamera(this.mainCamera)
-				.addInputTextures([
-					RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
-					RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
-					RENDER_PASS_DEPTH_STENCIL_TEXTURE,
-					RENDER_PASS_SSAO_BLUR_TEXTURE,
-					RENDER_PASS_DIRECTIONAL_LIGHT_DEPTH_TEXTURE,
-				])
-				.addOutputTexture(RENDER_PASS_LIGHTING_RESULT_TEXTURE);
-
-		const pointLightsNonInstancedNonCulledRenderPass =
-			new PointLightsNonCulledRenderPass()
-				.setCamera(this.mainCamera)
-				.addInputTextures([
-					RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
-					RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
-					RENDER_PASS_DEPTH_STENCIL_TEXTURE,
-					RENDER_PASS_SSAO_BLUR_TEXTURE,
-					RENDER_PASS_LIGHTING_RESULT_TEXTURE,
-				])
-				.addOutputTexture(RENDER_PASS_LIGHTING_RESULT_TEXTURE);
-
-		const pointLightsStencilMaskPass = new PointLightsMaskPass()
-			.setCamera(this.mainCamera)
-			.addInputTextures([RENDER_PASS_DEPTH_STENCIL_TEXTURE])
-			.addOutputTexture(RENDER_PASS_DEPTH_STENCIL_TEXTURE)
-			.setLightsBuffer(this.lightingManager.gpuBuffer)
-			.updateLightsMaskBindGroup();
-
-		const pointLightsRenderPass = new PointLightsRenderPass()
-			.setCamera(this.mainCamera)
-			.addInputTextures([
-				RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
-				RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
-				RENDER_PASS_DEPTH_STENCIL_TEXTURE,
-				RENDER_PASS_SSAO_BLUR_TEXTURE,
-				RENDER_PASS_LIGHTING_RESULT_TEXTURE,
-			])
-			.addOutputTexture(RENDER_PASS_LIGHTING_RESULT_TEXTURE);
-
-		const transparentRenderPass = new TransparentRenderPass()
-			.setCamera(this.mainCamera)
-			.addInputTextures([
-				RENDER_PASS_LIGHTING_RESULT_TEXTURE,
-				RENDER_PASS_DEPTH_STENCIL_TEXTURE,
-			])
-			.addOutputTextures([
-				RENDER_PASS_LIGHTING_RESULT_TEXTURE,
-				RENDER_PASS_DEPTH_STENCIL_TEXTURE,
-			]);
-
-		const skyboxRenderPass = new SkyboxRenderPass()
-			.setCamera(this.mainCamera)
-			.addInputTextures([
-				RENDER_PASS_LIGHTING_RESULT_TEXTURE,
-				RENDER_PASS_DEPTH_STENCIL_TEXTURE,
-			])
-			.addOutputTextures([
-				RENDER_PASS_LIGHTING_RESULT_TEXTURE,
-				RENDER_PASS_DEPTH_STENCIL_TEXTURE,
-			]);
-
-		const hiZCopyDepthComputePass = new HiZCopyDepthComputePass()
-			.addInputTexture(RENDER_PASS_DEPTH_STENCIL_TEXTURE)
-			.addOutputTexture(RENDER_PASS_HI_Z_DEPTH_TEXTURE);
-
-		const hiZDepthComputePass = new HiZDepthComputePass()
-			.addInputTexture(RENDER_PASS_HI_Z_DEPTH_TEXTURE)
-			.addOutputTexture(RENDER_PASS_HI_Z_DEPTH_TEXTURE);
-
-		const reflectionsComputePass = new ReflectionComputePass()
-			.setCamera(this.mainCamera)
-			.addInputTextures([
-				RENDER_PASS_LIGHTING_RESULT_TEXTURE,
-				RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
-				RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
-				RENDER_PASS_HI_Z_DEPTH_TEXTURE,
-			])
-			.addOutputTexture(RENDER_PASS_COMPUTED_REFLECTIONS_TEXTURE);
-
-		const taaResolveRenderPass = new TAAResolveRenderPass()
-			.addInputTextures([
-				RENDER_PASS_COMPUTED_REFLECTIONS_TEXTURE,
-				RENDER_PASS_VELOCITY_TEXTURE,
-			])
-			.addOutputTexture(RENDER_PASS_TAA_RESOLVE_TEXTURE);
-
-		const debugBBoxesPass = new DebugBoundsPass()
-			.addInputTextures([
-				RENDER_PASS_TAA_RESOLVE_TEXTURE,
-				RENDER_PASS_DEPTH_STENCIL_TEXTURE,
-			])
-			.addOutputTexture(RENDER_PASS_TAA_RESOLVE_TEXTURE)
-			.setScene(this.scene)
-			.setCamera(this.mainCamera);
-
-		debugBBoxesPass.enabled = false;
-
-		const blitRenderPass = new BlitRenderPass().addInputTexture(
-			RENDER_PASS_TAA_RESOLVE_TEXTURE,
-		);
-
-		this.renderPassComposer
-			.addPass(shadowRenderPass)
-			.addPass(gbufferRenderPass)
-			.addPass(ssaoRenderPass)
-			.addPass(ssaoBlurRenderPass)
-			.addPass(directionalAmbientLightRenderPass)
-			.addPass(pointLightsNonInstancedNonCulledRenderPass)
-			.addPass(pointLightsStencilMaskPass)
-			.addPass(pointLightsRenderPass)
-			.addPass(transparentRenderPass)
-			.addPass(skyboxRenderPass)
-			.addPass(hiZCopyDepthComputePass)
-			.addPass(hiZDepthComputePass)
-			.addPass(reflectionsComputePass)
-			.addPass(taaResolveRenderPass)
-			.addPass(debugBBoxesPass)
-			.addPass(blitRenderPass);
-
 		this.texturesDebugContainer = new TexturesDebugContainer();
 		this.timingDebugContainer = new DebugTimingContainer();
 
@@ -434,21 +283,21 @@ export default class Renderer extends RenderingContext {
 			true,
 			"Skybox Faces",
 		).then((texture) => {
-			const diffuseTexture = DiffuseIBLGenerator.encode(texture);
-			const specularTexture = SpecularIBLGenerator.encode(texture, 256);
-			const bdrfLutTexture = BDRFLutGenerator.encode();
+			this.envDiffuseTexture = DiffuseIBLGenerator.encode(texture);
+			this.envSpecularTexture = SpecularIBLGenerator.encode(texture, 256);
+			this.envBdrfLutTexture = BDRFLutGenerator.encode();
 
-			TextureController.generateMipsForCubeTexture(diffuseTexture);
-			this.scene.skybox.setTexture(diffuseTexture);
+			TextureController.generateMipsForCubeTexture(this.envDiffuseTexture);
+			this.scene.skybox.setTexture(this.envDiffuseTexture);
 
 			const dirAmbientLightPass = this.renderPassComposer.getPass(
 				RenderPassType.DirectionalAmbientLighting,
 			) as DirectionalAmbientLightRenderPass;
 
 			dirAmbientLightPass
-				.setDiffuseIBLTexture(diffuseTexture)
-				.setSpecularIBLTexture(specularTexture)
-				.setBDRFLutTexture(bdrfLutTexture);
+				.setDiffuseIBLTexture(this.envDiffuseTexture)
+				.setSpecularIBLTexture(this.envSpecularTexture)
+				.setBDRFLutTexture(this.envBdrfLutTexture);
 		});
 
 		const a = new GLTFModel("/sponza/Sponza.gltf");
@@ -471,16 +320,190 @@ export default class Renderer extends RenderingContext {
 		});
 	}
 
+	private recreateRenderComposer(width: number, height: number) {
+		this.renderPassComposer?.destroy();
+
+		this.renderPassComposer = new RenderPassComposer();
+		this.renderPassComposer.setScene(this.scene);
+
+		const shadowRenderPass = new DirectionalShadowRenderPass(
+			this.lightingManager.mainDirLight,
+			width,
+			height,
+		)
+			.addOutputTexture(RENDER_PASS_DIRECTIONAL_LIGHT_DEPTH_TEXTURE)
+			.setCamera(this.mainCamera);
+
+		const gbufferRenderPass = new GBufferRenderPass(width, height)
+			.setCamera(this.mainCamera)
+			.addOutputTextures([
+				RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
+				RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
+				RENDER_PASS_VELOCITY_TEXTURE,
+				RENDER_PASS_DEPTH_STENCIL_TEXTURE,
+			]);
+
+		const ssaoRenderPass = new SSAORenderPass(width, height)
+			.setCamera(this.mainCamera)
+			.addInputTextures([
+				RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
+				RENDER_PASS_DEPTH_STENCIL_TEXTURE,
+			])
+			.addOutputTexture(RENDER_PASS_SSAO_TEXTURE);
+
+		const ssaoBlurRenderPass = new SSAOBlurRenderPass(width, height)
+			.addInputTexture(RENDER_PASS_SSAO_TEXTURE)
+			.addOutputTexture(RENDER_PASS_SSAO_BLUR_TEXTURE);
+
+		const directionalAmbientLightRenderPass =
+			new DirectionalAmbientLightRenderPass(
+				shadowRenderPass.shadowCascadesBuffer,
+				width,
+				height,
+			)
+				.setCamera(this.mainCamera)
+				.addInputTextures([
+					RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
+					RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
+					RENDER_PASS_DEPTH_STENCIL_TEXTURE,
+					RENDER_PASS_SSAO_BLUR_TEXTURE,
+					RENDER_PASS_DIRECTIONAL_LIGHT_DEPTH_TEXTURE,
+				])
+				.addOutputTexture(RENDER_PASS_LIGHTING_RESULT_TEXTURE);
+
+		if (this.envDiffuseTexture) {
+			directionalAmbientLightRenderPass.setDiffuseIBLTexture(
+				this.envDiffuseTexture,
+			);
+		}
+
+		if (this.envSpecularTexture) {
+			directionalAmbientLightRenderPass.setSpecularIBLTexture(
+				this.envSpecularTexture,
+			);
+		}
+		if (this.envBdrfLutTexture) {
+			directionalAmbientLightRenderPass.setBDRFLutTexture(
+				this.envBdrfLutTexture,
+			);
+		}
+
+		const pointLightsNonInstancedNonCulledRenderPass =
+			new PointLightsNonCulledRenderPass(width, height)
+				.setCamera(this.mainCamera)
+				.addInputTextures([
+					RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
+					RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
+					RENDER_PASS_DEPTH_STENCIL_TEXTURE,
+					RENDER_PASS_SSAO_BLUR_TEXTURE,
+					RENDER_PASS_LIGHTING_RESULT_TEXTURE,
+				])
+				.addOutputTexture(RENDER_PASS_LIGHTING_RESULT_TEXTURE);
+
+		const pointLightsStencilMaskPass = new PointLightsMaskPass(width, height)
+			.setCamera(this.mainCamera)
+			.addInputTextures([RENDER_PASS_DEPTH_STENCIL_TEXTURE])
+			.addOutputTexture(RENDER_PASS_DEPTH_STENCIL_TEXTURE)
+			.setLightsBuffer(this.lightingManager.gpuBuffer)
+			.updateLightsMaskBindGroup();
+
+		const pointLightsRenderPass = new PointLightsRenderPass(width, height)
+			.setCamera(this.mainCamera)
+			.addInputTextures([
+				RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
+				RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
+				RENDER_PASS_DEPTH_STENCIL_TEXTURE,
+				RENDER_PASS_SSAO_BLUR_TEXTURE,
+				RENDER_PASS_LIGHTING_RESULT_TEXTURE,
+			])
+			.addOutputTexture(RENDER_PASS_LIGHTING_RESULT_TEXTURE);
+
+		const transparentRenderPass = new TransparentRenderPass(width, height)
+			.setCamera(this.mainCamera)
+			.addInputTextures([
+				RENDER_PASS_LIGHTING_RESULT_TEXTURE,
+				RENDER_PASS_DEPTH_STENCIL_TEXTURE,
+			])
+			.addOutputTextures([
+				RENDER_PASS_LIGHTING_RESULT_TEXTURE,
+				RENDER_PASS_DEPTH_STENCIL_TEXTURE,
+			]);
+
+		const skyboxRenderPass = new SkyboxRenderPass(width, height)
+			.setCamera(this.mainCamera)
+			.addInputTextures([
+				RENDER_PASS_LIGHTING_RESULT_TEXTURE,
+				RENDER_PASS_DEPTH_STENCIL_TEXTURE,
+			])
+			.addOutputTextures([
+				RENDER_PASS_LIGHTING_RESULT_TEXTURE,
+				RENDER_PASS_DEPTH_STENCIL_TEXTURE,
+			]);
+
+		const hiZCopyDepthComputePass = new HiZCopyDepthComputePass(width, height)
+			.addInputTexture(RENDER_PASS_DEPTH_STENCIL_TEXTURE)
+			.addOutputTexture(RENDER_PASS_HI_Z_DEPTH_TEXTURE);
+
+		const hiZDepthComputePass = new HiZDepthComputePass(width, height)
+			.addInputTexture(RENDER_PASS_HI_Z_DEPTH_TEXTURE)
+			.addOutputTexture(RENDER_PASS_HI_Z_DEPTH_TEXTURE);
+
+		const reflectionsComputePass = new ReflectionComputePass(width, height)
+			.setCamera(this.mainCamera)
+			.addInputTextures([
+				RENDER_PASS_LIGHTING_RESULT_TEXTURE,
+				RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
+				RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
+				RENDER_PASS_HI_Z_DEPTH_TEXTURE,
+			])
+			.addOutputTexture(RENDER_PASS_COMPUTED_REFLECTIONS_TEXTURE);
+
+		const taaResolveRenderPass = new TAAResolveRenderPass(width, height)
+			.addInputTextures([
+				RENDER_PASS_COMPUTED_REFLECTIONS_TEXTURE,
+				RENDER_PASS_VELOCITY_TEXTURE,
+			])
+			.addOutputTexture(RENDER_PASS_TAA_RESOLVE_TEXTURE);
+
+		const debugBBoxesPass = new DebugBoundsPass(width, height)
+			.addInputTextures([
+				RENDER_PASS_TAA_RESOLVE_TEXTURE,
+				RENDER_PASS_DEPTH_STENCIL_TEXTURE,
+			])
+			.addOutputTexture(RENDER_PASS_TAA_RESOLVE_TEXTURE)
+			.setScene(this.scene)
+			.setCamera(this.mainCamera);
+
+		debugBBoxesPass.enabled = false;
+
+		const blitRenderPass = new BlitRenderPass(width, height).addInputTexture(
+			RENDER_PASS_TAA_RESOLVE_TEXTURE,
+		);
+
+		this.renderPassComposer
+			.addPass(shadowRenderPass)
+			.addPass(gbufferRenderPass)
+			.addPass(ssaoRenderPass)
+			.addPass(ssaoBlurRenderPass)
+			.addPass(directionalAmbientLightRenderPass)
+			.addPass(pointLightsNonInstancedNonCulledRenderPass)
+			.addPass(pointLightsStencilMaskPass)
+			.addPass(pointLightsRenderPass)
+			.addPass(transparentRenderPass)
+			.addPass(skyboxRenderPass)
+			.addPass(hiZCopyDepthComputePass)
+			.addPass(hiZDepthComputePass)
+			.addPass(reflectionsComputePass)
+			.addPass(taaResolveRenderPass)
+			.addPass(debugBBoxesPass)
+			.addPass(blitRenderPass);
+	}
+
 	public resize(w: number, h: number) {
 		this.debugCamera.onResize(w, h);
 		this.mainCamera.onResize(w, h);
 
-		this.renderPassComposer.onResize(w, h);
-
-		// if (!this.reflectionComputePass) {
-		// 	this.reflectionComputePass = new ReflectionComputePass(this.scene);
-		// }
-		// this.reflectionComputePass.onResize(w, h);
+		this.recreateRenderComposer(w, h);
 	}
 
 	public async renderFrame(elapsedTime: number) {
@@ -568,16 +591,6 @@ export default class Renderer extends RenderingContext {
 
 		this.mainCamera.onFrameEnd();
 		this.debugCamera.onFrameEnd();
-
-		// const [gbufferRenderPassTimeOffsets, blitRenderPassTimeOffsets] =
-		// 	await Promise.all([
-		// 		this.renderPassComposer
-		// 			.getPass(RenderPassType.Deferred)
-		// 			.getStartAndEndTimings(),
-		// 		this.renderPassComposer
-		// 			.getPass(RenderPassType.Blit)
-		// 			.getStartAndEndTimings(),
-		// 	]);
 
 		const jsPerfTime = performance.now() - jsPerfStartTime;
 

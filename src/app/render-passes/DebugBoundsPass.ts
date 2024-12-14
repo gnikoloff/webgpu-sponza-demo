@@ -22,8 +22,8 @@ export default class DebugBoundsPass extends RenderPass {
 	private worldBBoxesBuffer!: GPUBuffer;
 	private worldBBoxes: Map<string, BoundingBox> = new Map();
 
-	constructor() {
-		super(RenderPassType.DebugBounds);
+	constructor(width: number, height: number) {
+		super(RenderPassType.DebugBounds, width, height);
 
 		const shaderModule = PipelineStates.createShaderModule(
 			DebugBoundingBoxesShaderUtils,
@@ -173,10 +173,6 @@ export default class DebugBoundsPass extends RenderPass {
 		_scene: Scene,
 		inputs: GPUTexture[],
 	): GPUTexture[] {
-		if (this.hasResized) {
-			this.hasResized = false;
-			return [];
-		}
 		if (!this.inputTextureViews.length) {
 			this.inputTextureViews.push(inputs[0].createView());
 			this.inputTextureViews.push(inputs[1].createView());

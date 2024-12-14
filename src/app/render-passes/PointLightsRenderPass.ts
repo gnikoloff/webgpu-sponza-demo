@@ -16,8 +16,8 @@ import LightRenderPass from "./LightRenderPass";
 export default class PointLightsRenderPass extends LightRenderPass {
 	private renderPSO: GPURenderPipeline;
 
-	constructor() {
-		super(RenderPassType.PointLightsLighting);
+	constructor(width: number, height: number) {
+		super(RenderPassType.PointLightsLighting, width, height);
 
 		const pointLightRenderPSOLayout =
 			RenderingContext.device.createPipelineLayout({
@@ -105,10 +105,6 @@ export default class PointLightsRenderPass extends LightRenderPass {
 		scene: Scene,
 		inputs: GPUTexture[],
 	): GPUTexture[] {
-		if (this.hasResized) {
-			this.hasResized = false;
-			return [];
-		}
 		if (!this.inputTextureViews.length) {
 			this.inputTextureViews.push(inputs[0].createView());
 			this.inputTextureViews.push(inputs[1].createView());

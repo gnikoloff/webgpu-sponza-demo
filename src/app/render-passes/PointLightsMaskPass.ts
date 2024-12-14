@@ -41,8 +41,8 @@ export default class PointLightsMaskPass extends LightRenderPass {
 		return this;
 	}
 
-	constructor() {
-		super(RenderPassType.PointLightsStencilMask, true);
+	constructor(width: number, height: number) {
+		super(RenderPassType.PointLightsStencilMask, width, height);
 
 		this.lightsMaskBindGroupEntries = [
 			{
@@ -149,10 +149,6 @@ export default class PointLightsMaskPass extends LightRenderPass {
 		scene: Scene,
 		inputs: GPUTexture[],
 	): GPUTexture[] {
-		if (this.hasResized) {
-			this.hasResized = false;
-			return [];
-		}
 		if (!this.inputTextureViews.length) {
 			this.inputTextureViews.push(inputs[0].createView());
 		}

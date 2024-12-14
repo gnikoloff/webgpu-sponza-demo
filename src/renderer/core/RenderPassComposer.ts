@@ -10,8 +10,11 @@ export default class RenderPassComposer {
 	private textureCache: Map<string, GPUTexture> = new Map();
 	private scene!: Scene;
 
-	public onResize(width: number, height: number) {
-		for (const renderPass of this.passes) [renderPass.onResize(width, height)];
+	public destroy() {
+		for (const pass of this.passes) {
+			pass.destroy();
+		}
+		this.textureCache.clear();
 	}
 
 	public setScene(scene: Scene) {
