@@ -35,6 +35,13 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 	private shadowCameraCascade0BufferUniformValues: StructuredView;
 	private shadowCameraCascade1BufferUniformValues: StructuredView;
 
+	public override destroy(): void {
+		super.destroy();
+		this.shadowCascadesBuffer.destroy();
+		this.shadowCameraCascade0GPUBuffer.destroy();
+		this.shadowCameraCascade1GPUBuffer.destroy();
+	}
+
 	constructor(
 		private sceneDirectionalLight: DirectionalLight,
 		width: number,

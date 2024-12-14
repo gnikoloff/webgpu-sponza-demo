@@ -20,9 +20,15 @@ export default class SSAORenderPass extends RenderPass {
 
 	private renderPSO: GPURenderPipeline;
 
-	private noiseTexture: GPUTexture;
+	private noiseTexture?: GPUTexture;
 
 	private kernelBuffer: GPUBuffer;
+
+	public override destroy(): void {
+		super.destroy();
+		this.noiseTexture?.destroy();
+		this.kernelBuffer.destroy();
+	}
 
 	constructor(width: number, height: number) {
 		super(RenderPassType.SSAO, width, height);
@@ -132,6 +138,8 @@ export default class SSAORenderPass extends RenderPass {
 			}),
 		);
 		this.outTextureView = this.outTextures[0].createView();
+
+		this.loadBlueNoiseTexture();
 	}
 
 	private async loadBlueNoiseTexture() {

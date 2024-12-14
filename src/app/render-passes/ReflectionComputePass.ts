@@ -45,6 +45,11 @@ export default class ReflectionComputePass extends RenderPass {
 		);
 	}
 
+	public override destroy(): void {
+		super.destroy();
+		this.settingsBuffer.destroy();
+	}
+
 	constructor(width: number, height: number) {
 		super(RenderPassType.Reflection, width, height);
 
