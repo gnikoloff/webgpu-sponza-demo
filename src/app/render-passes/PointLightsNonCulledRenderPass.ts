@@ -144,8 +144,9 @@ export default class PointLightsNonCulledRenderPass extends LightRenderPass {
 		let isPrevFrontFaceCullPSOBound = false;
 		let isPrevBackFaceCullPSOBound = false;
 		for (const pLight of scene.lightingManager.cameraFaceCulledPointLights) {
-			const dist = vec3.dist(this.camera.position, pLight.position);
-			if (dist > pLight.radius) {
+			const dist = vec3.dist(pLight.position, this.camera.position);
+
+			if (dist > pLight.radius + 0.1) {
 				if (!isPrevFrontFaceCullPSOBound) {
 					renderPass.setPipeline(this.frontFaceCullRenderPSO);
 				}

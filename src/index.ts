@@ -9,7 +9,7 @@ const renderer = await Renderer.initialize($canvas);
 const GUI_PARAMS: IGUIParams = {
 	"Play Animation": true,
 	"Enable TAA": true,
-	"Debug G-Buffer": true,
+	"Debug G-Buffer": false,
 	"Debug Shadow Map": false,
 	"Debug Shadow Cascades": false,
 	"Debug Point Lights Mask": false,
@@ -21,7 +21,10 @@ const GUI_PARAMS: IGUIParams = {
 	"Sun Position Y": 100,
 	"Sun Position Z": 0.1,
 	"Debug Skybox": true,
-	"Debug Bounding Boxes": false,
+	"Enable Bloom": true,
+	"Bloom Filter Radius": 0.005,
+	// "Debug Bounding Boxes": false,
+	// "Debug Point Lines Curve": false,
 	"Enable SSAO": true,
 	"SSAO Kernel Size": 16,
 	"SSAO Radius": 0.2,
@@ -39,11 +42,13 @@ gui.add(GUI_PARAMS, "Play Animation").onChange((v: boolean) => {
 // 	renderer.debugSkybox = v;
 // });
 
-const lightingFolder = gui.addFolder("Sun");
+const lightingFolder = gui.addFolder("Lighting");
 lightingFolder.open();
-lightingFolder.add(GUI_PARAMS, "Sun Intensity", 0, 5).onChange((v: number) => {
-	renderer.sunIntensity = v;
-});
+lightingFolder
+	.add(GUI_PARAMS, "Sun Intensity", 0, 100)
+	.onChange((v: number) => {
+		renderer.sunIntensity = v;
+	});
 lightingFolder
 	.add(GUI_PARAMS, "Sun Position X", -100, 100)
 	.onChange((v: number) => {
@@ -55,6 +60,22 @@ lightingFolder
 		renderer.sunPositionX = v;
 	});
 
+let lastBloomEnabled = GUI_PARAMS["Enable Bloom"];
+lightingFolder
+	.add(GUI_PARAMS, "Debug Point Lights Mask")
+	.onChange((v: boolean) => {
+		if (v) {
+			lastBloomEnabled = GUI_PARAMS["Enable Bloom"];
+			GUI_PARAMS["Enable Bloom"] = false;
+			renderer.bloomEnabled = false;
+		} else {
+			if (lastBloomEnabled) {
+				GUI_PARAMS["Enable Bloom"] = true;
+				renderer.bloomEnabled = true;
+			}
+		}
+		renderer.debugLightsMask = v;
+	});
 const ssaoFolder = gui.addFolder("Screen space Ambient Occlusion");
 ssaoFolder.open();
 ssaoFolder.add(GUI_PARAMS, "Enable SSAO").onChange((v: boolean) => {
@@ -81,8 +102,8 @@ const debugShadowController = shadowFolder
 		if (v && GUI_PARAMS["Debug G-Buffer"]) {
 			GUI_PARAMS["Debug G-Buffer"] = false;
 		}
-	});
-debugShadowController.listen();
+	})
+	.listen();
 
 shadowFolder.add(GUI_PARAMS, "Debug Shadow Cascades").onChange((v: boolean) => {
 	renderer.debugShadowCascadeIndex = v;
@@ -98,14 +119,8 @@ const debugGBufferController = deferredRendererFolder
 		if (v && GUI_PARAMS["Debug Shadow Map"]) {
 			GUI_PARAMS["Debug Shadow Map"] = false;
 		}
-	});
-debugGBufferController.listen();
-
-deferredRendererFolder
-	.add(GUI_PARAMS, "Debug Point Lights Mask")
-	.onChange((v: boolean) => {
-		renderer.debugLightsMask = v;
-	});
+	})
+	.listen();
 
 const ssrFolder = gui.addFolder("Screen space Reflections");
 ssrFolder.open();
@@ -126,19 +141,36 @@ const ssrMaxIterationsController = ssrFolder
 		renderer.ssrMaxIterations = v;
 	});
 
+const bloomFolder = gui.addFolder("Bloom");
+bloomFolder.open();
+const bloomEnabledCtrl = bloomFolder
+	.add(GUI_PARAMS, "Enable Bloom")
+	.onChange((v: boolean) => {
+		renderer.bloomEnabled = v;
+	});
+bloomEnabledCtrl.listen();
+bloomFolder
+	.add(GUI_PARAMS, "Bloom Filter Radius", 0.001, 0.01, 0.001)
+	.onChange((v: number) => {
+		renderer.bloomFilterRadius = v;
+	});
+
 const antialiasFolder = gui.addFolder("Anti-Aliasing");
 antialiasFolder.open();
 antialiasFolder.add(GUI_PARAMS, "Enable TAA").onChange((v: boolean) => {
 	renderer.enableTAA = v;
 });
 
-const miscFolder = gui.addFolder("Misc");
-miscFolder.open();
-const debugBBoxesController = miscFolder
-	.add(GUI_PARAMS, "Debug Bounding Boxes")
-	.onChange((v) => {
-		renderer.debugBoundingBoxes = v;
-	});
+// const miscFolder = gui.addFolder("Misc");
+// miscFolder.open();
+// const debugBBoxesController = miscFolder
+// 	.add(GUI_PARAMS, "Debug Bounding Boxes")
+// 	.onChange((v) => {
+// 		renderer.debugBoundingBoxes = v;
+// 	});
+// miscFolder.add(GUI_PARAMS, "Debug Point Lines Curve").onChange((v: boolean) => {
+// 	renderer.debugMovementCurve = v;
+// });
 
 requestAnimationFrame(renderFrame);
 window.addEventListener("resize", resize);

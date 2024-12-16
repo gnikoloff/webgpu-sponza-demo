@@ -22,6 +22,7 @@ export const RENDER_PASS_TAA_RESOLVE_TEXTURE = "taa resolve texture";
 export const RENDER_PASS_HI_Z_DEPTH_TEXTURE = "hi-z depth texture";
 export const RENDER_PASS_COMPUTED_REFLECTIONS_TEXTURE =
 	"computed reflections texture";
+export const RENDER_PASS_BLOOM_TEXTURE = "bloom downscale texture";
 
 export const GBUFFER_OUTPUT_TARGETS: GPUColorTargetState[] = new Array(3);
 

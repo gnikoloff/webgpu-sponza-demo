@@ -35,7 +35,7 @@ const FIRE_PARTICLE_EMITTER_POSITIONS: Vec3[] = [
 	vec3.create(-4.95, 3, -1.75),
 ];
 
-const FIRE_PARTICLE_COLOR = vec3.create(1, 0, 0);
+const FIRE_PARTICLE_COLOR = vec3.scale(vec3.create(1, 0.01, 0.01), 10);
 
 export default class LightingSystem extends LightingManager {
 	private static readonly COMPUTE_WORKGROUP_SIZE_X = 8;
@@ -58,8 +58,7 @@ export default class LightingSystem extends LightingManager {
 
 	public mainDirLight: DirectionalLight;
 
-	public set sunIntensity(v: number) {
-		this.mainDirLight.intensity = v;
+	private uploadMainDirLightToGPU() {
 		RenderingContext.device.queue.writeBuffer(
 			this.gpuBuffer,
 			0,
@@ -67,23 +66,31 @@ export default class LightingSystem extends LightingManager {
 		);
 	}
 
+	public set sunIntensity(v: number) {
+		this.mainDirLight.intensity = v;
+		this.uploadMainDirLightToGPU();
+	}
+
 	public set sunPositionX(v: number) {
 		this.mainDirLight.setPositionX(v);
+		this.uploadMainDirLightToGPU();
 	}
 
 	public set sunPositionY(v: number) {
 		this.mainDirLight.setPositionY(v);
+		this.uploadMainDirLightToGPU();
 	}
 
 	public set sunPositionZ(v: number) {
 		this.mainDirLight.setPositionZ(v);
+		this.uploadMainDirLightToGPU();
 	}
 
 	public addParticleLight(
 		v: Light,
 		pRadius = 0.05,
 		pLife = 0,
-		pLifeSpeed = Math.random() * 0.01 + 0.002,
+		pLifeSpeed = Math.random() * 2 + 0.1,
 		pVelocity = vec3.create(0, 0.5, 0),
 	): this {
 		super.addLight(v);
@@ -162,15 +169,17 @@ export default class LightingSystem extends LightingManager {
 		super();
 
 		const dirLight = new DirectionalLight();
-		dirLight.setPosition(0, 100, 1);
+		dirLight.setPosition(0, 20, 1);
 		dirLight.setColor(0.2156, 0.2627, 0.3333);
 		dirLight.intensity = 2;
 		this.addLight(dirLight);
 		this.mainDirLight = dirLight;
 
 		let r = 3;
+		let intesity = 0.3;
 		let p = new CameraFaceCulledPointLight();
 		p.radius = r;
+		p.intensity = intesity;
 		p.setPositionAsVec3(MAIN_LAMP_POINT_LIGHT_POSITIONS[0]);
 		p.setColorAsVec3(FIRE_PARTICLE_COLOR);
 		p.updateGPUBuffer();
@@ -178,12 +187,14 @@ export default class LightingSystem extends LightingManager {
 
 		let p2 = new CameraFaceCulledPointLight();
 		p2.radius = r;
+		p2.intensity = intesity;
 		p2.setPositionAsVec3(MAIN_LAMP_POINT_LIGHT_POSITIONS[1]);
 		p2.setColorAsVec3(FIRE_PARTICLE_COLOR);
 		p2.updateGPUBuffer();
 		this.addLight(p2);
 
 		let p3 = new CameraFaceCulledPointLight();
+		p3.intensity = intesity;
 		p3.radius = r;
 		p3.setPositionAsVec3(MAIN_LAMP_POINT_LIGHT_POSITIONS[2]);
 		p3.setColorAsVec3(FIRE_PARTICLE_COLOR);
@@ -191,6 +202,7 @@ export default class LightingSystem extends LightingManager {
 		this.addLight(p3);
 
 		let p4 = new CameraFaceCulledPointLight();
+		p4.intensity = intesity;
 		p4.radius = r;
 		p4.setPositionAsVec3(MAIN_LAMP_POINT_LIGHT_POSITIONS[3]);
 		p4.setColorAsVec3(FIRE_PARTICLE_COLOR);
@@ -210,9 +222,10 @@ export default class LightingSystem extends LightingManager {
 					),
 				);
 				p.radius = 0.5;
+				p.intensity = 0.1;
 				p.setPositionAsVec3(pos);
 				p.setColorAsVec3(FIRE_PARTICLE_COLOR);
-				this.addParticleLight(p, 0.05);
+				this.addParticleLight(p, 0.025);
 			}
 		}
 
@@ -243,16 +256,16 @@ export default class LightingSystem extends LightingManager {
 		for (let i = 0; i < LightingSystem.PARTICLES_PER_CURVE; i++) {
 			const p = new PointLight();
 			p.setColor(
-				Math.random() * 0.7 + 0.3,
-				Math.random() * 0.7 + 0.3,
-				Math.random() * 0.7 + 0.3,
+				Math.random() * 0.7 + 1,
+				Math.random() * 0.7 + 1,
+				Math.random() * 0.7 + 1,
 			);
 			p.setPositionAsVec3(zeroPos);
 			p.radius = 2;
 			p.intensity = 0.5;
 			const t = i / LightingSystem.PARTICLES_PER_CURVE;
 			// const t = Math.random();
-			this.addParticleLight(p, 0.025, t, 0.0001, vec3.random(0.5));
+			this.addParticleLight(p, 0.025, t, 0.01, vec3.random(0.5));
 		}
 
 		this.updateGPUBuffer();

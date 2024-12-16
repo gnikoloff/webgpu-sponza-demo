@@ -176,6 +176,9 @@ export default class PointLightsMaskPass extends LightRenderPass {
 		renderPass.drawIndexed(
 			GeometryCache.pointLightSphereGeometry.indexCount,
 			scene.lightingManager.pointLightsCount,
+			0,
+			0,
+			1,
 		);
 
 		if (RenderingContext.ENABLE_DEBUG_GROUPS) {

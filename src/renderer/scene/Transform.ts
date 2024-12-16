@@ -69,8 +69,8 @@ export default class Transform {
 	public updateWorldMatrix(): boolean {
 		const parentMatrix = this.parent?.worldMatrix ?? MAT4x4_IDENTITY_MATRIX;
 		if (!this.matrixNeedsUpdate) {
-			mat4.copy(this.worldMatrix, this.prevFrameModelMatrix);
 			mat4.mul(parentMatrix, this.cachedMatrix, this.worldMatrix);
+			mat4.copy(this.worldMatrix, this.prevFrameModelMatrix);
 			this.updateNormalMatrix();
 			return false;
 		}
@@ -94,8 +94,8 @@ export default class Transform {
 			mat4.mul(this.translateMatrix, this.cachedMatrix, this.cachedMatrix);
 		}
 
-		mat4.copy(this.worldMatrix, this.prevFrameModelMatrix);
 		mat4.mul(parentMatrix, this.cachedMatrix, this.worldMatrix);
+		mat4.copy(this.worldMatrix, this.prevFrameModelMatrix);
 		this.updateNormalMatrix();
 
 		this.matrixNeedsUpdate = false;

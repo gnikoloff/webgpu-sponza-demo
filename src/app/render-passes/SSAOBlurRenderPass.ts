@@ -60,8 +60,8 @@ export default class SSAOBlurRenderPass extends RenderPass {
 			},
 		});
 
-		width *= SSAORenderPass.SSAO_SCALE_FACTOR;
-		height *= SSAORenderPass.SSAO_SCALE_FACTOR;
+		// width *= SSAORenderPass.SSAO_SCALE_FACTOR;
+		// height *= SSAORenderPass.SSAO_SCALE_FACTOR;
 		this.outTextures.push(
 			RenderingContext.device.createTexture({
 				dimension: "2d",

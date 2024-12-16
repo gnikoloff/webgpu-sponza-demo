@@ -106,6 +106,10 @@ export default class LineDebugDrawable extends Transform {
 	}
 
 	public render(renderEncoder: GPURenderPassEncoder): void {
+		if (!this.visible) {
+			return;
+		}
+
 		if (RenderingContext.ENABLE_DEBUG_GROUPS) {
 			renderEncoder.pushDebugGroup(`Render Debug Line: ${this.label}`);
 		}

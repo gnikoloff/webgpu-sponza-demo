@@ -33,6 +33,20 @@ export default class TexturesDebugContainer {
 		this.$root.classList.remove("open");
 	}
 
+	public scrollToShadowSection() {
+		this.shadowDebugSection.$root.scrollIntoView({
+			block: "start",
+			inline: "nearest",
+		});
+	}
+
+	public scrollIntoGbufferSection() {
+		this.gbufferDebugSection.$root.scrollIntoView({
+			block: "start",
+			inline: "nearest",
+		});
+	}
+
 	public setTextureGBufferSection(
 		type: TextureDebugMeshType,
 		texture: GPUTexture,

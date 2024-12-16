@@ -26,6 +26,7 @@ export const AllDebugStatTypes: DebugStatType[] = [
 	DebugStatType.GPUTotal,
 	DebugStatType.FPS,
 	DebugStatType.VRAM,
+	DebugStatType.VisibleMeshes,
 	// DebugStatType.DeferredRenderPass,
 	// DebugStatType.SSAORenderPass,
 	// DebugStatType.DirectionalAmbientLightingRenderPass,

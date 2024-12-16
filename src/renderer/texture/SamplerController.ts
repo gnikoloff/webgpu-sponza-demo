@@ -35,7 +35,11 @@ export default class SamplerController extends BaseUtilObject {
 	}
 
 	public static createSampler(samplerInfo: GPUSamplerDescriptor): GPUSampler {
-		const key = JSON.stringify(samplerInfo);
+		const samplerInfoNoLabel = structuredClone(samplerInfo);
+		if (samplerInfoNoLabel.label) {
+			delete samplerInfoNoLabel.label;
+		}
+		const key = JSON.stringify(samplerInfoNoLabel);
 		let sampler: GPUSampler;
 		if ((sampler = _cachedSamplers.get(key))) {
 			return sampler;

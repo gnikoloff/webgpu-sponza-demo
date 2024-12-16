@@ -28,11 +28,11 @@ const SSAOShaderSrc = /* wgsl */ `
     in: VertexOutput
   ) -> @location(0) vec4f {
     let coord = in.position;
-    let pixelCoords = vec2i(floor(coord.xy * 2));
+    let pixelCoords = vec2i(floor(coord.xy));
     let encodedN = textureLoad(normalMetallicRoughnessTex, pixelCoords, 0).rg;
     let viewNormal = decodeNormal(encodedN); 
     let centerDepth = textureLoad(depthTexture, pixelCoords, 0);
-    let viewSpacePos = calcViewSpacePos(camera, coord.xy * 2, centerDepth);
+    let viewSpacePos = calcViewSpacePos(camera, coord.xy, centerDepth);
 
     let noiseScale = vec2i(textureDimensions(noiseTexture).xy);
     let sampleCoords = pixelCoords % noiseScale;

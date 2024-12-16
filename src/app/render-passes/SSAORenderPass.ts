@@ -26,7 +26,7 @@ export default class SSAORenderPass extends RenderPass {
 	private kernelBuffer: GPUBuffer;
 	private settingsBuffer: GPUBuffer;
 
-	private startKernelSize = 16;
+	private startKernelSize = 32;
 
 	private _kernelSize = 128;
 	public get kernelSize(): number {
@@ -81,7 +81,9 @@ export default class SSAORenderPass extends RenderPass {
 
 	public override destroy(): void {
 		super.destroy();
-		VRAMUsageTracker.removeTextureBytes(this.noiseTexture);
+		if (this.noiseTexture) {
+			VRAMUsageTracker.removeTextureBytes(this.noiseTexture);
+		}
 		VRAMUsageTracker.removeBufferBytes(this.kernelBuffer);
 		this.noiseTexture?.destroy();
 		this.kernelBuffer.destroy();
@@ -209,8 +211,8 @@ export default class SSAORenderPass extends RenderPass {
 		});
 
 		// Render SSAO at half res
-		width *= SSAORenderPass.SSAO_SCALE_FACTOR;
-		height *= SSAORenderPass.SSAO_SCALE_FACTOR;
+		// width *= SSAORenderPass.SSAO_SCALE_FACTOR;
+		// height *= SSAORenderPass.SSAO_SCALE_FACTOR;
 		this.outTextures.push(
 			RenderingContext.device.createTexture({
 				dimension: "2d",

@@ -71,7 +71,7 @@ export const POINT_LIGHTS_UPDATE_SHADER_SRC = /* wgsl */ `
     let light = &lights[idx + ANIMATED_PARTICLES_OFFSET_START];
 
 
-    particle.life += particle.lifeSpeed;
+    particle.life += particle.lifeSpeed * simSettings.timeDelta;
 
     if (particle.life >= 1) {
       particle.position = particle.origPosition;

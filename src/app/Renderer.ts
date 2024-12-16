@@ -3,6 +3,7 @@ import {
 	MAIN_CAMERA_FAR,
 	MAIN_CAMERA_NEAR,
 	RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
+	RENDER_PASS_BLOOM_TEXTURE,
 	RENDER_PASS_COMPUTED_REFLECTIONS_TEXTURE,
 	RENDER_PASS_DEPTH_STENCIL_TEXTURE,
 	RENDER_PASS_DIRECTIONAL_LIGHT_DEPTH_TEXTURE,
@@ -57,6 +58,8 @@ import LineDebugDrawable from "./debug/LineDebugDrawable";
 import { vec3 } from "wgpu-matrix";
 import CatmullRomCurve3 from "../renderer/math/CatmullRomCurve3";
 import VRAMUsageTracker from "../renderer/misc/VRAMUsageTracker";
+import { BloomDownscaleRenderPass } from "./render-passes/BloomDownscaleRenderPass";
+import BloomUpscaleRenderPass from "./render-passes/BloomUpscaleRenderPass";
 // import EnvironmentProbePass from "./render-passes/EnvironmentProbePass";
 
 export default class Renderer extends RenderingContext {
@@ -109,6 +112,11 @@ export default class Renderer extends RenderingContext {
 		).enabled = v;
 	}
 
+	public set debugMovementCurve(v: boolean) {
+		this.curveMoveLine.visible = v;
+	}
+
+	private curveMoveLine: LineDebugDrawable;
 	private lightingManager: LightingSystem;
 	private scene = new Scene();
 
@@ -174,12 +182,18 @@ export default class Renderer extends RenderingContext {
 		v
 			? this.texturesDebugContainer.reveal()
 			: this.texturesDebugContainer.hide();
+		if (v) {
+			this.texturesDebugContainer.scrollIntoGbufferSection();
+		}
 	}
 
 	public set debugShadowMap(v: boolean) {
 		v
 			? this.texturesDebugContainer.reveal()
 			: this.texturesDebugContainer.hide();
+		if (v) {
+			this.texturesDebugContainer.scrollToShadowSection();
+		}
 	}
 
 	public set debugShadowCascadeIndex(v: boolean) {
@@ -228,6 +242,22 @@ export default class Renderer extends RenderingContext {
 					: RENDER_PASS_LIGHTING_RESULT_TEXTURE,
 				RENDER_PASS_VELOCITY_TEXTURE,
 			]);
+	}
+
+	public set bloomEnabled(v: boolean) {
+		this.renderPassComposer.getPass(RenderPassType.BloomDownsample).enabled = v;
+		this.renderPassComposer.getPass(RenderPassType.BloomUpsample).enabled = v;
+		(
+			this.renderPassComposer.getPass(RenderPassType.Blit) as BlitRenderPass
+		).bloomEnabled = v;
+	}
+
+	public set bloomFilterRadius(v: number) {
+		(
+			this.renderPassComposer.getPass(
+				RenderPassType.BloomUpsample,
+			) as BloomUpscaleRenderPass
+		).bloomFilterRadius = v;
 	}
 
 	constructor() {
@@ -293,8 +323,9 @@ export default class Renderer extends RenderingContext {
 			true,
 		);
 		const movementCurvePoints = curve.getPoints(240);
-		// const debugLine = new LineDebugDrawable(movementCurvePoints);
-		// this.scene.addChild(debugLine);
+		this.curveMoveLine = new LineDebugDrawable(movementCurvePoints);
+		this.curveMoveLine.visible = false;
+		this.scene.addChild(this.curveMoveLine);
 
 		this.lightingManager = new LightingSystem(movementCurvePoints);
 		this.scene.lightingManager = this.lightingManager;
@@ -495,20 +526,29 @@ export default class Renderer extends RenderingContext {
 			])
 			.addOutputTexture(RENDER_PASS_TAA_RESOLVE_TEXTURE);
 
-		const debugBBoxesPass = new DebugBoundsPass(width, height)
-			.addInputTextures([
-				RENDER_PASS_TAA_RESOLVE_TEXTURE,
-				RENDER_PASS_DEPTH_STENCIL_TEXTURE,
-			])
-			.addOutputTexture(RENDER_PASS_TAA_RESOLVE_TEXTURE)
-			.setScene(this.scene)
-			.setCamera(this.mainCamera);
+		const bloomDownscaleRenderPass = new BloomDownscaleRenderPass(width, height)
+			.addInputTexture(RENDER_PASS_TAA_RESOLVE_TEXTURE)
+			.addOutputTexture(RENDER_PASS_BLOOM_TEXTURE);
 
-		debugBBoxesPass.enabled = false;
+		const bloomUpscaleRenderPass = new BloomUpscaleRenderPass(width, height)
+			.addInputTexture(RENDER_PASS_BLOOM_TEXTURE)
+			.addOutputTexture(RENDER_PASS_BLOOM_TEXTURE);
 
-		const blitRenderPass = new BlitRenderPass(width, height).addInputTexture(
+		// const debugBBoxesPass = new DebugBoundsPass(width, height)
+		// 	.addInputTextures([
+		// 		RENDER_PASS_TAA_RESOLVE_TEXTURE,
+		// 		RENDER_PASS_DEPTH_STENCIL_TEXTURE,
+		// 	])
+		// 	.addOutputTexture(RENDER_PASS_TAA_RESOLVE_TEXTURE)
+		// 	.setScene(this.scene)
+		// 	.setCamera(this.mainCamera);
+
+		// debugBBoxesPass.enabled = false;
+
+		const blitRenderPass = new BlitRenderPass(width, height).addInputTextures([
+			RENDER_PASS_BLOOM_TEXTURE,
 			RENDER_PASS_TAA_RESOLVE_TEXTURE,
-		);
+		]);
 
 		this.renderPassComposer
 			.addPass(shadowRenderPass)
@@ -525,7 +565,9 @@ export default class Renderer extends RenderingContext {
 			.addPass(hiZDepthComputePass)
 			.addPass(reflectionsComputePass)
 			.addPass(taaResolveRenderPass)
-			.addPass(debugBBoxesPass)
+			.addPass(bloomDownscaleRenderPass)
+			.addPass(bloomUpscaleRenderPass)
+			// .addPass(debugBBoxesPass)
 			.addPass(blitRenderPass);
 	}
 
@@ -541,11 +583,15 @@ export default class Renderer extends RenderingContext {
 		const deltaDiff = now - RenderingContext.prevTimeMs;
 		RenderingContext.prevTimeMs = now;
 		RenderingContext.elapsedTimeMs += this.enableAnimation ? deltaDiff : 0;
-		RenderingContext.deltaTimeMs = Math.min(deltaDiff, 0.5);
-
+		RenderingContext.deltaTimeMs = this.enableAnimation
+			? Math.min(deltaDiff, 0.5)
+			: 0;
 		const jsPerfStartTime = performance.now();
 
 		// a.textContent = `Display Meshes: ${this.scene.visibleNodesCount} / ${this.scene.nodesCount}`;
+
+		// this.mainCamera.position[0] += RenderingContext.deltaTimeMs *;
+		// this.mainCamera.updateViewMatrix();
 
 		this.debugCamera.onFrameStart();
 		this.mainCamera.onFrameStart();
@@ -636,8 +682,7 @@ export default class Renderer extends RenderingContext {
 		const gbufferRenderPassTimings = shadowRenderPassTimingResult.timings;
 		const blitRenderPassTimings = blitRenderPassTimingResult.timings;
 		const totalGPUTime =
-			Math.abs(blitRenderPassTimings[1] - gbufferRenderPassTimings[0]) /
-			1_000_000;
+			(blitRenderPassTimings[1] - gbufferRenderPassTimings[0]) / 1_000_000;
 
 		this.cpuAverage.addSample(jsPerfTime);
 		this.fpsDisplayAverage.addSample(1 / deltaDiff);
@@ -654,13 +699,17 @@ export default class Renderer extends RenderingContext {
 			)
 			.setDisplayValue(
 				DebugStatType.GPUTotal,
-				gpuAverageStat !== 0 ? `${gpuAverageStat.toFixed(1)}ms` : "N/A",
+				gpuAverageStat > 0 ? `${gpuAverageStat.toFixed(1)}ms` : "N/A",
 			)
 			.setDisplayValue(
 				DebugStatType.FPS,
 				fpsAverageStat !== 0 ? `${fpsAverageStat.toFixed(1)}ms` : "N/A",
 			)
-			.setDisplayValue(DebugStatType.VRAM, VRAMUsageTracker.getFormattedSize());
+			.setDisplayValue(DebugStatType.VRAM, VRAMUsageTracker.getFormattedSize())
+			.setDisplayValue(
+				DebugStatType.VisibleMeshes,
+				`${this.scene.visibleNodesCount} / ${this.scene.nodesCount}`,
+			);
 
 		RenderingContext.frameIndex++;
 	}

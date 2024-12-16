@@ -51,6 +51,15 @@ export const getDefaultDeferredPBRFragmentShader = ({
       viewSpaceN = normalize(viewSpaceTBN * textureNormal);
     }
 
+    var color = model.baseColor;
+    if (${hasPBRTextures}) {
+      let texColor = textureSample(albedoTexture, texSampler, uv);
+      if (texColor.a < 0.2) {
+        discard;
+      }
+      color = texColor.rgb;
+    }
+
     var out: GBufferOutput;
 
     #if ${isInstanced}
@@ -73,16 +82,6 @@ export const getDefaultDeferredPBRFragmentShader = ({
       metallic,
       roughness
     );
-    
-    
-    var color = model.baseColor;
-    if (${hasPBRTextures}) {
-      let texColor = textureSample(albedoTexture, texSampler, uv);
-      if (texColor.a < 0.2) {
-        discard;
-      }
-      color = texColor.rgb;
-    }
     
     out.color = vec4f(color, f32(model.isReflective));
     

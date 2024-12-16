@@ -62,9 +62,10 @@ export const PARTICLES_RENDER_SHADER_SRC = /* wgsl */ `
     let light = &lights[in.instanceId + ANIMATED_PARTICLES_OFFSET_START];
     let d = distance(in.uv, vec2f(0.5));
     let mask = 1.0 - smoothstep(0.2, 0.5, d);
-    // if (mask < 0.2) {
-    //   discard;
-    // }
+    if (mask < 0.2) {
+      discard;
+    }
+    let lightColor = light.color;
     return vec4f(light.color * mask * 0.8, 1);
   }
 `;

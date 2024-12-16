@@ -18,7 +18,10 @@ export interface IGUIParams {
 	"Sun Position Y": number;
 	"Sun Position Z": number;
 	"Debug Skybox": boolean;
-	"Debug Bounding Boxes": boolean;
+	"Enable Bloom": boolean;
+	"Bloom Filter Radius": number;
+	// "Debug Bounding Boxes": boolean;
+	// "Debug Point Lines Curve": boolean;
 	"Enable SSAO": boolean;
 	"SSAO Radius": number;
 	"SSAO Strength": number;

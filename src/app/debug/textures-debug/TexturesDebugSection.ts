@@ -14,13 +14,11 @@ const debugSectionTypeToTitle: Map<DebugSectionType, string> = new Map([
 export default class TexturesDebugSection {
 	protected static createRootElement(): HTMLDivElement {
 		const $el = document.createElement("div");
-		$el.style.setProperty("padding", "1rem");
-		$el.style.setProperty("border-bottom", "1px dotted red");
-		$el.style.setProperty("background-color", "rgba(0, 0, 0, 0.7)");
+		$el.classList.add("texture-debug-wrapper");
 		return $el;
 	}
 
-	protected $root: HTMLDivElement;
+	public $root: HTMLDivElement;
 	protected $main: HTMLDivElement;
 
 	protected canvases: Map<TextureDebugMeshType, DebugTextureCanvas> = new Map();

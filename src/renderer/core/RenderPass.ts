@@ -192,7 +192,7 @@ export default class RenderPass {
 		}
 		const times = await this.getStartAndEndTimings();
 
-		const duration = Math.abs(times[1] - times[0]) / 1_000_000;
+		const duration = (times[1] - times[0]) / 1_000_000;
 
 		this.gpuTimingAverage.addSample(duration);
 

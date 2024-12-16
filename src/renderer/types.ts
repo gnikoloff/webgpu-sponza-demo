@@ -16,6 +16,8 @@ export enum RenderPassType {
 	CopyDepthForHiZ,
 	HiZ,
 	Reflection,
+	BloomDownsample,
+	BloomUpsample,
 	DebugBounds,
 	Blit,
 }
@@ -25,6 +27,7 @@ export enum DebugStatType {
 	GPUTotal,
 	FPS,
 	VRAM,
+	VisibleMeshes,
 	DeferredRenderPass,
 	DirectionalAmbientLightingRenderPass,
 	PointLightsStencilMask,

@@ -6,6 +6,7 @@ const DebugTimingTypeToDebugIds: Map<DebugStatType, string> = new Map([
 	[DebugStatType.GPUTotal, "gpu-total"],
 	[DebugStatType.FPS, "fps"],
 	[DebugStatType.VRAM, "vram"],
+	[DebugStatType.VisibleMeshes, "culled-meshes"],
 	[DebugStatType.DeferredRenderPass, "deferred"],
 	[
 		DebugStatType.DirectionalAmbientLightingRenderPass,
@@ -26,6 +27,7 @@ const DebugTimingTypeToNames: Map<DebugStatType, string> = new Map([
 	[DebugStatType.GPUTotal, "GPU"],
 	[DebugStatType.FPS, "FPS"],
 	[DebugStatType.VRAM, "VRAM Usage"],
+	[DebugStatType.VisibleMeshes, "Visible Meshes"],
 	[DebugStatType.DeferredRenderPass, "G-Buffer Render Pass"],
 	[
 		DebugStatType.DirectionalAmbientLightingRenderPass,

@@ -19,7 +19,7 @@ import VRAMUsageTracker from "../../renderer/misc/VRAMUsageTracker";
 export default class DirectionalShadowRenderPass extends RenderPass {
 	public static readonly TEXTURE_SIZE = 2048;
 	public static readonly TEXTURE_CASCADES_COUNT = 2;
-	public static readonly TEXTURE_CASCADE_FAR_DISTANCES: number[] = [6, 22, 200];
+	public static readonly TEXTURE_CASCADE_FAR_DISTANCES: number[] = [6, 23, 200];
 
 	private shadowTextureCascade0: GPUTextureView;
 	private shadowTextureCascade1: GPUTextureView;
@@ -216,7 +216,7 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 			maxZ = Math.max(maxZ, trf[2]);
 		}
 
-		let zMult = 10;
+		let zMult = 6;
 		if (minZ < 0) {
 			minZ *= zMult;
 		} else {

@@ -14,7 +14,7 @@ const GetPBRLightingShaderUtils = (
 
     let nom   = a2;
     var denom = (NdotH2 * (a2 - 1.0) + 1.0);
-    denom = PI * denom * denom;
+    denom = PI * denom * denom + 0.0001;
 
     return nom / denom;
 }
@@ -25,7 +25,7 @@ const GetPBRLightingShaderUtils = (
     let k = (r * r) / 8;
 
     let nom   = NdotV;
-    let denom = NdotV * (1.0 - k) + k;
+    let denom = NdotV * (1.0 - k) + k + 0.0001;
     return nom / denom;
   }
 
@@ -81,35 +81,37 @@ const GetPBRLightingShaderUtils = (
 
     let metallic = material.metallic;
 
-    #if ${
-			lightPassType === RenderPassType.DirectionalAmbientLighting ||
-			lightPassType === RenderPassType.PointLightsStencilMask ||
-			lightPassType === RenderPassType.PointLightsLighting
-		}
+    #if ${lightPassType === RenderPassType.DirectionalAmbientLighting}
     let light = &lightsBuffer[instanceId];
-    let isPointLight = light.lightType == ${LightType.Point};
-    let lightViewSpacePos = (camera.viewMatrix * vec4f(light.position, select(0.0, 1.0, isPointLight))).xyz;
-    let dist = lightViewSpacePos.xyz - viewSpacePos.xyz;
-    let d = length(dist);
-    let pointLightAttenuation = 1 - smoothstep(0.0, light.radius, d);
+    // let isPointLight = light.lightType == ${LightType.Point};
+    let lightViewSpacePos = (camera.viewMatrix * vec4f(light.position, 0.0)).xyz;
+    
     let lightColor = light.color;
     let lightIntensity = light.intensity;
+    let L = normalize(lightViewSpacePos);
+    let attenuation = 1.0;
+    #elif ${lightPassType === RenderPassType.PointLightsLighting}
+    let light = &lightsBuffer[instanceId];
+    let lightColor = light.color;
+    let lightIntensity = light.intensity;
+    let lightViewSpacePos = (camera.viewMatrix * vec4f(light.position, 1.0)).xyz;
+    let dist = lightViewSpacePos.xyz - viewSpacePos.xyz;
+    let d = length(dist);
+    var attenuation = 1 - smoothstep(0.0, light.radius, d);
+    attenuation *= attenuation;
+    let L = normalize(dist);
     #elif ${lightPassType === RenderPassType.PointLightsNonCulledLighting}
     let lightViewSpacePos = (camera.viewMatrix * vec4f(lightPosition, 1)).xyz;
     let dist = lightViewSpacePos.xyz - viewSpacePos.xyz;
     let d = length(dist);
-    let isPointLight = true;
-    let pointLightAttenuation = 1 - smoothstep(0.0, lightRadius, d);
+    var attenuation = 1 - smoothstep(0.0, lightRadius, d);
+    attenuation *= attenuation;
+    let L = normalize(dist);
     #endif
 
-    let L = select(normalize(lightViewSpacePos), normalize(dist), isPointLight);
+    
     let H = normalize(V + L);
-
-    // pointLightAttenuation *= pointLightAttenuation;
-    // let fade = max(0.0, 1.0 - d / 0.1);
-    // pointLightAttenuation *= fade;
-    var attenuation = select(1.0, pointLightAttenuation, isPointLight);
-    attenuation *= attenuation;
+    
     let radiance = lightColor * attenuation * lightIntensity;
 
     let NDF = DistributionGGX(viewSpaceNormal, H, roughnessQuad);

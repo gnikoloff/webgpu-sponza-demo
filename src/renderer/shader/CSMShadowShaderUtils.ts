@@ -59,10 +59,15 @@ const CSMShadowShaderUtils = /* wgsl */ `
 
     // calculate bias (based on depth map resolution and slope)
     //  float bias = max(0.05 * (dot(normal, lightDir)), 0.05);
-    let biasModifier = 1.0;
+    let biasModifier = 0.5;
     //
-    var bias = max(0.05 * (1.0 - dot(N, lightDir)), 0.05);
-    bias *= 1 / (shadowCascades[layer].distance * biasModifier);
+    var bias = max(0.05 * (1.0 - dot(N, lightDir)), 0.005);
+
+    bias *= select(
+      1 / (shadowCascades[layer].distance * biasModifier),
+      1 / (100 * biasModifier),
+      layer == 3
+    );
 
     // PCF
     var shadow: f32 = 0;
