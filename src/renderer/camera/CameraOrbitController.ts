@@ -1,8 +1,8 @@
 // @ts-nocheck
 
 import { vec3 } from "wgpu-matrix";
-import PerspectiveCamera from "./PerspectiveCamera";
 import { clamp } from "../math/math";
+import PerspectiveCamera from "./PerspectiveCamera";
 
 class DampedAction {
 	private value = 0.0;

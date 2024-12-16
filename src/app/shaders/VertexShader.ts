@@ -1,9 +1,9 @@
 import { wgsl } from "wgsl-preprocessor/wgsl-preprocessor.js";
-import { SHADER_CHUNKS } from "../../renderer/shader/chunks";
 import {
 	BIND_GROUP_LOCATIONS,
 	PBR_TEXTURES_LOCATIONS,
 } from "../../renderer/core/RendererBindings";
+import { SHADER_CHUNKS } from "../../renderer/shader/chunks";
 
 export const DefaultVertexShaderEntryFn = "vertexMain";
 

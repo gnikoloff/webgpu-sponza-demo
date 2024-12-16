@@ -1,7 +1,7 @@
 import { IModel } from "obj-file-parser-ts";
-import Geometry from "./Geometry";
-import Face from "./Face";
 import { Vec2, Vec3, vec2, vec3 } from "wgpu-matrix";
+import Face from "./Face";
+import Geometry from "./Geometry";
 
 export default class OBJGeometry extends Geometry {
 	constructor(modelInfo: IModel) {

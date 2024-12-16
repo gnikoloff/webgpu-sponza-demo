@@ -1,11 +1,11 @@
 import { Mat4, mat4 } from "wgpu-matrix";
 
-import Drawable from "./Drawable";
-import Geometry from "../geometry/Geometry";
 import PipelineStates from "../core/PipelineStates";
 import { BIND_GROUP_LOCATIONS } from "../core/RendererBindings";
 import RenderingContext from "../core/RenderingContext";
+import Geometry from "../geometry/Geometry";
 import VRAMUsageTracker from "../misc/VRAMUsageTracker";
+import Drawable from "./Drawable";
 
 interface InstanceValue {
 	worldMatrix: Mat4;

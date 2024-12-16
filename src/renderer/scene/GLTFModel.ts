@@ -4,24 +4,24 @@ import {
 	GLTFPostprocessed,
 	postProcessGLTF,
 } from "@loaders.gl/gltf";
-import { quat, vec3 } from "wgpu-matrix";
 import {
 	GLTFBufferViewPostprocessed,
 	GLTFMaterialPostprocessed,
 	GLTFSamplerPostprocessed,
 	GLTFTexturePostprocessed,
 } from "@loaders.gl/gltf/dist/lib/types/gltf-postprocessed-schema";
+import { quat, vec3 } from "wgpu-matrix";
 
-import Transform from "./Transform";
-import GLTFGeometry from "../geometry/GLTFGeometry";
-import Drawable from "./Drawable";
-import Material from "../material/Material";
-import TextureLoader from "../texture/TextureLoader";
 import { PBR_TEXTURES_LOCATIONS } from "../core/RendererBindings";
-import SamplerController from "../texture/SamplerController";
-import { RenderPassType, TextureLocation } from "../types";
 import RenderingContext from "../core/RenderingContext";
+import GLTFGeometry from "../geometry/GLTFGeometry";
+import Material from "../material/Material";
 import VRAMUsageTracker from "../misc/VRAMUsageTracker";
+import SamplerController from "../texture/SamplerController";
+import TextureLoader from "../texture/TextureLoader";
+import { RenderPassType, TextureLocation } from "../types";
+import Drawable from "./Drawable";
+import Transform from "./Transform";
 
 const GL_ELEMENT_ARRAY_BUFFER = 34963;
 const GL_ARRAY_BUFFER = 34962;

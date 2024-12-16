@@ -2,9 +2,7 @@ import RenderPass from "../../renderer/core/RenderPass";
 import { BIND_GROUP_LOCATIONS } from "../../renderer/core/RendererBindings";
 import RenderingContext from "../../renderer/core/RenderingContext";
 import Scene from "../../renderer/scene/Scene";
-import Transform from "../../renderer/scene/Transform";
 import { RenderPassType } from "../../renderer/types";
-import Renderer from "../Renderer";
 
 export default class SkyboxRenderPass extends RenderPass {
 	constructor(width: number, height: number) {

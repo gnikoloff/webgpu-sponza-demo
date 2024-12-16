@@ -1,5 +1,6 @@
 import PipelineStates from "../../renderer/core/PipelineStates";
 import RenderingContext from "../../renderer/core/RenderingContext";
+import VRAMUsageTracker from "../../renderer/misc/VRAMUsageTracker";
 import Scene from "../../renderer/scene/Scene";
 import FullScreenVertexShaderUtils, {
 	FullScreenVertexShaderEntryFn,
@@ -7,11 +8,10 @@ import FullScreenVertexShaderUtils, {
 import SamplerController from "../../renderer/texture/SamplerController";
 import TextureLoader from "../../renderer/texture/TextureLoader";
 import { RenderPassType } from "../../renderer/types";
-import LightRenderPass from "./LightRenderPass";
 import GetGBufferIntegrateShader, {
 	GBufferIntegrateShaderEntryFn,
 } from "../shaders/GBufferIntegrateShader";
-import VRAMUsageTracker from "../../renderer/misc/VRAMUsageTracker";
+import LightRenderPass from "./LightRenderPass";
 
 export default class DirectionalAmbientLightRenderPass extends LightRenderPass {
 	private outTextureView: GPUTextureView;

@@ -1,8 +1,8 @@
 import { GLTFMeshPrimitivePostprocessed } from "@loaders.gl/gltf";
 
-import Geometry from "./Geometry";
 import RenderingContext from "../core/RenderingContext";
 import VRAMUsageTracker from "../misc/VRAMUsageTracker";
+import Geometry from "./Geometry";
 
 export default class GLTFGeometry extends Geometry {
 	public firstIndex = 0;

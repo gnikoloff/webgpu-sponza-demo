@@ -1,15 +1,15 @@
-import { Mat4, Vec3, Vec4, mat4, quat, vec3, vec4 } from "wgpu-matrix";
 import {
 	StructuredView,
 	makeShaderDataDefinitions,
 	makeStructuredView,
 } from "webgpu-utils";
-import { SHADER_CHUNKS } from "../shader/chunks";
-import Drawable from "../scene/Drawable";
-import Plane from "../math/Plane";
-import Transform from "../scene/Transform";
+import { Mat4, Vec3, Vec4, mat4, vec3, vec4 } from "wgpu-matrix";
 import RenderingContext from "../core/RenderingContext";
+import Plane from "../math/Plane";
 import VRAMUsageTracker from "../misc/VRAMUsageTracker";
+import Drawable from "../scene/Drawable";
+import Transform from "../scene/Transform";
+import { SHADER_CHUNKS } from "../shader/chunks";
 
 const HAMILTON_SEQUENCE = [
 	[0.5, 0.333333],

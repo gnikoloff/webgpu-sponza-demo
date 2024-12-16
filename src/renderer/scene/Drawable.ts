@@ -1,28 +1,28 @@
-import { mat4, vec3 } from "wgpu-matrix";
 import {
 	StructuredView,
 	makeShaderDataDefinitions,
 	makeStructuredView,
 } from "webgpu-utils";
+import { vec3 } from "wgpu-matrix";
 
 import { SHADER_CHUNKS } from "../shader/chunks";
 
-import Geometry from "../geometry/Geometry";
-import Material from "../material/Material";
-import MaterialProps from "../material/MaterialProps";
 import PipelineStates from "../core/PipelineStates";
-import TextureLoader from "../texture/TextureLoader";
-import SamplerController from "../texture/SamplerController";
-import Transform from "./Transform";
-import BoundingBox from "../math/BoundingBox";
 import {
 	BIND_GROUP_LOCATIONS,
 	PBR_TEXTURES_LOCATIONS,
 	SAMPLER_LOCATIONS,
 } from "../core/RendererBindings";
-import { RenderPassType, TextureLocation } from "../types";
 import RenderingContext from "../core/RenderingContext";
+import Geometry from "../geometry/Geometry";
+import Material from "../material/Material";
+import MaterialProps from "../material/MaterialProps";
+import BoundingBox from "../math/BoundingBox";
 import VRAMUsageTracker from "../misc/VRAMUsageTracker";
+import SamplerController from "../texture/SamplerController";
+import TextureLoader from "../texture/TextureLoader";
+import { RenderPassType, TextureLocation } from "../types";
+import Transform from "./Transform";
 
 export default class Drawable extends Transform {
 	public static readonly INDEX_FORMAT: GPUIndexFormat = "uint16";

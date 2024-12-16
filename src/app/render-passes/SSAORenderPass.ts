@@ -1,16 +1,16 @@
+import { vec4 } from "wgpu-matrix";
 import PipelineStates from "../../renderer/core/PipelineStates";
 import RenderPass from "../../renderer/core/RenderPass";
+import RenderingContext from "../../renderer/core/RenderingContext";
+import { lerp } from "../../renderer/math/math";
+import VRAMUsageTracker from "../../renderer/misc/VRAMUsageTracker";
 import Scene from "../../renderer/scene/Scene";
 import FullScreenVertexShaderUtils, {
 	FullScreenVertexShaderEntryFn,
 } from "../../renderer/shader/FullScreenVertexShaderUtils";
-import SSAOShaderSrc, { SSAOShaderName } from "../shaders/SSAOShader";
-import { vec4 } from "wgpu-matrix";
-import { lerp } from "../../renderer/math/math";
-import { RenderPassType } from "../../renderer/types";
-import RenderingContext from "../../renderer/core/RenderingContext";
 import TextureLoader from "../../renderer/texture/TextureLoader";
-import VRAMUsageTracker from "../../renderer/misc/VRAMUsageTracker";
+import { RenderPassType } from "../../renderer/types";
+import SSAOShaderSrc, { SSAOShaderName } from "../shaders/SSAOShader";
 
 export default class SSAORenderPass extends RenderPass {
 	public static readonly SSAO_SCALE_FACTOR = 0.5;

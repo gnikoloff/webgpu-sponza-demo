@@ -4,13 +4,13 @@ import RenderPass from "../../renderer/core/RenderPass";
 import Transform from "../../renderer/scene/Transform";
 
 import { BIND_GROUP_LOCATIONS } from "../../renderer/core/RendererBindings";
+import RenderingContext from "../../renderer/core/RenderingContext";
 import {
 	SKYBOX_CUBEMAP_CAMERA_LOOK_ATS,
 	SKYBOX_CUBEMAP_CAMERA_UPS,
 } from "../../renderer/math/math";
-import { RenderPassType } from "../../renderer/types";
-import RenderingContext from "../../renderer/core/RenderingContext";
 import VRAMUsageTracker from "../../renderer/misc/VRAMUsageTracker";
+import { RenderPassType } from "../../renderer/types";
 
 export default class EnvironmentProbePass extends RenderPass {
 	private static readonly ENVIRONMENT_TEXTURE_SIZE = 512;

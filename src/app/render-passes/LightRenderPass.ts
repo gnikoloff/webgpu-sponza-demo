@@ -1,8 +1,6 @@
 import RenderPass from "../../renderer/core/RenderPass";
 import RenderingContext from "../../renderer/core/RenderingContext";
 import VRAMUsageTracker from "../../renderer/misc/VRAMUsageTracker";
-import SamplerController from "../../renderer/texture/SamplerController";
-import TextureLoader from "../../renderer/texture/TextureLoader";
 import { RenderPassType } from "../../renderer/types";
 import { LightPassType } from "../../types";
 

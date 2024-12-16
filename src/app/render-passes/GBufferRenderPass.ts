@@ -1,12 +1,12 @@
 import RenderPass from "../../renderer/core/RenderPass";
-import RenderingContext from "../../renderer/core/RenderingContext";
-import Scene from "../../renderer/scene/Scene";
 import {
 	BIND_GROUP_LOCATIONS,
 	RENDER_TARGET_LOCATIONS,
 } from "../../renderer/core/RendererBindings";
-import { RenderPassType } from "../../renderer/types";
+import RenderingContext from "../../renderer/core/RenderingContext";
 import VRAMUsageTracker from "../../renderer/misc/VRAMUsageTracker";
+import Scene from "../../renderer/scene/Scene";
+import { RenderPassType } from "../../renderer/types";
 
 export default class GBufferRenderPass extends RenderPass {
 	constructor(width: number, height: number) {

@@ -1,11 +1,11 @@
 import HDRjs from "hdr.js";
+import BaseUtilObject from "../core/BaseUtilObject";
+import RenderingContext from "../core/RenderingContext";
+import { numMipLevelsForSize } from "../math/math";
+import VRAMUsageTracker from "../misc/VRAMUsageTracker";
+import { HDRImageResult } from "../types";
 import CubeTextureController from "./CubeTextureController";
 import TextureController from "./TextureController";
-import { numMipLevelsForSize } from "../math/math";
-import BaseUtilObject from "../core/BaseUtilObject";
-import { HDRImageResult } from "../types";
-import RenderingContext from "../core/RenderingContext";
-import VRAMUsageTracker from "../misc/VRAMUsageTracker";
 
 // prettier-ignore
 const BAYERN_PATTERN = new Uint8Array([

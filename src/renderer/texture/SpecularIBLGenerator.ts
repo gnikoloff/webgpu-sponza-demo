@@ -1,13 +1,12 @@
 import BaseUtilObject from "../core/BaseUtilObject";
 import PipelineStates from "../core/PipelineStates";
+import RenderingContext from "../core/RenderingContext";
+import VRAMUsageTracker from "../misc/VRAMUsageTracker";
 import SpecularIBLShaderUtils, {
 	SpecularIBLShaderUtilsEntryFn,
 } from "../shader/SpecularIBLShaderUtils";
-import { numMipLevelsForSize } from "../math/math";
 import CubeTextureController from "./CubeTextureController";
 import SamplerController from "./SamplerController";
-import RenderingContext from "../core/RenderingContext";
-import VRAMUsageTracker from "../misc/VRAMUsageTracker";
 
 let _computePSO: GPUComputePipeline;
 

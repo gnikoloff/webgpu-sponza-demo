@@ -1,6 +1,8 @@
 import PipelineStates from "../../renderer/core/PipelineStates";
+import VertexDescriptor from "../../renderer/core/VertexDescriptor";
 import Material from "../../renderer/material/Material";
 import Renderer from "../Renderer";
+import { GBUFFER_OUTPUT_TARGETS } from "../constants";
 import {
 	DeferredRenderPBRShaderEntryFn,
 	getDefaultDeferredPBRFragmentShader,
@@ -13,8 +15,6 @@ import {
 	DefaultVertexShaderEntryFn,
 	getVertexShader,
 } from "../shaders/VertexShader";
-import VertexDescriptor from "../../renderer/core/VertexDescriptor";
-import { GBUFFER_OUTPUT_TARGETS } from "../constants";
 
 let _defaultDeferredPBRMaterial: Material;
 let _defaultGLTFDeferredPBRMaterial: Material;

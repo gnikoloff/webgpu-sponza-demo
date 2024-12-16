@@ -1,16 +1,16 @@
 import Camera from "../camera/Camera";
-import PipelineStates from "./PipelineStates";
+import { RenderPassNames } from "../constants";
+import RollingAverage from "../math/RollingAverage";
+import VRAMUsageTracker from "../misc/VRAMUsageTracker";
+import Scene from "../scene/Scene";
 import {
 	RenderPassTiming,
 	RenderPassTimingRange,
 	RenderPassTimingResolveBufferState,
 	RenderPassType,
 } from "../types";
-import { RenderPassNames } from "../constants";
-import RollingAverage from "../math/RollingAverage";
-import Scene from "../scene/Scene";
+import PipelineStates from "./PipelineStates";
 import RenderingContext from "./RenderingContext";
-import VRAMUsageTracker from "../misc/VRAMUsageTracker";
 
 export default class RenderPass {
 	public name: string;

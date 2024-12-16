@@ -1,12 +1,12 @@
 import { wgsl } from "wgsl-preprocessor/wgsl-preprocessor.js";
-import { SHADER_CHUNKS } from "../../renderer/shader/chunks";
-import GetPBRLightingShaderUtils from "../../renderer/shader/PBRLightingShaderUtils";
 import CSMShadowShaderUtils from "../../renderer/shader/CSMShadowShaderUtils";
 import NormalEncoderShaderUtils from "../../renderer/shader/NormalEncoderShaderUtils";
-import getGBufferCommonShaderBindings from "./GBufferCommonShaderBindings";
-import { LightPassType } from "../../types";
+import GetPBRLightingShaderUtils from "../../renderer/shader/PBRLightingShaderUtils";
+import { SHADER_CHUNKS } from "../../renderer/shader/chunks";
 import { RenderPassType } from "../../renderer/types";
+import { LightPassType } from "../../types";
 import DirectionalShadowRenderPass from "../render-passes/DirectionalShadowRenderPass";
+import getGBufferCommonShaderBindings from "./GBufferCommonShaderBindings";
 
 export const GBufferIntegrateShaderEntryFn = "integrateMain";
 

@@ -1,6 +1,6 @@
-import TexturesDebugSection, { DebugSectionType } from "./TexturesDebugSection";
-import DebugTextureCanvas from "./DebugTextureCanvas";
 import { TextureDebugMeshType } from "../../../types";
+import DebugTextureCanvas from "./DebugTextureCanvas";
+import TexturesDebugSection, { DebugSectionType } from "./TexturesDebugSection";
 
 export default class ShadowDebugSection extends TexturesDebugSection {
 	constructor() {

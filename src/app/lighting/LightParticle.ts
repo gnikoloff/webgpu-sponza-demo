@@ -1,7 +1,7 @@
-import { Vec3, vec3 } from "wgpu-matrix";
-import { ILightParticle } from "../../types";
-import { SHADER_CHUNKS } from "../../renderer/shader/chunks";
 import { makeShaderDataDefinitions, makeStructuredView } from "webgpu-utils";
+import { Vec3, vec3 } from "wgpu-matrix";
+import { SHADER_CHUNKS } from "../../renderer/shader/chunks";
+import { ILightParticle } from "../../types";
 
 const particleShaderDefs = makeShaderDataDefinitions(SHADER_CHUNKS.Particle);
 const particleStorageView = makeStructuredView(

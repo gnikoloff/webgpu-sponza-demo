@@ -10,7 +10,6 @@ import { RenderPassType } from "../../renderer/types";
 import SSAOBlurShaderSrc, {
 	SSSAOBlurShaderName,
 } from "../shaders/SSAOBlurShader";
-import SSAORenderPass from "./SSAORenderPass";
 
 export default class SSAOBlurRenderPass extends RenderPass {
 	private outTextureView: GPUTextureView;

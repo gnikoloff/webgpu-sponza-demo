@@ -9,16 +9,16 @@ import HDRToCubeMapShaderUtils, {
 	HDRToCubeMapShaderUtilsEntryVertexFn,
 } from "../shader/HDRToCubeMapShaderUtils";
 
-import Drawable from "../scene/Drawable";
-import PipelineStates from "../core/PipelineStates";
-import CubeGeometry from "../geometry/CubeGeometry";
-import SamplerController from "./SamplerController";
 import PerspectiveCamera from "../camera/PerspectiveCamera";
-import TextureController from "./TextureController";
 import BaseUtilObject from "../core/BaseUtilObject";
-import VertexDescriptor from "../core/VertexDescriptor";
+import PipelineStates from "../core/PipelineStates";
 import RenderingContext from "../core/RenderingContext";
+import VertexDescriptor from "../core/VertexDescriptor";
+import CubeGeometry from "../geometry/CubeGeometry";
 import VRAMUsageTracker from "../misc/VRAMUsageTracker";
+import Drawable from "../scene/Drawable";
+import SamplerController from "./SamplerController";
+import TextureController from "./TextureController";
 
 let _emptyCubeTexCounters = 0;
 

@@ -3,7 +3,7 @@ import RenderingContext from "../../renderer/core/RenderingContext";
 import VertexDescriptor from "../../renderer/core/VertexDescriptor";
 import Drawable from "../../renderer/scene/Drawable";
 import Scene from "../../renderer/scene/Scene";
-import { LightType, RenderPassType } from "../../renderer/types";
+import { RenderPassType } from "../../renderer/types";
 import GetGBufferIntegrateShader, {
 	GBufferIntegrateShaderEntryFn,
 } from "../shaders/GBufferIntegrateShader";

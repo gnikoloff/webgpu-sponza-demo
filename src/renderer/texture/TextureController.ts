@@ -1,9 +1,9 @@
 import { Vec2, vec2 } from "wgpu-matrix";
-import PipelineStates from "../core/PipelineStates";
-import { numMipLevelsForSize } from "../math/math";
 import BaseUtilObject from "../core/BaseUtilObject";
+import PipelineStates from "../core/PipelineStates";
 import RenderingContext from "../core/RenderingContext";
-import { HDRImageResult } from "../types";
+import { numMipLevelsForSize } from "../math/math";
+import VRAMUsageTracker from "../misc/VRAMUsageTracker";
 import CopyTextureViewShaderUtils, {
 	CopyTextureViewShaderUtilsEntryFn,
 } from "../shader/CopyTextureViewShaderUtils";
@@ -11,7 +11,7 @@ import {
 	GetMipComputeGeneratorShaderUtils,
 	MipComputeGeneratorShaderEntryFn,
 } from "../shader/MipComputeGeneratorShaderUtils";
-import VRAMUsageTracker from "../misc/VRAMUsageTracker";
+import { HDRImageResult } from "../types";
 
 function initBindGroup(
 	nextMipLevel: number,

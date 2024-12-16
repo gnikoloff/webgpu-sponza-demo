@@ -1,4 +1,3 @@
-import Camera from "../../renderer/camera/Camera";
 import PipelineStates from "../../renderer/core/PipelineStates";
 import RenderPass from "../../renderer/core/RenderPass";
 import { BIND_GROUP_LOCATIONS } from "../../renderer/core/RendererBindings";

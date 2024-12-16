@@ -1,10 +1,6 @@
 import LineDebugDrawable from "../../app/debug/LineDebugDrawable";
 import Camera from "../camera/Camera";
-import RenderingContext from "../core/RenderingContext";
-import DirectionalLight from "../lighting/DirectionalLight";
-import Light from "../lighting/Light";
 import LightingManager from "../lighting/LightingManager";
-import PointLight from "../lighting/PointLight";
 import Drawable from "./Drawable";
 import Transform from "./Transform";
 

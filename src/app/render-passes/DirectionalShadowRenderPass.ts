@@ -5,16 +5,16 @@ import {
 } from "webgpu-utils";
 import { Mat4, mat4, vec3, vec4 } from "wgpu-matrix";
 import Camera from "../../renderer/camera/Camera";
+import PipelineStates from "../../renderer/core/PipelineStates";
 import RenderPass from "../../renderer/core/RenderPass";
 import { SHADER_CHUNKS } from "../../renderer/shader/chunks";
-import PipelineStates from "../../renderer/core/PipelineStates";
 
-import DirectionalLight from "../../renderer/lighting/DirectionalLight";
 import { BIND_GROUP_LOCATIONS } from "../../renderer/core/RendererBindings";
+import RenderingContext from "../../renderer/core/RenderingContext";
+import DirectionalLight from "../../renderer/lighting/DirectionalLight";
+import VRAMUsageTracker from "../../renderer/misc/VRAMUsageTracker";
 import Scene from "../../renderer/scene/Scene";
 import { RenderPassType } from "../../renderer/types";
-import RenderingContext from "../../renderer/core/RenderingContext";
-import VRAMUsageTracker from "../../renderer/misc/VRAMUsageTracker";
 
 export default class DirectionalShadowRenderPass extends RenderPass {
 	public static readonly TEXTURE_SIZE = 2048;

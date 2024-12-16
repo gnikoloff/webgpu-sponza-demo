@@ -1,6 +1,6 @@
 import { wgsl } from "wgsl-preprocessor/wgsl-preprocessor.js";
-import { LightType, RenderPassType } from "../types";
 import { LightPassType } from "../../types";
+import { LightType, RenderPassType } from "../types";
 
 const GetPBRLightingShaderUtils = (
 	lightPassType: LightPassType,

@@ -1,5 +1,3 @@
-import Renderer from "../../app/Renderer";
-import Camera from "../camera/Camera";
 import { RenderPassNames } from "../constants";
 import Scene from "../scene/Scene";
 import { RenderPassType } from "../types";

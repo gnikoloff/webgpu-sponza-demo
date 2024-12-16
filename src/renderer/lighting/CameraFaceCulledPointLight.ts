@@ -1,9 +1,9 @@
+import { vec3 } from "wgpu-matrix";
+import { SHADER_POINT_LIGHT_TYPE } from "../constants";
 import RenderingContext from "../core/RenderingContext";
+import VRAMUsageTracker from "../misc/VRAMUsageTracker";
 import Light from "./Light";
 import PointLight from "./PointLight";
-import { SHADER_POINT_LIGHT_TYPE } from "../constants";
-import { vec3 } from "wgpu-matrix";
-import VRAMUsageTracker from "../misc/VRAMUsageTracker";
 
 export default class CameraFaceCulledPointLight extends PointLight {
 	private static _bindGroupLayout: GPUBindGroupLayout;

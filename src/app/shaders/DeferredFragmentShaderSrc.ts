@@ -1,12 +1,12 @@
 import { wgsl } from "wgsl-preprocessor/wgsl-preprocessor.js";
 
-import { SHADER_CHUNKS } from "../../renderer/shader/chunks";
-import NormalEncoderShaderUtils from "../../renderer/shader/NormalEncoderShaderUtils";
 import {
 	BIND_GROUP_LOCATIONS,
 	PBR_TEXTURES_LOCATIONS,
 	SAMPLER_LOCATIONS,
 } from "../../renderer/core/RendererBindings";
+import NormalEncoderShaderUtils from "../../renderer/shader/NormalEncoderShaderUtils";
+import { SHADER_CHUNKS } from "../../renderer/shader/chunks";
 
 export const DeferredRenderPBRShaderEntryFn = "deferredPBRFrag";
 

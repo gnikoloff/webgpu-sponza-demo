@@ -1,7 +1,7 @@
 import { wgsl } from "wgsl-preprocessor/wgsl-preprocessor.js";
 import { SHADER_CHUNKS } from "../../renderer/shader/chunks";
-import { LightPassType } from "../../types";
 import { RenderPassType } from "../../renderer/types";
+import { LightPassType } from "../../types";
 
 export const GBufferVertexEntryFn = "pointLightVertex";
 

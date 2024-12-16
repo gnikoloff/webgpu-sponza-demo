@@ -1,13 +1,15 @@
 import { Vec3, vec3 } from "wgpu-matrix";
-import LightingManager from "../../renderer/lighting/LightingManager";
-import PointLight from "../../renderer/lighting/PointLight";
 import PipelineStates from "../../renderer/core/PipelineStates";
 import RenderingContext from "../../renderer/core/RenderingContext";
-import Light from "../../renderer/lighting/Light";
-import LightParticle from "./LightParticle";
-import Drawable from "../../renderer/scene/Drawable";
 import DirectionalLight from "../../renderer/lighting/DirectionalLight";
+import Light from "../../renderer/lighting/Light";
+import LightingManager from "../../renderer/lighting/LightingManager";
+import PointLight from "../../renderer/lighting/PointLight";
+import Drawable from "../../renderer/scene/Drawable";
+import LightParticle from "./LightParticle";
 
+import CameraFaceCulledPointLight from "../../renderer/lighting/CameraFaceCulledPointLight";
+import VRAMUsageTracker from "../../renderer/misc/VRAMUsageTracker";
 import {
 	PARTICLES_RENDER_SHADER_SRC,
 	PARTICLES_SHADER_FRAGMENT_ENTRY_FN,
@@ -17,9 +19,6 @@ import {
 	POINT_LIGHTS_SHADER_COMPUTE_ENTRY_FN,
 	POINT_LIGHTS_UPDATE_SHADER_SRC,
 } from "../shaders/PointLightsUpdateShader";
-import CameraFaceCulledPointLight from "../../renderer/lighting/CameraFaceCulledPointLight";
-import CatmullRomCurve3 from "../../renderer/math/CatmullRomCurve3";
-import VRAMUsageTracker from "../../renderer/misc/VRAMUsageTracker";
 
 const MAIN_LAMP_POINT_LIGHT_POSITIONS: Vec3[] = [
 	vec3.create(3.9, 3, 0.9),

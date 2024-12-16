@@ -1,4 +1,3 @@
-import Drawable from "../scene/Drawable";
 import { RenderPassType } from "../types";
 
 export default class RenderingContext {

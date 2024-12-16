@@ -1,4 +1,4 @@
-import { Vec2, Vec3, vec2, vec3 } from "wgpu-matrix";
+import { Vec2, Vec3, vec3 } from "wgpu-matrix";
 
 export default class Face {
 	public centroid = vec3.create();

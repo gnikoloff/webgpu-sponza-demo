@@ -3,11 +3,11 @@ import {
 	makeShaderDataDefinitions,
 	makeStructuredView,
 } from "webgpu-utils";
+import { Vec3, vec3 } from "wgpu-matrix";
+import { LightTypeToShaderType } from "../constants";
 import Transform from "../scene/Transform";
 import { SHADER_CHUNKS } from "../shader/chunks";
-import { Vec3, vec3 } from "wgpu-matrix";
 import { LightType, UUIDString } from "../types";
-import { LightTypeToShaderType } from "../constants";
 
 const _lightShaderDefs = makeShaderDataDefinitions(SHADER_CHUNKS.Light);
 const _lightsStorageView = makeStructuredView(_lightShaderDefs.structs.Light);

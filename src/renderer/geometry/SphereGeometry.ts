@@ -1,6 +1,6 @@
 import { Vec2, Vec3, vec2, vec3 } from "wgpu-matrix";
-import Geometry from "./Geometry";
 import Face from "./Face";
+import Geometry from "./Geometry";
 
 export default class SphereGeometry extends Geometry {
 	constructor(

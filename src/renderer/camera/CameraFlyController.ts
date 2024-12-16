@@ -1,4 +1,4 @@
-import { Vec3, mat4, quat, vec2, vec3 } from "wgpu-matrix";
+import { Vec3, mat4, vec2, vec3 } from "wgpu-matrix";
 import Camera from "./Camera";
 
 const DIR = vec3.create();

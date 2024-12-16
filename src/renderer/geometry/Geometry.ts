@@ -1,9 +1,9 @@
-import { Vec3, vec2, vec3, vec4 } from "wgpu-matrix";
-import Face from "./Face";
+import { Vec3, vec2, vec3 } from "wgpu-matrix";
+import RenderingContext from "../core/RenderingContext";
 import VertexDescriptor from "../core/VertexDescriptor";
 import BoundingBox from "../math/BoundingBox";
-import RenderingContext from "../core/RenderingContext";
 import VRAMUsageTracker from "../misc/VRAMUsageTracker";
+import Face from "./Face";
 
 export default class Geometry {
 	public faces: Face[] = [];

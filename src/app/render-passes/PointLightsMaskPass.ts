@@ -3,13 +3,13 @@ import PipelineStates from "../../renderer/core/PipelineStates";
 import RenderingContext from "../../renderer/core/RenderingContext";
 import VertexDescriptor from "../../renderer/core/VertexDescriptor";
 import Drawable from "../../renderer/scene/Drawable";
+import Scene from "../../renderer/scene/Scene";
 import { RenderPassType } from "../../renderer/types";
-import GeometryCache from "../utils/GeometryCache";
-import LightRenderPass from "./LightRenderPass";
 import GetGBufferVertexShader, {
 	GBufferVertexEntryFn,
 } from "../shaders/GBufferVertexShader";
-import Scene from "../../renderer/scene/Scene";
+import GeometryCache from "../utils/GeometryCache";
+import LightRenderPass from "./LightRenderPass";
 
 export default class PointLightsMaskPass extends LightRenderPass {
 	private renderPSO: GPURenderPipeline;

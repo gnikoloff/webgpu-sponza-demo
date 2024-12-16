@@ -2,6 +2,7 @@ import { vec3 } from "wgpu-matrix";
 import PipelineStates from "../../renderer/core/PipelineStates";
 import RenderingContext from "../../renderer/core/RenderingContext";
 import VertexDescriptor from "../../renderer/core/VertexDescriptor";
+import CameraFaceCulledPointLight from "../../renderer/lighting/CameraFaceCulledPointLight";
 import Drawable from "../../renderer/scene/Drawable";
 import Scene from "../../renderer/scene/Scene";
 import { RenderPassType } from "../../renderer/types";
@@ -13,7 +14,6 @@ import GetGBufferVertexShader, {
 } from "../shaders/GBufferVertexShader";
 import GeometryCache from "../utils/GeometryCache";
 import LightRenderPass from "./LightRenderPass";
-import CameraFaceCulledPointLight from "../../renderer/lighting/CameraFaceCulledPointLight";
 
 export default class PointLightsNonCulledRenderPass extends LightRenderPass {
 	private static readonly FRONT_FACE_RENDER_PSO_LABEL =

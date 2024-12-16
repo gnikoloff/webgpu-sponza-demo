@@ -1,5 +1,5 @@
-import Light from "./Light";
 import { LightType } from "../types";
+import Light from "./Light";
 
 export default class PointLight extends Light {
 	private _radius: number;

@@ -1,13 +1,13 @@
 import { Vec3 } from "wgpu-matrix";
 import PipelineStates from "../../renderer/core/PipelineStates";
 import RenderingContext from "../../renderer/core/RenderingContext";
+import VRAMUsageTracker from "../../renderer/misc/VRAMUsageTracker";
 import Transform from "../../renderer/scene/Transform";
 import {
 	LINE_DEBUG_FRAGMENT_SHADER_ENTRY_FN,
 	LINE_DEBUG_SHADER_SRC,
 	LINE_DEBUG_VERTEX_SHADER_ENTRY_FN,
 } from "../shaders/LineDebugShader";
-import VRAMUsageTracker from "../../renderer/misc/VRAMUsageTracker";
 
 export default class LineDebugDrawable extends Transform {
 	private renderPSO: GPURenderPipeline;
