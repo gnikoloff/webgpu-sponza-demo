@@ -42,6 +42,7 @@ export default class LightingSystem extends LightingManager {
 
 	private static readonly PARTICLES_PER_FIRE = 64;
 	private static readonly PARTICLES_PER_CURVE = 150;
+	private static readonly PARTICLES_PER_CORRIDOR = 32;
 
 	private particlesGPUBuffer!: GPUBuffer;
 	private particles: LightParticle[] = [];
@@ -90,7 +91,7 @@ export default class LightingSystem extends LightingManager {
 		v: Light,
 		pRadius = 0.05,
 		pLife = 0,
-		pLifeSpeed = Math.random() * 2 + 0.1,
+		pLifeSpeed = Math.random() * 1.5 + 0.35,
 		pVelocity = vec3.create(0, 0.5, 0),
 	): this {
 		super.addLight(v);
@@ -161,7 +162,6 @@ export default class LightingSystem extends LightingManager {
 
 		this.particlesGPUBuffer.unmap();
 
-		this.particlesLength = this.particles.length;
 		this.particles = null;
 	}
 
@@ -251,7 +251,7 @@ export default class LightingSystem extends LightingManager {
 
 		curvePointsBuff.unmap();
 
-		// Curve Particles
+		// 2nd Floor Curve Particles
 		let zeroPos = vec3.create();
 		for (let i = 0; i < LightingSystem.PARTICLES_PER_CURVE; i++) {
 			const p = new PointLight();
@@ -262,11 +262,55 @@ export default class LightingSystem extends LightingManager {
 			);
 			p.setPositionAsVec3(zeroPos);
 			p.radius = 2;
-			p.intensity = 0.5;
+			p.intensity = 1;
 			const t = i / LightingSystem.PARTICLES_PER_CURVE;
 			// const t = Math.random();
-			this.addParticleLight(p, 0.025, t, 0.01, vec3.random(0.5));
+			this.addParticleLight(p, 0.02, t, 0.01, vec3.random(0.5));
 		}
+
+		this.particlesLength = this.particles.length;
+
+		// 1st Floor Left Corridor
+		for (let i = 0; i < LightingSystem.PARTICLES_PER_CORRIDOR; i++) {
+			const p = new PointLight();
+			p.setColor(
+				Math.random() * 3 + 1,
+				Math.random() * 3 + 1,
+				Math.random() * 3 + 1,
+			);
+			p.setPositionAsVec3(zeroPos);
+			p.radius = 1;
+			this.addParticleLight(
+				p,
+				0.02,
+				i / LightingSystem.PARTICLES_PER_CORRIDOR,
+				0.01,
+				vec3.create(3.125, 1, 0),
+			);
+		}
+
+		// 1st Floor Right Corridor
+		for (let i = 0; i < LightingSystem.PARTICLES_PER_CORRIDOR; i++) {
+			const p = new PointLight();
+			p.setColor(
+				Math.random() * 3 + 1,
+				Math.random() * 3 + 1,
+				Math.random() * 3 + 1,
+			);
+			p.setPositionAsVec3(zeroPos);
+			p.radius = 1;
+			this.addParticleLight(
+				p,
+				0.02,
+				i / LightingSystem.PARTICLES_PER_CORRIDOR,
+				0.01,
+				vec3.create(-3.775, -1, 0),
+			);
+		}
+
+		console.log(this.lightsCount);
+
+		// this.particlesLength = this.particles.length;
 
 		this.updateGPUBuffer();
 		this.updateParticlesBuffer();
@@ -408,9 +452,10 @@ export default class LightingSystem extends LightingManager {
 				constants: {
 					WORKGROUP_SIZE_X: LightingSystem.COMPUTE_WORKGROUP_SIZE_X,
 					WORKGROUP_SIZE_Y: LightingSystem.COMPUTE_WORKGROUP_SIZE_Y,
-					ANIMATED_PARTICLES_OFFSET_START: 5,
-					FIREWORK_PARTICLES_OFFSET: 0,
+					ANIMATED_PARTICLES_OFFSET_START: 1,
+					FIREWORK_PARTICLES_OFFSET: 5,
 					CURVE_PARTICLES_OFFSET: 4 * LightingSystem.PARTICLES_PER_FIRE,
+					CURVE_PARTICLES_COUNT: LightingSystem.PARTICLES_PER_CURVE,
 					CURVE_POSITIONS_COUNT: curvePoints.length,
 				},
 			},
@@ -458,7 +503,7 @@ export default class LightingSystem extends LightingManager {
 				module: renderShaderModule,
 				targets: colorTargets,
 				constants: {
-					ANIMATED_PARTICLES_OFFSET_START: 5,
+					ANIMATED_PARTICLES_OFFSET_START: 1,
 					// CURVE_PARTICLES_OFFSET: 4 * LightingSystem.PARTICLES_PER_FIRE,
 				},
 			},

@@ -7,6 +7,7 @@ const DebugTimingTypeToDebugIds: Map<DebugStatType, string> = new Map([
 	[DebugStatType.FPS, "fps"],
 	[DebugStatType.VRAM, "vram"],
 	[DebugStatType.VisibleMeshes, "culled-meshes"],
+	[DebugStatType.LightsCount, "lights-count"],
 	[DebugStatType.DeferredRenderPass, "deferred"],
 	[
 		DebugStatType.DirectionalAmbientLightingRenderPass,
@@ -28,6 +29,7 @@ const DebugTimingTypeToNames: Map<DebugStatType, string> = new Map([
 	[DebugStatType.FPS, "FPS"],
 	[DebugStatType.VRAM, "VRAM Usage"],
 	[DebugStatType.VisibleMeshes, "Visible Meshes"],
+	[DebugStatType.LightsCount, "Lights Count"],
 	[DebugStatType.DeferredRenderPass, "G-Buffer Render Pass"],
 	[
 		DebugStatType.DirectionalAmbientLightingRenderPass,

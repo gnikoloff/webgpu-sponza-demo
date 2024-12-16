@@ -28,6 +28,7 @@ export enum DebugStatType {
 	FPS,
 	VRAM,
 	VisibleMeshes,
+	LightsCount,
 	DeferredRenderPass,
 	DirectionalAmbientLightingRenderPass,
 	PointLightsStencilMask,

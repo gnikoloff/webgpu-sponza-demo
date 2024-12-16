@@ -672,6 +672,10 @@ export default class Renderer extends RenderingContext {
 			.setDisplayValue(
 				DebugStatType.VisibleMeshes,
 				`${this.scene.visibleNodesCount} / ${this.scene.nodesCount}`,
+			)
+			.setDisplayValue(
+				DebugStatType.LightsCount,
+				this.lightingManager.lightsCount.toString(),
 			);
 
 		RenderingContext.frameIndex++;

@@ -22,6 +22,7 @@ export const POINT_LIGHTS_UPDATE_SHADER_SRC = /* wgsl */ `
   override FIREWORK_PARTICLES_OFFSET: u32;
   override FIREWORK_PARTICLES_COUNT: u32;
   override CURVE_PARTICLES_OFFSET: u32;
+  override CURVE_PARTICLES_COUNT: u32;
   override CURVE_POSITIONS_COUNT: u32;
   
   @must_use
@@ -70,7 +71,6 @@ export const POINT_LIGHTS_UPDATE_SHADER_SRC = /* wgsl */ `
     let particle = &particles[idx];
     let light = &lights[idx + ANIMATED_PARTICLES_OFFSET_START];
 
-
     particle.life += particle.lifeSpeed * simSettings.timeDelta;
 
     if (particle.life >= 1) {
@@ -83,18 +83,26 @@ export const POINT_LIGHTS_UPDATE_SHADER_SRC = /* wgsl */ `
         particle.position * 0.05 + 
         vec3<f32>(0.0, simSettings.time * 0.05, 0.0)
       ) * 0.2;
-
       particle.position += (particle.velocity + turbulence) * simSettings.timeDelta;
-
-      light.position = particle.position;
       light.intensity = (1 - particle.life);
     }
 
-    if (idx >= CURVE_PARTICLES_OFFSET) {
-      particle.position = interpolateLinePoint(particle.life) + particle.velocity;
-      light.position = particle.position;
-      light.intensity = 1;
+    if (idx >= CURVE_PARTICLES_OFFSET && idx < CURVE_PARTICLES_OFFSET + CURVE_PARTICLES_COUNT) {
+      particle.position = interpolateLinePoint(particle.life) + particle.velocity;  
     }
+
+    if (idx >= CURVE_PARTICLES_OFFSET + CURVE_PARTICLES_COUNT) {
+      particle.position = vec3f(
+        particle.life * 15 - 7.5,
+        cos(particle.life + particle.life * particle.velocity.y * 30) * 1.2 + 3.5,
+        sin(particle.life + particle.life * particle.velocity.y * 30) * 1.075 + particle.velocity.x
+      );
+      let fadeIn = smoothstep(0.0, 0.1, particle.life);
+      let fadeOut = 1.0 - smoothstep(0.9, 1.0, particle.life);
+      light.intensity = 0.5 * fadeIn * fadeOut;
+      light.radius = 1 * fadeIn * fadeOut;
+    }
+    light.position = particle.position;
 
   }
 `;

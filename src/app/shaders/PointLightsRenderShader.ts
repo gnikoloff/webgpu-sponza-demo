@@ -43,7 +43,7 @@ export const PARTICLES_RENDER_SHADER_SRC = /* wgsl */ `
   ) -> VertexOut {
     let p = particles[instanceId];
     let particlePosition = p.position;
-    let particleRadius = select(p.radius - p.radius * p.life, p.radius, instanceId > CURVE_PARTICLES_OFFSET);
+    let particleRadius = select(p.radius - p.radius * p.life, p.radius, instanceId >= CURVE_PARTICLES_OFFSET);
     // let particleRadius = p.radius;
     let uv = uvs[vertexId];
     var out: VertexOut;
