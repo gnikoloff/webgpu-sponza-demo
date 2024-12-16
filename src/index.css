@@ -11,6 +11,30 @@ a {
 	color: white;
 }
 
+#no-webgpu-wrapper {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100vw;
+	height: 100vh;
+	z-index: 999;
+	background-color: black;
+	display: none;
+	padding: 1rem 3rem 1rem 1rem;
+	box-sizing: border-box;
+	font-size: 14px;
+}
+
+#no-webgpu-wrapper h1 {
+	margin: 0 0 1rem 0;
+	text-wrap: balance;
+	font-size: 18px;
+}
+
+#no-webgpu-wrapper ul li li {
+	margin-bottom: 1rem;
+}
+
 .logo {
 	position: fixed;
 	left: 1rem;

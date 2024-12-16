@@ -61,7 +61,11 @@ import MaterialCache from "./utils/MaterialCache";
 export default class Renderer extends RenderingContext {
 	public static initialize = async (
 		canvas: HTMLCanvasElement,
-	): Promise<Renderer> => {
+	): Promise<Renderer | undefined> => {
+		if (!navigator.gpu) {
+			return undefined;
+		}
+
 		const adapter = await navigator.gpu.requestAdapter();
 
 		RenderingContext.$canvas = canvas;

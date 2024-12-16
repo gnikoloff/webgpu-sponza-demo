@@ -6,6 +6,12 @@ import { IGUIParams, SSRMethod } from "./types";
 const $canvas = document.getElementById("c") as HTMLCanvasElement;
 const renderer = await Renderer.initialize($canvas);
 
+if (renderer === undefined) {
+	document
+		.getElementById("no-webgpu-wrapper")
+		.style.setProperty("display", "block");
+}
+
 const GUI_PARAMS: IGUIParams = {
 	"Play Animation": true,
 	"Performance Stats": false,
