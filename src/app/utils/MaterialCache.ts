@@ -226,7 +226,7 @@ const MaterialCache = Object.freeze({
 			vertexShaderEntryFn: DefaultVertexShaderEntryFn,
 			vertexBuffers: VertexDescriptor.defaultGLTFLayout,
 			primitive: {
-				cullMode: "back",
+				cullMode: "front",
 			},
 			depthStencilState: {
 				format: "depth32float",

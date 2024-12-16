@@ -22,9 +22,9 @@ import VRAMUsageTracker from "../misc/VRAMUsageTracker";
 import SamplerController from "../texture/SamplerController";
 import TextureLoader from "../texture/TextureLoader";
 import { RenderPassType, TextureLocation } from "../types";
-import Transform from "./Transform";
+import Node from "./Node";
 
-export default class Drawable extends Transform {
+export default class Drawable extends Node {
 	public static readonly INDEX_FORMAT: GPUIndexFormat = "uint16";
 
 	public geometry: Geometry;

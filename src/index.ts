@@ -24,7 +24,7 @@ const GUI_PARAMS: IGUIParams = {
 	"Sun Position Z": 0.1,
 	"Debug Skybox": true,
 	"Enable Bloom": true,
-	"Bloom Filter Radius": 0.005,
+	"Bloom Filter Radius": 0.0035,
 	// "Debug Bounding Boxes": false,
 	// "Debug Point Lines Curve": false,
 	"Enable SSAO": true,
@@ -199,7 +199,7 @@ function renderFrame() {
 
 function resize() {
 	const w = Math.min(innerWidth, 1920);
-	const h = Math.min(innerHeight, 800);
+	const h = Math.min(innerHeight, 1080);
 	$canvas.width = w;
 	$canvas.height = h;
 	$canvas.style.setProperty("left", `${innerWidth * 0.5 - w * 0.5}px`);
@@ -208,22 +208,6 @@ function resize() {
 	$canvas.style.setProperty("height", `${h}px`);
 
 	renderer.resize(w, h);
-
-	renderer.enableAnimation = GUI_PARAMS["Play Animation"];
-	renderer.enableTAA = GUI_PARAMS["Enable TAA"];
-	renderer.debugGBuffer = GUI_PARAMS["Debug G-Buffer"];
-	renderer.debugShadowMap = GUI_PARAMS["Debug Shadow Map"];
-	renderer.sunPositionX = GUI_PARAMS["Sun Position Z"];
-	renderer.sunPositionY = GUI_PARAMS["Sun Position Y"];
-	renderer.sunPositionZ = GUI_PARAMS["Sun Position X"];
-	renderer.sunIntensity = GUI_PARAMS["Sun Intensity"];
-	renderer.ssaoEnabled = GUI_PARAMS["Enable SSAO"];
-	// renderer.ssaoKernelSize = GUI_PARAMS["SSAO Kernel Size"];
-	// renderer.ssaoStrength = GUI_PARAMS["SSAO Strength"];
-	// renderer.ssaoRadius = GUI_PARAMS["SSAO Radius"];
-	// renderer.debugPointLights = GUI_PARAMS["Debug Point Lights Mask"];
-	// renderer.toggleDebugCamera = GUI_PARAMS["Toggle Debug Camera"];
-	// renderer.debugSkybox = GUI_PARAMS["Debug Skybox"];
 }
 
 function offsetLogoAndStats() {

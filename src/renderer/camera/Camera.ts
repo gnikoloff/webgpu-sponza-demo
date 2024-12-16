@@ -8,7 +8,7 @@ import RenderingContext from "../core/RenderingContext";
 import Plane from "../math/Plane";
 import VRAMUsageTracker from "../misc/VRAMUsageTracker";
 import Drawable from "../scene/Drawable";
-import Transform from "../scene/Transform";
+import Node from "../scene/Node";
 import { SHADER_CHUNKS } from "../shader/chunks";
 
 const HAMILTON_SEQUENCE = [
@@ -30,7 +30,7 @@ const HAMILTON_SEQUENCE = [
 	[0.03125, 0.592593],
 ];
 
-export default class Camera extends Transform {
+export default class Camera extends Node {
 	public static readonly UP_VECTOR = vec3.fromValues(0, 1, 0);
 
 	public lookAt = vec3.fromValues(0, 0, 0);

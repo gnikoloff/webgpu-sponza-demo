@@ -169,7 +169,7 @@ export default class LightingSystem extends LightingManager {
 		super();
 
 		const dirLight = new DirectionalLight();
-		dirLight.setPosition(0, 20, 1);
+		dirLight.setPosition(0.1, 100, 0.1);
 		dirLight.setColor(0.2156, 0.2627, 0.3333);
 		dirLight.intensity = 2;
 		this.addLight(dirLight);
@@ -256,9 +256,9 @@ export default class LightingSystem extends LightingManager {
 		for (let i = 0; i < LightingSystem.PARTICLES_PER_CURVE; i++) {
 			const p = new PointLight();
 			p.setColor(
-				Math.random() * 0.7 + 1,
-				Math.random() * 0.7 + 1,
-				Math.random() * 0.7 + 1,
+				Math.random() * 3 + 1,
+				Math.random() * 3 + 1,
+				Math.random() * 3 + 1,
 			);
 			p.setPositionAsVec3(zeroPos);
 			p.radius = 2;

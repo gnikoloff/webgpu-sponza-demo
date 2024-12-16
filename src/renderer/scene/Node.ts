@@ -2,31 +2,28 @@ import { Mat4, Quat, Vec3, mat3, mat4, quat, vec3 } from "wgpu-matrix";
 import { MAT4x4_IDENTITY_MATRIX, QUATERNION_COMP_ORDER } from "../math/math";
 import { UUIDString } from "../types";
 
-export default class Transform {
+export default class Node {
 	private _position = vec3.fromValues(0, 0, 0);
 	private _rotation = vec3.fromValues(0, 0, 0);
 	private _scale = vec3.fromValues(1, 1, 1);
 	private _worldPosition = vec3.create();
 
-	private translateMatrix = mat4.identity();
-	private scaleMatrix = mat4.identity();
-	private rotationMatrix = mat4.identity();
-	private cachedMatrix = mat4.create();
-	private worldMatrix = mat4.identity();
+	protected translateMatrix = mat4.identity();
+	protected scaleMatrix = mat4.identity();
+	protected rotationMatrix = mat4.identity();
+	protected cachedMatrix = mat4.create();
+	protected worldMatrix = mat4.identity();
+	protected normalMatrix = mat3.create();
+	protected quaternion = quat.create();
 	protected prevFrameModelMatrix = mat4.create();
 	private _customMatrix?: Mat4;
-
-	protected normalMatrix = mat3.create();
-
 	protected matrixNeedsUpdate = true;
 
 	public id: UUIDString = crypto.randomUUID();
 	public label = "Object";
 
-	public parent?: Transform;
-	public children: Transform[] = [];
-
-	public quaternion = quat.create();
+	public parent?: Node;
+	public children: Node[] = [];
 
 	protected _visible = true;
 	public get visible(): boolean {
@@ -107,28 +104,28 @@ export default class Transform {
 		// ...
 	}
 
-	public addChild(child: Transform) {
+	public addChild(child: Node) {
 		child.parent = this;
 		this.children.push(child);
 		child.updateWorldMatrix();
 		this.onChildAdd(child);
 	}
 
-	public removeChild(child: Transform) {
+	public removeChild(child: Node) {
 		this.children = this.children.filter(({ id }) => id != child.id);
 		child.parent = null;
 		this.onChildRemove(child);
 	}
 
-	protected onChildAdd(child: Transform) {
+	protected onChildAdd(child: Node) {
 		this.parent?.onChildAdd(child);
 	}
 
-	protected onChildRemove(child: Transform) {
+	protected onChildRemove(child: Node) {
 		this.parent?.onChildRemove(child);
 	}
 
-	public traverse(traverseFn: (node: Transform) => void, recursive = true) {
+	public traverse(traverseFn: (node: Node) => void, recursive = true) {
 		traverseFn(this);
 		if (recursive) {
 			for (let child of this.children) {
@@ -137,7 +134,7 @@ export default class Transform {
 		}
 	}
 
-	public findChild(traverseFn: (node: Transform) => boolean): Transform {
+	public findChild(traverseFn: (node: Node) => boolean): Node {
 		const found = traverseFn(this);
 		if (found) {
 			return this;
@@ -150,11 +147,11 @@ export default class Transform {
 		}
 	}
 
-	public findChildByLabel(label: string): Transform {
+	public findChildByLabel(label: string): Node {
 		return this.findChild(({ label: nodeLabel }) => label === nodeLabel);
 	}
 
-	public findChildById(id: UUIDString): Transform {
+	public findChildById(id: UUIDString): Node {
 		return this.findChild(({ id: nodeId }) => id === nodeId);
 	}
 

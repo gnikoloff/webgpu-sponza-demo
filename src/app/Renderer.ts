@@ -1,5 +1,6 @@
 import PerspectiveCamera from "../renderer/camera/PerspectiveCamera";
 import {
+	ENVIRONMENT_CUBE_TEXTURE_FACE_URLS,
 	MAIN_CAMERA_FAR,
 	MAIN_CAMERA_NEAR,
 	RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
@@ -14,9 +15,9 @@ import {
 	RENDER_PASS_SSAO_TEXTURE,
 	RENDER_PASS_TAA_RESOLVE_TEXTURE,
 	RENDER_PASS_VELOCITY_TEXTURE,
+	SECOND_FLOOR_PARTICLES_CATMULL_CURVE_POINT_POSITIONS,
 } from "./constants";
 
-import { vec3 } from "wgpu-matrix";
 import CameraFlyController from "../renderer/camera/CameraFlyController";
 import RenderPassComposer from "../renderer/core/RenderPassComposer";
 import RenderingContext from "../renderer/core/RenderingContext";
@@ -56,7 +57,6 @@ import SkyboxRenderPass from "./render-passes/SkyboxRenderPass";
 import TAAResolveRenderPass from "./render-passes/TAAResolveRenderPass";
 import TransparentRenderPass from "./render-passes/TransparentRenderPass";
 import MaterialCache from "./utils/MaterialCache";
-// import EnvironmentProbePass from "./render-passes/EnvironmentProbePass";
 
 export default class Renderer extends RenderingContext {
 	public static initialize = async (
@@ -89,7 +89,6 @@ export default class Renderer extends RenderingContext {
 			device: RenderingContext.device,
 			format: RenderingContext.pixelFormat,
 			usage: GPUTextureUsage.RENDER_ATTACHMENT,
-			// alphaMode: "premultiplied",
 		});
 
 		return new Renderer();
@@ -97,20 +96,7 @@ export default class Renderer extends RenderingContext {
 
 	public mainCamera: PerspectiveCamera;
 	public debugCamera: PerspectiveCamera;
-	// public mainCameraCtrl: CameraOrbitController;
 	public mainCameraCtrl: CameraFlyController;
-
-	public set debugBoundingBoxes(v: boolean) {
-		(
-			this.renderPassComposer.getPass(
-				RenderPassType.DebugBounds,
-			) as DebugBoundsPass
-		).enabled = v;
-	}
-
-	public set debugMovementCurve(v: boolean) {
-		this.curveMoveLine.visible = v;
-	}
 
 	private curveMoveLine: LineDebugDrawable;
 	private lightingManager: LightingSystem;
@@ -260,6 +246,18 @@ export default class Renderer extends RenderingContext {
 		).bloomFilterRadius = v;
 	}
 
+	public set debugBoundingBoxes(v: boolean) {
+		(
+			this.renderPassComposer.getPass(
+				RenderPassType.DebugBounds,
+			) as DebugBoundsPass
+		).enabled = v;
+	}
+
+	public set debugMovementCurve(v: boolean) {
+		this.curveMoveLine.visible = v;
+	}
+
 	public toggleStatsVisibility() {
 		this.timingDebugContainer.toggleVisibility();
 	}
@@ -295,41 +293,13 @@ export default class Renderer extends RenderingContext {
 		this.debugCamera.updateViewMatrix();
 
 		const curve = new CatmullRomCurve3(
-			[
-				vec3.create(5.5, 7.5, 3.25),
-				vec3.create(4, 6.5, 0.5),
-				vec3.create(2.5, 6.5, 3.25),
-				vec3.create(1, 7.5, 0.5),
-				vec3.create(-0.5, 7.5, 3.25),
-				vec3.create(-2, 6.5, 0.5),
-				vec3.create(-3.5, 6.5, 3.25),
-				vec3.create(-5, 7.5, 0.5),
-				vec3.create(-6.5, 7.5, 3.25),
-				vec3.create(-7.75, 6.5, 0.5),
-				vec3.create(-10.5, 7.5, -0.125),
-				vec3.create(-7.75, 7.5, -1),
-				vec3.create(-6.5, 6.5, -4),
-				vec3.create(-5, 6.5, -1),
-				vec3.create(-3.5, 7.5, -4),
-				vec3.create(-2, 7.5, -1),
-				vec3.create(-0.5, 6.5, -4),
-				vec3.create(1, 6.5, -1),
-				vec3.create(2.5, 7.5, -4),
-				vec3.create(4, 7.5, -1),
-				vec3.create(5.5, 6.5, -4),
-				vec3.create(6.5, 6.5, -1),
-				vec3.create(9, 6.5, -1),
-				vec3.create(9.5, 7.5, -0.125),
-				vec3.create(9, 6.5, 0.7),
-				vec3.create(6, 6.5, 1),
-				vec3.create(6, 7.5, 3.25),
-			],
+			SECOND_FLOOR_PARTICLES_CATMULL_CURVE_POINT_POSITIONS,
 			true,
 		);
 		const movementCurvePoints = curve.getPoints(240);
-		this.curveMoveLine = new LineDebugDrawable(movementCurvePoints);
-		this.curveMoveLine.visible = false;
-		this.scene.addChild(this.curveMoveLine);
+		// this.curveMoveLine = new LineDebugDrawable(movementCurvePoints);
+		// this.curveMoveLine.visible = false;
+		// this.scene.addChild(this.curveMoveLine);
 
 		this.lightingManager = new LightingSystem(movementCurvePoints);
 		this.scene.lightingManager = this.lightingManager;
@@ -339,14 +309,24 @@ export default class Renderer extends RenderingContext {
 
 		this.scene.skybox = new Skybox();
 
-		TextureLoader.load6SeparateHDRFacesAsCubeMapTexture(
-			["/px.hdr", "/nx.hdr", "/py.hdr", "/ny.hdr", "/pz.hdr", "/nz.hdr"],
-			512,
-			true,
-			"Skybox Faces",
-		).then((texture) => {
-			this.envDiffuseTexture = DiffuseIBLGenerator.encode(texture);
-			this.envSpecularTexture = SpecularIBLGenerator.encode(texture, 256);
+		const sponzaModel = new GLTFModel("/sponza/Sponza.gltf");
+		this.scene.addChild(sponzaModel);
+		sponzaModel.setPositionY(2).updateWorldMatrix();
+
+		Promise.all([
+			TextureLoader.load6SeparateHDRFacesAsCubeMapTexture(
+				ENVIRONMENT_CUBE_TEXTURE_FACE_URLS,
+				512,
+				true,
+				"Skybox Faces",
+			),
+			sponzaModel.load(),
+		]).then(([environmentTexture]) => {
+			this.envDiffuseTexture = DiffuseIBLGenerator.encode(environmentTexture);
+			this.envSpecularTexture = SpecularIBLGenerator.encode(
+				environmentTexture,
+				256,
+			);
 			this.envBdrfLutTexture = BDRFLutGenerator.encode();
 
 			TextureController.generateMipsForCubeTexture(this.envDiffuseTexture);
@@ -361,27 +341,15 @@ export default class Renderer extends RenderingContext {
 				.setSpecularIBLTexture(this.envSpecularTexture)
 				.setBDRFLutTexture(this.envBdrfLutTexture);
 
-			VRAMUsageTracker.removeTextureBytes(texture);
-			texture.destroy();
-		});
+			VRAMUsageTracker.removeTextureBytes(environmentTexture);
+			environmentTexture.destroy();
 
-		const a = new GLTFModel("/sponza/Sponza.gltf");
-		this.scene.addChild(a);
-		a.setPositionY(2) //.setRotationY(Math.PI * 0.5)
-			.updateWorldMatrix();
-		a.load().then(() => {
-			// a.setIsReflective(false);
-			a.setMaterial(
-				MaterialCache.defaultGLTFTexturedDeferredMaterial,
-			).setMaterial(
-				MaterialCache.defaultGLTFShadowMaterial,
-				RenderPassType.Shadow,
-			);
-
-			// a.setMaterial(
-			// 	MaterialCache.defaultGLTFTransparentPBRMaterial,
-			// 	RenderPassType.Transparent,
-			// );
+			sponzaModel
+				.setMaterial(MaterialCache.defaultGLTFTexturedDeferredMaterial)
+				.setMaterial(
+					MaterialCache.defaultGLTFShadowMaterial,
+					RenderPassType.Shadow,
+				);
 		});
 	}
 
@@ -592,20 +560,11 @@ export default class Renderer extends RenderingContext {
 			: 0;
 		const jsPerfStartTime = performance.now();
 
-		// a.textContent = `Display Meshes: ${this.scene.visibleNodesCount} / ${this.scene.nodesCount}`;
-
-		// this.mainCamera.position[0] += RenderingContext.deltaTimeMs *;
-		// this.mainCamera.updateViewMatrix();
-
 		this.debugCamera.onFrameStart();
 		this.mainCamera.onFrameStart();
 
-		if (this.mainCamera.hasChangedSinceLastFrame) {
-			// this.scene.sortTransparentNodesFrom(this.mainCamera);
-		}
-
 		const commandEncoder = RenderingContext.device.createCommandEncoder({
-			label: "Render Pass Composer Command Encoder",
+			label: "Frame Command Encoder",
 		});
 
 		this.lightingManager.update(commandEncoder);

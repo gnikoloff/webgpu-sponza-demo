@@ -5,14 +5,14 @@ import {
 } from "webgpu-utils";
 import { Vec3, vec3 } from "wgpu-matrix";
 import { LightTypeToShaderType } from "../constants";
-import Transform from "../scene/Transform";
+import Node from "../scene/Node";
 import { SHADER_CHUNKS } from "../shader/chunks";
 import { LightType, UUIDString } from "../types";
 
 const _lightShaderDefs = makeShaderDataDefinitions(SHADER_CHUNKS.Light);
 const _lightsStorageView = makeStructuredView(_lightShaderDefs.structs.Light);
 
-export default class Light extends Transform {
+export default class Light extends Node {
 	public static get STRUCT_BYTE_SIZE(): number {
 		return _lightsStorageView.arrayBuffer.byteLength;
 	}

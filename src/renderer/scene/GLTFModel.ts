@@ -21,7 +21,7 @@ import SamplerController from "../texture/SamplerController";
 import TextureLoader from "../texture/TextureLoader";
 import { RenderPassType, TextureLocation } from "../types";
 import Drawable from "./Drawable";
-import Transform from "./Transform";
+import Node from "./Node";
 
 const GL_ELEMENT_ARRAY_BUFFER = 34963;
 const GL_ARRAY_BUFFER = 34962;
@@ -29,7 +29,7 @@ const GL_ARRAY_BUFFER = 34962;
 // hacky - we need to select the floor only to apply reflectance on
 const SPONZA_FLOOR_TEX_ID = "5823059166183034438";
 
-export default class GLTFModel extends Transform {
+export default class GLTFModel extends Node {
 	private nodeMaterialIds: Map<string, Drawable[]> = new Map([]);
 	private gpuSamplers: Map<string, GPUSampler> = new Map();
 	private gpuTextures: Map<string, Promise<GPUTexture>> = new Map();
@@ -97,15 +97,20 @@ export default class GLTFModel extends Transform {
 		return this;
 	}
 
-	public async load() {
-		const gltfWithBuffers = await load(this.url, GLTFLoader);
-		const gltfDefinition = postProcessGLTF(gltfWithBuffers);
+	public async load(): Promise<any> {
+		const resourcesToLoad: Promise<any>[] = [];
+		const gltfWithBuffers = load(this.url, GLTFLoader);
+		resourcesToLoad.push(gltfWithBuffers);
+		const gltfDefinition = postProcessGLTF(await gltfWithBuffers);
 
-		this.initGPUTexturesFrom(gltfDefinition.textures);
+		const texPromises = this.initGPUTexturesFrom(gltfDefinition.textures);
+		resourcesToLoad.push(texPromises);
 		this.initGPUSamplersFrom(gltfDefinition.samplers);
 		this.initGPUBuffersFrom(gltfDefinition.bufferViews);
 		this.initMaterialsFrom(gltfDefinition.materials);
 		this.initNodesFrom(gltfDefinition);
+
+		return Promise.all(resourcesToLoad);
 	}
 
 	private async initMaterialsFrom(materials: GLTFMaterialPostprocessed[]) {
@@ -145,7 +150,10 @@ export default class GLTFModel extends Transform {
 		}
 	}
 
-	private async initGPUTexturesFrom(textures: GLTFTexturePostprocessed[]) {
+	private async initGPUTexturesFrom(
+		textures: GLTFTexturePostprocessed[],
+	): Promise<GPUTexture[]> {
+		const promisesToLoad: Promise<GPUTexture>[] = [];
 		for (const texture of textures) {
 			const texPromise = TextureLoader.loadTextureFromData(
 				texture.source.bufferView.data,
@@ -155,8 +163,10 @@ export default class GLTFModel extends Transform {
 				false,
 				`GLTF Texture: ${texture.id}`,
 			);
+			promisesToLoad.push(texPromise);
 			this.gpuTextures.set(texture.id, texPromise);
 		}
+		return Promise.all(promisesToLoad);
 	}
 
 	private initGPUSamplersFrom(samplers: GLTFSamplerPostprocessed[]) {

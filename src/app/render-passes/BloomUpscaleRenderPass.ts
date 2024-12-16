@@ -54,7 +54,7 @@ export default class BloomUpscaleRenderPass extends RenderPass {
 
 		VRAMUsageTracker.addBufferBytes(this.filterRadiusBuffer);
 
-		new Float32Array(this.filterRadiusBuffer.getMappedRange()).set([0.005]);
+		new Float32Array(this.filterRadiusBuffer.getMappedRange()).set([0.0035]);
 		this.filterRadiusBuffer.unmap();
 
 		const bindGroupLayoutEntries: GPUBindGroupLayoutEntry[] = [

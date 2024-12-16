@@ -2,12 +2,12 @@ import LineDebugDrawable from "../../app/debug/LineDebugDrawable";
 import Camera from "../camera/Camera";
 import LightingManager from "../lighting/LightingManager";
 import Drawable from "./Drawable";
-import Transform from "./Transform";
+import Node from "./Node";
 
-export default class Scene extends Transform {
+export default class Scene extends Node {
 	public skybox: Drawable;
 
-	public debugMeshes: Transform[] = [];
+	public debugMeshes: Node[] = [];
 	public opaqueMeshes: Drawable[] = [];
 	public transparentMeshes: Drawable[] = [];
 	public lightingManager: LightingManager;
@@ -116,7 +116,7 @@ export default class Scene extends Transform {
 		});
 	}
 
-	protected override onChildAdd(child: Transform): void {
+	protected override onChildAdd(child: Node): void {
 		if (child instanceof Drawable) {
 			if (child.isOpaque) {
 				this.opaqueMeshes.push(child);
@@ -140,10 +140,10 @@ export default class Scene extends Transform {
 		}
 	}
 
-	protected override onChildRemove(child: Transform): void {
+	protected override onChildRemove(child: Node): void {
 		super.onChildRemove(child);
 
-		const filterOut = ({ id }: Transform) => id !== child.id;
+		const filterOut = ({ id }: Node) => id !== child.id;
 
 		if (child instanceof Drawable) {
 			if (child.isOpaque) {

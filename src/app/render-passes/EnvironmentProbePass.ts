@@ -1,7 +1,7 @@
 import { Mat4, mat4, vec3 } from "wgpu-matrix";
 import PerspectiveCamera from "../../renderer/camera/PerspectiveCamera";
 import RenderPass from "../../renderer/core/RenderPass";
-import Transform from "../../renderer/scene/Transform";
+import Node from "../../renderer/scene/Node";
 
 import { BIND_GROUP_LOCATIONS } from "../../renderer/core/RendererBindings";
 import RenderingContext from "../../renderer/core/RenderingContext";
@@ -129,7 +129,7 @@ export default class EnvironmentProbePass extends RenderPass {
 		});
 	}
 
-	public override render(commandEncoder: GPUCommandEncoder, scene: Transform) {
+	public override render(commandEncoder: GPUCommandEncoder, scene: Node) {
 		// RenderingContext.activeRenderPass = this.type;
 
 		const colorAttachments: GPURenderPassColorAttachment[] = [
