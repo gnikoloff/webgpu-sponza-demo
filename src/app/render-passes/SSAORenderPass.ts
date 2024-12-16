@@ -26,7 +26,7 @@ export default class SSAORenderPass extends RenderPass {
 	private kernelBuffer: GPUBuffer;
 	private settingsBuffer: GPUBuffer;
 
-	private startKernelSize = 32;
+	private startKernelSize = 8;
 
 	private _kernelSize = 128;
 	public get kernelSize(): number {
@@ -37,7 +37,7 @@ export default class SSAORenderPass extends RenderPass {
 		this.updateSettingsBufferKernelSize();
 	}
 
-	private _radius = 0.2;
+	private _radius = 0.5;
 	public get radius(): number {
 		return this._radius;
 	}

@@ -8,11 +8,13 @@ const renderer = await Renderer.initialize($canvas);
 
 const GUI_PARAMS: IGUIParams = {
 	"Play Animation": true,
+	"Performance Stats": true,
 	"Enable TAA": true,
 	"Debug G-Buffer": false,
 	"Debug Shadow Map": false,
 	"Debug Shadow Cascades": false,
 	"Debug Point Lights Mask": false,
+	"Render 2nd Floor Points": true,
 	"Enable SSR": true,
 	"SSR Method": "hi-z",
 	"SSR Max Iterations": 30,
@@ -26,7 +28,7 @@ const GUI_PARAMS: IGUIParams = {
 	// "Debug Bounding Boxes": false,
 	// "Debug Point Lines Curve": false,
 	"Enable SSAO": true,
-	"SSAO Kernel Size": 16,
+	"SSAO Kernel Size": 8,
 	"SSAO Radius": 0.2,
 	"SSAO Strength": 3,
 };
@@ -36,6 +38,19 @@ const gui = new dat.GUI({ width: 270 });
 gui.add(GUI_PARAMS, "Play Animation").onChange((v: boolean) => {
 	renderer.enableAnimation = v;
 });
+gui.add(GUI_PARAMS, "Performance Stats").onChange((v: boolean) => {
+	console.log({ v });
+});
+gui
+	.add(GUI_PARAMS, "Debug G-Buffer")
+	.onChange((v: boolean) => {
+		renderer.debugGBuffer = v;
+		offsetLogoAndStats();
+		if (v && GUI_PARAMS["Debug Shadow Map"]) {
+			GUI_PARAMS["Debug Shadow Map"] = false;
+		}
+	})
+	.listen();
 
 // const envFolder = gui.addFolder("Environment");
 // envFolder.add(GUI_PARAMS, "Debug Skybox").onChange((v: boolean) => {
@@ -60,6 +75,23 @@ lightingFolder
 		renderer.sunPositionX = v;
 	});
 
+const shadowFolder = gui.addFolder("Shadow");
+shadowFolder.open();
+const debugShadowController = shadowFolder
+	.add(GUI_PARAMS, "Debug Shadow Map")
+	.onChange((v: boolean) => {
+		renderer.debugShadowMap = v;
+		offsetLogoAndStats();
+		if (v && GUI_PARAMS["Debug G-Buffer"]) {
+			GUI_PARAMS["Debug G-Buffer"] = false;
+		}
+	})
+	.listen();
+
+shadowFolder.add(GUI_PARAMS, "Debug Shadow Cascades").onChange((v: boolean) => {
+	renderer.debugShadowCascadeIndex = v;
+});
+
 let lastBloomEnabled = GUI_PARAMS["Enable Bloom"];
 lightingFolder
 	.add(GUI_PARAMS, "Debug Point Lights Mask")
@@ -76,6 +108,12 @@ lightingFolder
 		}
 		renderer.debugLightsMask = v;
 	});
+lightingFolder
+	.add(GUI_PARAMS, "Render 2nd Floor Points")
+	.onChange((v: boolean) => {
+		renderer.render2ndFloorPoints = v;
+	});
+
 const ssaoFolder = gui.addFolder("Screen space Ambient Occlusion");
 ssaoFolder.open();
 ssaoFolder.add(GUI_PARAMS, "Enable SSAO").onChange((v: boolean) => {
@@ -92,35 +130,6 @@ ssaoFolder.add(GUI_PARAMS, "SSAO Radius", 0, 1).onChange((v: number) => {
 ssaoFolder.add(GUI_PARAMS, "SSAO Strength", 0, 5).onChange((v: number) => {
 	renderer.ssaoStrength = v;
 });
-
-const shadowFolder = gui.addFolder("Shadow");
-shadowFolder.open();
-const debugShadowController = shadowFolder
-	.add(GUI_PARAMS, "Debug Shadow Map")
-	.onChange((v: boolean) => {
-		renderer.debugShadowMap = v;
-		if (v && GUI_PARAMS["Debug G-Buffer"]) {
-			GUI_PARAMS["Debug G-Buffer"] = false;
-		}
-	})
-	.listen();
-
-shadowFolder.add(GUI_PARAMS, "Debug Shadow Cascades").onChange((v: boolean) => {
-	renderer.debugShadowCascadeIndex = v;
-});
-
-const deferredRendererFolder = gui.addFolder("Deferred Renderer");
-deferredRendererFolder.open();
-
-const debugGBufferController = deferredRendererFolder
-	.add(GUI_PARAMS, "Debug G-Buffer")
-	.onChange((v: boolean) => {
-		renderer.debugGBuffer = v;
-		if (v && GUI_PARAMS["Debug Shadow Map"]) {
-			GUI_PARAMS["Debug Shadow Map"] = false;
-		}
-	})
-	.listen();
 
 const ssrFolder = gui.addFolder("Screen space Reflections");
 ssrFolder.open();
@@ -150,7 +159,7 @@ const bloomEnabledCtrl = bloomFolder
 	});
 bloomEnabledCtrl.listen();
 bloomFolder
-	.add(GUI_PARAMS, "Bloom Filter Radius", 0.001, 0.01, 0.001)
+	.add(GUI_PARAMS, "Bloom Filter Radius", 0.001, 0.01, 0.06)
 	.onChange((v: number) => {
 		renderer.bloomFilterRadius = v;
 	});
@@ -184,10 +193,12 @@ function renderFrame() {
 }
 
 function resize() {
-	const w = innerWidth;
-	const h = innerHeight;
+	const w = Math.min(innerWidth, 1920);
+	const h = Math.min(innerHeight, 800);
 	$canvas.width = w;
 	$canvas.height = h;
+	$canvas.style.setProperty("left", `${innerWidth * 0.5 - w * 0.5}px`);
+	$canvas.style.setProperty("top", `${innerHeight * 0.5 - h * 0.5}px`);
 	$canvas.style.setProperty("width", `${w}px`);
 	$canvas.style.setProperty("height", `${h}px`);
 
@@ -208,4 +219,11 @@ function resize() {
 	// renderer.debugPointLights = GUI_PARAMS["Debug Point Lights Mask"];
 	// renderer.toggleDebugCamera = GUI_PARAMS["Toggle Debug Camera"];
 	// renderer.debugSkybox = GUI_PARAMS["Debug Skybox"];
+}
+
+function offsetLogoAndStats() {
+	document.getElementById("logo").classList.toggle("debug-open");
+	document
+		.getElementById("timings-debug-container")
+		.classList.toggle("debug-open");
 }

@@ -57,6 +57,7 @@ export default class LightingSystem extends LightingManager {
 	private particlesSimSettingsArr = new Float32Array(2).fill(0);
 
 	public mainDirLight: DirectionalLight;
+	public render2ndFloorParticles = true;
 
 	private uploadMainDirLightToGPU() {
 		RenderingContext.device.queue.writeBuffer(
@@ -265,7 +266,7 @@ export default class LightingSystem extends LightingManager {
 			p.intensity = 0.5;
 			const t = i / LightingSystem.PARTICLES_PER_CURVE;
 			// const t = Math.random();
-			this.addParticleLight(p, 0.025, t, 0.01, vec3.random(0.5));
+			this.addParticleLight(p, 0.0125, t, 0.01, vec3.random(0.5));
 		}
 
 		this.updateGPUBuffer();
@@ -516,6 +517,12 @@ export default class LightingSystem extends LightingManager {
 		renderPass.setBindGroup(1, this.renderBindGroup);
 		renderPass.setIndexBuffer(this.particleIndexBuffer, Drawable.INDEX_FORMAT);
 
-		renderPass.drawIndexed(6, this.particlesLength);
+		// renderPass.drawIndexed(6, this.particlesLength);
+		renderPass.drawIndexed(
+			6,
+			this.render2ndFloorParticles
+				? this.particlesLength
+				: LightingSystem.PARTICLES_PER_FIRE * 4,
+		);
 	}
 }

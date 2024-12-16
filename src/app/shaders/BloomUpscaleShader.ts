@@ -13,8 +13,11 @@ export const BloomUpscaleShaderSrc = /* wgsl */ `
   fn ${BloomUpscaleShaderEntryFn}(
     in: VertexOutput
   ) -> @location(0) vec4f {
+    let srcSize = vec2f(textureDimensions(srcTexture));
+    let aspect = srcSize.x / srcSize.y;
+
     let x = filterRadius;
-    let y = filterRadius;
+    let y = filterRadius * aspect;
 
     let texCoord = vec2f(in.uv.x, 1 - in.uv.y);
 

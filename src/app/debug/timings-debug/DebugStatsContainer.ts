@@ -60,6 +60,7 @@ export default class DebugStatsContainer {
 	constructor() {
 		this.$root = document.createElement("div");
 		this.$root.id = "timings-debug-container";
+		this.$root.classList.add("fadable");
 		document.body.appendChild(this.$root);
 
 		for (const debugTimeType of AllDebugStatTypes) {

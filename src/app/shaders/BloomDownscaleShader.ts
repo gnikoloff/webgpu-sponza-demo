@@ -24,7 +24,7 @@ export const BloomDownscaleShaderSrc = /* wgsl */ `
     let x = texelSize.x;
     let y = texelSize.y;
 
-    let texCoords = vec2f(f32(tid.x) / f32(outTexSize.x), f32(tid.y) / f32(outTexSize.y));
+    let texCoords = vec2f((f32(tid.x) + 0.5) / f32(outTexSize.x), (f32(tid.y) + 0.5) / f32(outTexSize.y));
 
     // Take 13 samples around current texel:
     // a - b - c

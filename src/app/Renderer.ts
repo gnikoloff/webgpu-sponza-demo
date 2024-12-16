@@ -212,6 +212,10 @@ export default class Renderer extends RenderingContext {
 		).debugLightsMask = v;
 	}
 
+	public set render2ndFloorPoints(v: boolean) {
+		this.lightingManager.render2ndFloorParticles = v;
+	}
+
 	public enableAnimation = true;
 
 	public set ssrIsHiZ(v: boolean) {
