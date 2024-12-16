@@ -1,0 +1,22 @@
+# Blender 4.1.1 MTL File: 'Buda_2.blend'
+# www.blender.org
+
+newmtl Buda_a
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Buda_a_Base_Color.jpg
+map_Bump -bm 1.000000 Buda_a_Normal.jpg
+
+newmtl Buda_b
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Buda_b_Base_Color.jpg
+map_Bump -bm 1.000000 Buda_b_Normal.jpg

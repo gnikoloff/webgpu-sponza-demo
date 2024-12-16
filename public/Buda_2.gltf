@@ -83,9 +83,10 @@
 					"attributes":{
 						"POSITION":0,
 						"NORMAL":1,
-						"TEXCOORD_0":2
+						"TEXCOORD_0":2,
+						"TANGENT":3
 					},
-					"indices":3,
+					"indices":4,
 					"material":0
 				}
 			]
@@ -95,11 +96,12 @@
 			"primitives":[
 				{
 					"attributes":{
-						"POSITION":4,
-						"NORMAL":5,
-						"TEXCOORD_0":6
+						"POSITION":5,
+						"NORMAL":6,
+						"TEXCOORD_0":7,
+						"TANGENT":8
 					},
-					"indices":7,
+					"indices":9,
 					"material":1
 				}
 			]
@@ -149,7 +151,7 @@
 		{
 			"bufferView":0,
 			"componentType":5126,
-			"count":2861,
+			"count":2880,
 			"max":[
 				35.207298278808594,
 				238.33949279785156,
@@ -165,25 +167,31 @@
 		{
 			"bufferView":1,
 			"componentType":5126,
-			"count":2861,
+			"count":2880,
 			"type":"VEC3"
 		},
 		{
 			"bufferView":2,
 			"componentType":5126,
-			"count":2861,
+			"count":2880,
 			"type":"VEC2"
 		},
 		{
 			"bufferView":3,
+			"componentType":5126,
+			"count":2880,
+			"type":"VEC4"
+		},
+		{
+			"bufferView":4,
 			"componentType":5123,
 			"count":14214,
 			"type":"SCALAR"
 		},
 		{
-			"bufferView":4,
+			"bufferView":5,
 			"componentType":5126,
-			"count":2989,
+			"count":2996,
 			"max":[
 				460.62139892578125,
 				239.14540100097656,
@@ -197,19 +205,25 @@
 			"type":"VEC3"
 		},
 		{
-			"bufferView":5,
+			"bufferView":6,
 			"componentType":5126,
-			"count":2989,
+			"count":2996,
 			"type":"VEC3"
 		},
 		{
-			"bufferView":6,
+			"bufferView":7,
 			"componentType":5126,
-			"count":2989,
+			"count":2996,
 			"type":"VEC2"
 		},
 		{
-			"bufferView":7,
+			"bufferView":8,
+			"componentType":5126,
+			"count":2996,
+			"type":"VEC4"
+		},
+		{
+			"bufferView":9,
 			"componentType":5123,
 			"count":14802,
 			"type":"SCALAR"
@@ -218,50 +232,62 @@
 	"bufferViews":[
 		{
 			"buffer":0,
-			"byteLength":34332,
+			"byteLength":34560,
 			"byteOffset":0,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":34332,
-			"byteOffset":34332,
+			"byteLength":34560,
+			"byteOffset":34560,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":22888,
-			"byteOffset":68664,
+			"byteLength":23040,
+			"byteOffset":69120,
+			"target":34962
+		},
+		{
+			"buffer":0,
+			"byteLength":46080,
+			"byteOffset":92160,
 			"target":34962
 		},
 		{
 			"buffer":0,
 			"byteLength":28428,
-			"byteOffset":91552,
+			"byteOffset":138240,
 			"target":34963
 		},
 		{
 			"buffer":0,
-			"byteLength":35868,
-			"byteOffset":119980,
+			"byteLength":35952,
+			"byteOffset":166668,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":35868,
-			"byteOffset":155848,
+			"byteLength":35952,
+			"byteOffset":202620,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":23912,
-			"byteOffset":191716,
+			"byteLength":23968,
+			"byteOffset":238572,
+			"target":34962
+		},
+		{
+			"buffer":0,
+			"byteLength":47936,
+			"byteOffset":262540,
 			"target":34962
 		},
 		{
 			"buffer":0,
 			"byteLength":29604,
-			"byteOffset":215628,
+			"byteOffset":310476,
 			"target":34963
 		}
 	],
@@ -273,7 +299,7 @@
 	],
 	"buffers":[
 		{
-			"byteLength":245232,
+			"byteLength":340080,
 			"uri":"Buda_2.bin"
 		}
 	]
