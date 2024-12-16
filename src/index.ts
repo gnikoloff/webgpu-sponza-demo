@@ -8,7 +8,7 @@ const renderer = await Renderer.initialize($canvas);
 
 const GUI_PARAMS: IGUIParams = {
 	"Play Animation": true,
-	"Performance Stats": true,
+	"Performance Stats": false,
 	"Enable TAA": true,
 	"Debug G-Buffer": false,
 	"Debug Shadow Map": false,
@@ -39,7 +39,7 @@ gui.add(GUI_PARAMS, "Play Animation").onChange((v: boolean) => {
 	renderer.enableAnimation = v;
 });
 gui.add(GUI_PARAMS, "Performance Stats").onChange((v: boolean) => {
-	console.log({ v });
+	renderer.toggleStatsVisibility();
 });
 gui
 	.add(GUI_PARAMS, "Debug G-Buffer")
@@ -65,10 +65,15 @@ lightingFolder
 		renderer.sunIntensity = v;
 	});
 lightingFolder
-	.add(GUI_PARAMS, "Sun Position X", -100, 100)
+	.add(GUI_PARAMS, "Sun Position X", -60, 60)
 	.onChange((v: number) => {
 		renderer.sunPositionZ = v;
 	});
+// lightingFolder
+// 	.add(GUI_PARAMS, "Sun Position Y", 0, 100)
+// 	.onChange((v: number) => {
+// 		renderer.sunPositionY = v;
+// 	});
 lightingFolder
 	.add(GUI_PARAMS, "Sun Position Z", -150, 150)
 	.onChange((v: number) => {
@@ -159,7 +164,7 @@ const bloomEnabledCtrl = bloomFolder
 	});
 bloomEnabledCtrl.listen();
 bloomFolder
-	.add(GUI_PARAMS, "Bloom Filter Radius", 0.001, 0.01, 0.06)
+	.add(GUI_PARAMS, "Bloom Filter Radius", 0.001, 0.005, 0.0005)
 	.onChange((v: number) => {
 		renderer.bloomFilterRadius = v;
 	});

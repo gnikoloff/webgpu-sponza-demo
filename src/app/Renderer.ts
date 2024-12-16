@@ -260,6 +260,10 @@ export default class Renderer extends RenderingContext {
 		).bloomFilterRadius = v;
 	}
 
+	public toggleStatsVisibility() {
+		this.timingDebugContainer.toggleVisibility();
+	}
+
 	constructor() {
 		super();
 		this.mainCamera = new PerspectiveCamera(

@@ -23,7 +23,7 @@ export class BloomDownscaleRenderPass extends RenderPass {
 	constructor(width: number, height: number) {
 		super(RenderPassType.BloomDownsample, width, height);
 
-		this.mipLevelCount = Math.ceil(numMipLevelsForSize(width, height) * 0.5);
+		this.mipLevelCount = numMipLevelsForSize(width, height);
 		this.outTextures.push(
 			RenderingContext.device.createTexture({
 				label: "Bloom Downscale Texture",

@@ -225,9 +225,17 @@ const MaterialCache = Object.freeze({
 			vertexShaderSrc: getVertexShader(),
 			vertexShaderEntryFn: DefaultVertexShaderEntryFn,
 			vertexBuffers: VertexDescriptor.defaultGLTFLayout,
-			// primitive: {
-			// 	cullMode: "back",
-			// },
+			primitive: {
+				cullMode: "back",
+			},
+			depthStencilState: {
+				format: "depth32float",
+				depthWriteEnabled: true,
+				depthCompare: "less",
+				depthBias: 1,
+				depthBiasSlopeScale: 5,
+				// depthBiasClamp: 0,
+			},
 		});
 
 		return _defaultGLTFShadowMaterial;
@@ -247,6 +255,11 @@ const MaterialCache = Object.freeze({
 				PipelineStates.defaultModelMaterialBindGroupLayout,
 				PipelineStates.instancesBindGroupLayout,
 			],
+			depthStencilState: {
+				format: "depth24plus",
+				depthWriteEnabled: true,
+				depthCompare: "less",
+			},
 			// primitive: {
 			// 	cullMode: "back",
 			// },

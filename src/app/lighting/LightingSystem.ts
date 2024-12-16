@@ -265,7 +265,7 @@ export default class LightingSystem extends LightingManager {
 			p.intensity = 0.5;
 			const t = i / LightingSystem.PARTICLES_PER_CURVE;
 			// const t = Math.random();
-			this.addParticleLight(p, 0.0125, t, 0.01, vec3.random(0.5));
+			this.addParticleLight(p, 0.025, t, 0.01, vec3.random(0.5));
 		}
 
 		this.updateGPUBuffer();

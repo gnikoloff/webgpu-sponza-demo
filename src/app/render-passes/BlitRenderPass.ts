@@ -2,18 +2,17 @@ import PipelineStates from "../../renderer/core/PipelineStates";
 import RenderPass from "../../renderer/core/RenderPass";
 import RenderingContext from "../../renderer/core/RenderingContext";
 import Scene from "../../renderer/scene/Scene";
+import FullScreenVertexShaderUtils, {
+	FullScreenVertexShaderEntryFn,
+} from "../../renderer/shader/FullScreenVertexShaderUtils";
 import { RenderPassType } from "../../renderer/types";
 import {
 	BLIT_FRAGMENT_SHADER_ENTRY_NAME,
 	BLIT_FRAGMENT_SHADER_SRC,
 } from "../shaders/BlitShader";
-import {
-	FULLSCREEN_TRIANGLE_VERTEX_SHADER_ENTRY_NAME,
-	FULLSCREEN_TRIANGLE_VERTEX_SHADER_SRC,
-} from "../shaders/VertexShader";
 
 export default class BlitRenderPass extends RenderPass {
-	private static readonly BLOOM_MIX_FACTOR = 0.04;
+	private static readonly BLOOM_MIX_FACTOR = 0.035;
 
 	private renderPSO: GPURenderPipeline;
 	private texturesBindGroupLayout: GPUBindGroupLayout;
@@ -31,7 +30,7 @@ export default class BlitRenderPass extends RenderPass {
 	constructor(width: number, height: number) {
 		super(RenderPassType.Blit, width, height);
 		const vertexShaderModule = PipelineStates.createShaderModule(
-			FULLSCREEN_TRIANGLE_VERTEX_SHADER_SRC,
+			FullScreenVertexShaderUtils,
 		);
 		const fragmentShaderModule = PipelineStates.createShaderModule(
 			BLIT_FRAGMENT_SHADER_SRC,
@@ -73,7 +72,7 @@ export default class BlitRenderPass extends RenderPass {
 			}),
 			vertex: {
 				module: vertexShaderModule,
-				entryPoint: FULLSCREEN_TRIANGLE_VERTEX_SHADER_ENTRY_NAME,
+				entryPoint: FullScreenVertexShaderEntryFn,
 			},
 			fragment: {
 				module: fragmentShaderModule,

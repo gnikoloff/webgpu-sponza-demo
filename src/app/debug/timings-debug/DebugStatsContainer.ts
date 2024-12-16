@@ -57,9 +57,14 @@ export default class DebugStatsContainer {
 	private $renderPassTimingDisplayEls: Map<DebugStatType, TimingDisplay> =
 		new Map();
 
+	public toggleVisibility() {
+		this.$root.classList.toggle("hidden");
+	}
+
 	constructor() {
 		this.$root = document.createElement("div");
 		this.$root.id = "timings-debug-container";
+		// this.$root.classList.add("fadable", "hidden");
 		this.$root.classList.add("fadable");
 		document.body.appendChild(this.$root);
 

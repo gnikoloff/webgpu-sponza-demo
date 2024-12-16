@@ -136,6 +136,10 @@ body {
 	left: 1rem;
 }
 
+#timings-debug-container.hidden {
+	opacity: 0;
+}
+
 #timings-debug-container {
 	color: white;
 }

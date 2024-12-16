@@ -3,16 +3,15 @@ import RenderPass from "../../renderer/core/RenderPass";
 import RenderingContext from "../../renderer/core/RenderingContext";
 import VRAMUsageTracker from "../../renderer/misc/VRAMUsageTracker";
 import Scene from "../../renderer/scene/Scene";
+import FullScreenVertexShaderUtils, {
+	FullScreenVertexShaderEntryFn,
+} from "../../renderer/shader/FullScreenVertexShaderUtils";
 import { RenderPassType } from "../../renderer/types";
 
 import {
 	TAA_RESOLVE_FRAGMENT_SHADER_ENTRY_NAME,
 	TAA_RESOLVE_FRAGMENT_SHADER_SRC,
 } from "../shaders/TAAResolveShader";
-import {
-	FULLSCREEN_TRIANGLE_VERTEX_SHADER_ENTRY_NAME,
-	FULLSCREEN_TRIANGLE_VERTEX_SHADER_SRC,
-} from "../shaders/VertexShader";
 
 export default class TAAResolveRenderPass extends RenderPass {
 	private outTextureView: GPUTextureView;
@@ -31,7 +30,7 @@ export default class TAAResolveRenderPass extends RenderPass {
 		super(RenderPassType.TAAResolve, width, height);
 
 		const vertexShaderModule = PipelineStates.createShaderModule(
-			FULLSCREEN_TRIANGLE_VERTEX_SHADER_SRC,
+			FullScreenVertexShaderUtils,
 		);
 		const fragmentShaderModule = PipelineStates.createShaderModule(
 			TAA_RESOLVE_FRAGMENT_SHADER_SRC,
@@ -73,7 +72,7 @@ export default class TAAResolveRenderPass extends RenderPass {
 			}),
 			vertex: {
 				module: vertexShaderModule,
-				entryPoint: FULLSCREEN_TRIANGLE_VERTEX_SHADER_ENTRY_NAME,
+				entryPoint: FullScreenVertexShaderEntryFn,
 			},
 			fragment: {
 				module: fragmentShaderModule,

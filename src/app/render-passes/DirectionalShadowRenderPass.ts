@@ -69,7 +69,7 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 		this.outTextures.push(
 			RenderingContext.device.createTexture({
 				dimension: "2d",
-				format: "depth24plus",
+				format: "depth32float",
 				size: {
 					width: DirectionalShadowRenderPass.TEXTURE_SIZE,
 					height: DirectionalShadowRenderPass.TEXTURE_SIZE,
@@ -216,7 +216,7 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 			maxZ = Math.max(maxZ, trf[2]);
 		}
 
-		let zMult = 6;
+		let zMult = 8;
 		if (minZ < 0) {
 			minZ *= zMult;
 		} else {
