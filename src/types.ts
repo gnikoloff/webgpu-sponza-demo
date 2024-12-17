@@ -10,6 +10,7 @@ export interface IGUIParams {
 	"Debug G-Buffer": boolean;
 	"Debug Shadow Map": boolean;
 	"Debug Shadow Cascades": boolean;
+	"Shadow Map Size": number;
 	"Debug Point Lights Mask": boolean;
 	"Render 2nd Floor Points": boolean;
 	"Enable SSR": boolean;

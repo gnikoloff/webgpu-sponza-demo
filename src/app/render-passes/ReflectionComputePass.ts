@@ -145,7 +145,9 @@ export default class ReflectionComputePass extends RenderPass {
 				size: { width, height, depthOrArrayLayers: 1 },
 				format: "rgba16float",
 				usage:
-					GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.STORAGE_BINDING,
+					GPUTextureUsage.TEXTURE_BINDING |
+					GPUTextureUsage.STORAGE_BINDING |
+					GPUTextureUsage.COPY_SRC,
 			}),
 		);
 

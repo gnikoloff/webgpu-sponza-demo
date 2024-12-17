@@ -14,17 +14,32 @@ import {
 } from "../shaders/TAAResolveShader";
 
 export default class TAAResolveRenderPass extends RenderPass {
+	private static readonly HISTORY_MIX_FACTOR = 0.9;
+
 	private outTextureView: GPUTextureView;
 	private historyTextureView: GPUTextureView;
-
 	private sourceCopyTextureInfo: GPUTexelCopyTextureInfo;
 	private destCopyTextureInfo: GPUTexelCopyTextureInfo;
 	private copyTextureExtend: GPUExtent3DStrict;
-
 	private renderPSO: GPURenderPipeline;
 	private texturesBindGroupLayout: GPUBindGroupLayout;
-
 	private textureBindGroup: GPUBindGroup;
+	private historyMixFactorBuffer: GPUBuffer;
+	private historyReset = false;
+
+	public override destroy(): void {
+		VRAMUsageTracker.removeBufferBytes(this.historyMixFactorBuffer);
+		this.historyMixFactorBuffer.destroy();
+	}
+
+	public resetHistory() {
+		this.historyReset = true;
+		RenderingContext.device.queue.writeBuffer(
+			this.historyMixFactorBuffer,
+			0,
+			new Float32Array([0]),
+		);
+	}
 
 	constructor(width: number, height: number) {
 		super(RenderPassType.TAAResolve, width, height);
@@ -57,6 +72,11 @@ export default class TAAResolveRenderPass extends RenderPass {
 				binding: 2,
 				visibility: GPUShaderStage.FRAGMENT,
 				texture: {},
+			},
+			{
+				binding: 3,
+				visibility: GPUShaderStage.FRAGMENT,
+				buffer: {},
 			},
 		];
 
@@ -141,6 +161,21 @@ export default class TAAResolveRenderPass extends RenderPass {
 			height,
 			depthOrArrayLayers: 1,
 		};
+
+		this.historyMixFactorBuffer = RenderingContext.device.createBuffer({
+			label: "TAA History Mix Factor Buffer",
+			size: 1 * Float32Array.BYTES_PER_ELEMENT,
+			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+			mappedAtCreation: true,
+		});
+
+		new Float32Array(this.historyMixFactorBuffer.getMappedRange()).set([
+			TAAResolveRenderPass.HISTORY_MIX_FACTOR,
+		]);
+
+		VRAMUsageTracker.addBufferBytes(this.historyMixFactorBuffer);
+
+		this.historyMixFactorBuffer.unmap();
 	}
 
 	protected override createRenderPassDescriptor(): GPURenderPassDescriptor {
@@ -184,6 +219,12 @@ export default class TAAResolveRenderPass extends RenderPass {
 					binding: 2,
 					resource: this.historyTextureView,
 				},
+				{
+					binding: 3,
+					resource: {
+						buffer: this.historyMixFactorBuffer,
+					},
+				},
 			];
 
 			this.textureBindGroup = RenderingContext.device.createBindGroup({
@@ -209,6 +250,18 @@ export default class TAAResolveRenderPass extends RenderPass {
 		);
 
 		this.postRender(commandEncoder);
+
+		if (this.historyReset) {
+			RenderingContext.device.queue.onSubmittedWorkDone().then(() => {
+				RenderingContext.device.queue.writeBuffer(
+					this.historyMixFactorBuffer,
+					0,
+					new Float32Array([TAAResolveRenderPass.HISTORY_MIX_FACTOR]),
+				);
+			});
+
+			this.historyReset = false;
+		}
 
 		return this.outTextures;
 	}

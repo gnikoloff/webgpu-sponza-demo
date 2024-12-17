@@ -5,6 +5,7 @@ export const TAA_RESOLVE_FRAGMENT_SHADER_SRC = /*wgsl*/ `
   @group(0) @binding(0) var colorTexture: texture_2d<f32>;
   @group(0) @binding(1) var velocityTexture: texture_2d<f32>;
   @group(0) @binding(2) var historyTexture: texture_2d<f32>;
+  @group(0) @binding(3) var<uniform> historyMixFactor: f32;
 
   @fragment
   fn ${TAA_RESOLVE_FRAGMENT_SHADER_ENTRY_NAME}(@builtin(position) coord: vec4f) -> @location(0) vec4f {
@@ -25,13 +26,7 @@ export const TAA_RESOLVE_FRAGMENT_SHADER_SRC = /*wgsl*/ `
     
     history = clamp(history, boxMin, boxMax);
 
-
-    let modulationFactor: f32 = 0.9;
-    var color = vec4f(mix(currColor, history, modulationFactor), 1.0);
-
-    // color = color / (color + vec4f(vec3f(1.0), 0.0));
-    // // gamma correct
-    // color = pow(color, vec4f(vec3f(1.0/2.2), 1.0)); 
+    var color = vec4f(mix(currColor, history, historyMixFactor), 1.0);
 
     return color;
   }

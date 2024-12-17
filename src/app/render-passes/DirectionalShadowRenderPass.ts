@@ -36,6 +36,43 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 	private shadowCameraCascade0BufferUniformValues: StructuredView;
 	private shadowCameraCascade1BufferUniformValues: StructuredView;
 
+	public set shadowMapSize(v: number) {
+		const oldTexture = this.outTextures[0];
+		this.outTextures[0] = RenderingContext.device.createTexture({
+			dimension: "2d",
+			format: "depth32float",
+			size: {
+				width: v,
+				height: v,
+				depthOrArrayLayers: DirectionalShadowRenderPass.TEXTURE_CASCADES_COUNT,
+			},
+			usage:
+				GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
+			mipLevelCount: 1,
+			sampleCount: 1,
+			label: "Shadow Map Texture",
+		});
+
+		this.shadowTextureCascade0 = this.outTextures[0].createView({
+			baseArrayLayer: 0,
+			arrayLayerCount: 1,
+			dimension: "2d",
+		});
+
+		this.shadowTextureCascade1 = this.outTextures[0].createView({
+			baseArrayLayer: 1,
+			arrayLayerCount: 1,
+			dimension: "2d",
+		});
+
+		VRAMUsageTracker.addTextureBytes(this.outTextures[0]);
+
+		RenderingContext.device.queue.onSubmittedWorkDone().then(() => {
+			VRAMUsageTracker.removeTextureBytes(oldTexture);
+			oldTexture.destroy();
+		});
+	}
+
 	public override destroy(): void {
 		super.destroy();
 		VRAMUsageTracker.removeBufferBytes(this.shadowCascadesBuffer);
@@ -216,7 +253,7 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 			maxZ = Math.max(maxZ, trf[2]);
 		}
 
-		let zMult = 8;
+		let zMult = 10;
 		if (minZ < 0) {
 			minZ *= zMult;
 		} else {

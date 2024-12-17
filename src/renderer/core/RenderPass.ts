@@ -41,14 +41,22 @@ export default class RenderPass {
 		}
 		this.inputTextureViews.length = 0;
 		this.querySet?.destroy();
-		VRAMUsageTracker.removeBufferBytes(this.resolveBuffer);
-		this.resolveBuffer?.destroy();
+		if (this.resolveBuffer) {
+			VRAMUsageTracker.removeBufferBytes(this.resolveBuffer);
+			this.resolveBuffer.destroy();
+		}
 		this.inputTextureNames.length = 0;
 		this.inputTextureViews.length = 0;
 		for (const buff of this.resultBuffers) {
 			VRAMUsageTracker.removeBufferBytes(buff);
 			buff.destroy();
 		}
+	}
+
+	public resetInputs() {
+		this.inputTextureNames.length = 0;
+		this.inputTextureViews.length = 0;
+		return this;
 	}
 
 	constructor(

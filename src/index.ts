@@ -1,9 +1,9 @@
-import Renderer from "./app/Renderer";
-
 import * as dat from "dat.gui";
+import Renderer from "./app/Renderer";
 import { IGUIParams, SSRMethod } from "./types";
 
 const $canvas = document.getElementById("c") as HTMLCanvasElement;
+
 const renderer = await Renderer.initialize($canvas);
 
 if (renderer === undefined) {
@@ -19,6 +19,7 @@ const GUI_PARAMS: IGUIParams = {
 	"Debug G-Buffer": false,
 	"Debug Shadow Map": false,
 	"Debug Shadow Cascades": false,
+	"Shadow Map Size": 2048,
 	"Debug Point Lights Mask": false,
 	"Render 2nd Floor Points": true,
 	"Enable SSR": true,
@@ -98,6 +99,12 @@ const debugShadowController = shadowFolder
 		}
 	})
 	.listen();
+
+shadowFolder
+	.add(GUI_PARAMS, "Shadow Map Size", [512, 1024, 2048, 4096])
+	.onChange((v: string) => {
+		renderer.shadowMapSize = parseInt(v);
+	});
 
 shadowFolder.add(GUI_PARAMS, "Debug Shadow Cascades").onChange((v: boolean) => {
 	renderer.debugShadowCascadeIndex = v;

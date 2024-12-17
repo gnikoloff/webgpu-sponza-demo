@@ -67,17 +67,15 @@ export default class Renderer extends RenderingContext {
 		}
 
 		const adapter = await navigator.gpu.requestAdapter();
-
 		RenderingContext.$canvas = canvas;
 		RenderingContext.canvasContext = canvas.getContext(
 			"webgpu",
 		) as GPUCanvasContext;
-
 		RenderingContext.pixelFormat = navigator.gpu.getPreferredCanvasFormat();
 
 		const requiredFeatures: GPUFeatureName[] = [];
 
-		const supportsGPUTimestampQuery = adapter.features.has("timestamp-query");
+		const supportsGPUTimestampQuery = true; //adapter.features.has("timestamp-query");
 
 		if (supportsGPUTimestampQuery) {
 			requiredFeatures.push("timestamp-query");
@@ -162,6 +160,36 @@ export default class Renderer extends RenderingContext {
 
 	public set enableTAA(v: boolean) {
 		this.mainCamera.shouldJitter = v;
+		const taaPass = this.renderPassComposer.getPass(
+			RenderPassType.TAAResolve,
+		) as TAAResolveRenderPass;
+		const bloomDownscaleRenderPass = this.renderPassComposer.getPass(
+			RenderPassType.BloomDownsample,
+		) as BloomDownscaleRenderPass;
+		const blitPass = this.renderPassComposer.getPass(
+			RenderPassType.Blit,
+		) as BlitRenderPass;
+		taaPass.enabled = v;
+
+		if (v) {
+			taaPass.resetHistory();
+		}
+
+		bloomDownscaleRenderPass
+			.resetInputs()
+			.addInputTexture(
+				v
+					? RENDER_PASS_TAA_RESOLVE_TEXTURE
+					: RENDER_PASS_COMPUTED_REFLECTIONS_TEXTURE,
+			);
+		blitPass
+			.resetInputs()
+			.addInputTextures([
+				RENDER_PASS_BLOOM_TEXTURE,
+				v
+					? RENDER_PASS_TAA_RESOLVE_TEXTURE
+					: RENDER_PASS_COMPUTED_REFLECTIONS_TEXTURE,
+			]);
 	}
 
 	public set debugGBuffer(v: boolean) {
@@ -180,6 +208,23 @@ export default class Renderer extends RenderingContext {
 		if (v) {
 			this.texturesDebugContainer.scrollToShadowSection();
 		}
+	}
+
+	public set shadowMapSize(v: number) {
+		const shadowPass = this.renderPassComposer.getPass(
+			RenderPassType.Shadow,
+		) as DirectionalShadowRenderPass;
+		this.renderPassComposer
+			.getPass(RenderPassType.DirectionalAmbientLighting)
+			.resetInputs()
+			.addInputTextures([
+				RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
+				RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
+				RENDER_PASS_DEPTH_STENCIL_TEXTURE,
+				RENDER_PASS_SSAO_BLUR_TEXTURE,
+				RENDER_PASS_DIRECTIONAL_LIGHT_DEPTH_TEXTURE,
+			]);
+		shadowPass.shadowMapSize = v;
 	}
 
 	public set debugShadowCascadeIndex(v: boolean) {
@@ -638,22 +683,26 @@ export default class Renderer extends RenderingContext {
 
 		const jsPerfTime = performance.now() - jsPerfStartTime;
 
-		const [shadowRenderPassTimingResult, blitRenderPassTimingResult] =
-			await Promise.all([
-				this.renderPassComposer
-					.getPass(RenderPassType.Shadow)
-					.getTimingResult(),
-				this.renderPassComposer.getPass(RenderPassType.Blit).getTimingResult(),
-			]);
+		if (RenderingContext.supportsGPUTimestampQuery) {
+			const [shadowRenderPassTimingResult, blitRenderPassTimingResult] =
+				await Promise.all([
+					this.renderPassComposer
+						.getPass(RenderPassType.Shadow)
+						.getTimingResult(),
+					this.renderPassComposer
+						.getPass(RenderPassType.Blit)
+						.getTimingResult(),
+				]);
 
-		const gbufferRenderPassTimings = shadowRenderPassTimingResult.timings;
-		const blitRenderPassTimings = blitRenderPassTimingResult.timings;
-		const totalGPUTime =
-			(blitRenderPassTimings[1] - gbufferRenderPassTimings[0]) / 1_000_000;
+			const gbufferRenderPassTimings = shadowRenderPassTimingResult.timings;
+			const blitRenderPassTimings = blitRenderPassTimingResult.timings;
+			const totalGPUTime =
+				(blitRenderPassTimings[1] - gbufferRenderPassTimings[0]) / 1_000_000;
+			this.gpuAverage.addSample(totalGPUTime);
+		}
 
 		this.cpuAverage.addSample(jsPerfTime);
 		this.fpsDisplayAverage.addSample(1 / deltaDiff);
-		this.gpuAverage.addSample(totalGPUTime);
 
 		const cpuAverageStat = this.cpuAverage.get();
 		const fpsAverageStat = this.fpsDisplayAverage.get();
