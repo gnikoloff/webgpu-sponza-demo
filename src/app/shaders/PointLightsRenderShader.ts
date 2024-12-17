@@ -6,7 +6,7 @@ export const PARTICLES_SHADER_FRAGMENT_ENTRY_FN = "fragMain";
 export const PARTICLES_RENDER_SHADER_SRC = /* wgsl */ `
   ${SHADER_CHUNKS.Particle}
   ${SHADER_CHUNKS.Light}
-  ${SHADER_CHUNKS.CameraUniform}
+  ${SHADER_CHUNKS.Camera}
 
   struct VertexOut {
     @builtin(position) position: vec4f,
@@ -14,7 +14,7 @@ export const PARTICLES_RENDER_SHADER_SRC = /* wgsl */ `
     @location(1) @interpolate(flat) instanceId: u32,
   };
 
-  @group(0) @binding(0) var<uniform> camera: CameraUniform;
+  @group(0) @binding(0) var<uniform> camera: Camera;
 
   @group(1) @binding(0) var<storage, read> particles: array<Particle>;
   @group(1) @binding(1) var<storage, read> lights: array<Light>;

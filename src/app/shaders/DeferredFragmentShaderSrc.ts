@@ -15,13 +15,13 @@ export const getDefaultDeferredPBRFragmentShader = ({
 	hasPBRTextures = false,
   isInstanced = false
 } = {}): string => wgsl/* wgsl */ `
-  ${SHADER_CHUNKS.CameraUniform}
+  ${SHADER_CHUNKS.Camera}
   ${SHADER_CHUNKS.VertexOutput}
   ${SHADER_CHUNKS.GBufferOutput}
   ${SHADER_CHUNKS.ModelUniform}
   ${SHADER_CHUNKS.InstanceInput}
 
-  @group(${BIND_GROUP_LOCATIONS.CameraPlusOptionalLights}) @binding(0) var<uniform> camera: CameraUniform;
+  @group(${BIND_GROUP_LOCATIONS.CameraPlusOptionalLights}) @binding(0) var<uniform> camera: Camera;
   @group(${BIND_GROUP_LOCATIONS.Model}) @binding(0) var<uniform> model: ModelUniform;
   
   @group(${BIND_GROUP_LOCATIONS.PBRTextures}) @binding(${SAMPLER_LOCATIONS.Default}) var texSampler: sampler;

@@ -66,7 +66,11 @@ export const getDebugFragmentShader = (
     // Normalize the linear depth to [0, 1] (NDC space)
     let depth_ndc = (depth_linear - near) / (far - near);
     color = vec4f(vec3f(depth_ndc), 1);
-
+    #elif ${
+			debugTexType === TextureDebugMeshType.DepthMomentsCascade0 ||
+			debugTexType === TextureDebugMeshType.DepthMomentsCascade1
+		}
+    color = vec4f(textureSample(myTexture, mySampler, uv).rg, 0, 1);
     #elif ${debugTexType === TextureDebugMeshType.Velocity}
     color = vec4f(textureSample(myTexture, mySampler, uv).rg * 100, 0, 1);
     #elif ${debugTexType === TextureDebugMeshType.BDRF}

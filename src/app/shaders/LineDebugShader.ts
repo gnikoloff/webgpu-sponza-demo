@@ -5,9 +5,9 @@ export const LINE_DEBUG_VERTEX_SHADER_ENTRY_FN = "vertexMain";
 export const LINE_DEBUG_FRAGMENT_SHADER_ENTRY_FN = "fragmentMain";
 
 export const LINE_DEBUG_SHADER_SRC = /* wgsl */ `
-  ${SHADER_CHUNKS.CameraUniform}
+  ${SHADER_CHUNKS.Camera}
 
-  @group(${BIND_GROUP_LOCATIONS.CameraPlusOptionalLights}) @binding(0) var<uniform> camera: CameraUniform;
+  @group(${BIND_GROUP_LOCATIONS.CameraPlusOptionalLights}) @binding(0) var<uniform> camera: Camera;
 
   @group(1) @binding(0) var<storage, read> linePointPositions: array<vec4f>;
 

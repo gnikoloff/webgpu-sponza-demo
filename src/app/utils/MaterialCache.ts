@@ -222,9 +222,12 @@ const MaterialCache = Object.freeze({
 		}
 		_defaultGLTFShadowMaterial = new Material({
 			debugLabel: "Default Shadow Material",
-			vertexShaderSrc: getVertexShader(),
+			vertexShaderSrc: getVertexShader({ isShadow: true }),
 			vertexShaderEntryFn: DefaultVertexShaderEntryFn,
 			vertexBuffers: VertexDescriptor.defaultGLTFLayout,
+			// fragmentShaderSrc: VARIANCE_SHADOW_SHADER_SRC,
+			// fragmentShaderEntryFn: VARIANCE_SHADOW_SHADER_ENTRY_FN,
+			// targets: [{ format: "rg16float" }],
 			primitive: {
 				cullMode: "front",
 			},
@@ -232,9 +235,9 @@ const MaterialCache = Object.freeze({
 				format: "depth32float",
 				depthWriteEnabled: true,
 				depthCompare: "less",
-				depthBias: 0.15,
-				depthBiasSlopeScale: 0.0,
-				depthBiasClamp: 0.1,
+				depthBias: 1,
+				depthBiasSlopeScale: 1,
+				// depthBiasClamp: 0.01,
 			},
 		});
 

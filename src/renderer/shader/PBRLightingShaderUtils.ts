@@ -75,6 +75,9 @@ const GetPBRLightingShaderUtils = (
     var Lo = vec3f(0.0);
     let albedoOverPi = albedo / PI;
 
+    var ambientOcclusion = material.ambientOcclusion;
+    ambientOcclusion *= (1 - shadow * 0.5);
+
     let roughness = material.roughness;
     let roughnessSq = roughness * roughness;
     let roughnessQuad = roughnessSq * roughnessSq;
@@ -90,6 +93,9 @@ const GetPBRLightingShaderUtils = (
     let lightIntensity = light.intensity;
     let L = normalize(lightViewSpacePos);
     let attenuation = 1.0;
+
+    // return vec4f(vec3f(shadow), 1.0)
+
     #elif ${lightPassType === RenderPassType.PointLightsLighting}
     let light = &lightsBuffer[instanceId];
     let lightColor = light.color;
@@ -167,7 +173,7 @@ const GetPBRLightingShaderUtils = (
       specular = mix(specular, specular * 0.2, 1 - shadow);
 
       let diffuse = irradiance * albedo;
-      let ambient = (kD * diffuse + specular * metallic) * material.ambientOcclusion;
+      let ambient = (kD * diffuse + specular * metallic) * ambientOcclusion;
 
       // let ambient = vec3f(0.03) * albedo * material.ambientOcclusion;
       

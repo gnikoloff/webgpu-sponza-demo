@@ -52,11 +52,25 @@ export default class TexturesDebugContainer {
 		texture: GPUTexture,
 		w = texture.width * 0.2,
 		h = texture.height * 0.2,
-	) {
+	): this {
 		if (!this.open) {
-			return;
+			return this;
 		}
 		this.gbufferDebugSection.setTextureFor(type, texture, w, h);
+		return this;
+	}
+
+	public setTextureShadowSection(
+		type: TextureDebugMeshType,
+		texture: GPUTexture,
+		w = texture.width * 0.2,
+		h = texture.height * 0.2,
+	): this {
+		if (!this.open) {
+			return this;
+		}
+		this.shadowDebugSection.setTextureFor(type, texture, w, h);
+		return this;
 	}
 
 	public render(commandEncoder: GPUCommandEncoder) {

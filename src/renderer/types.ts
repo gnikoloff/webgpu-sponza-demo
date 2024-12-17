@@ -11,6 +11,8 @@ export enum RenderPassType {
 	Skybox,
 	Transparent,
 	Shadow,
+	MomentsShadow,
+	BlurMomentsShadow,
 	EnvironmentCube,
 	TAAResolve,
 	CopyDepthForHiZ,

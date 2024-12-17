@@ -11,18 +11,18 @@ const GetGBufferVertexShader = (
 
   ${SHADER_CHUNKS.VertexInput}
   ${SHADER_CHUNKS.VertexOutput}
-  ${SHADER_CHUNKS.CameraUniform}
+  ${SHADER_CHUNKS.Camera}
   ${SHADER_CHUNKS.Light}
 
   #if ${lightPassType === RenderPassType.PointLightsStencilMask}
-  @group(0) @binding(0) var<uniform> camera: CameraUniform;
+  @group(0) @binding(0) var<uniform> camera: Camera;
   @group(0) @binding(1) var<storage, read> lightsBuffer: array<Light>;
   #else
   @group(0) @binding(0) var normalTexture: texture_2d<f32>;
   @group(0) @binding(1) var colorTexture: texture_2d<f32>;
   @group(0) @binding(2) var depthTexture: texture_depth_2d;
   @group(0) @binding(3) var aoTexture: texture_2d<f32>;
-  @group(0) @binding(4) var<uniform> camera: CameraUniform;
+  @group(0) @binding(4) var<uniform> camera: Camera;
   #endif
 
   #if ${

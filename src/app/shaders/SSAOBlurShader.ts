@@ -3,7 +3,7 @@ import { SHADER_CHUNKS } from "../../renderer/shader/chunks";
 export const SSSAOBlurShaderName = "fragBlurSSAO";
 
 const SSAOBlurShaderSrc = /* wgsl */ `
-  ${SHADER_CHUNKS.CameraUniform}
+  ${SHADER_CHUNKS.Camera}
   ${SHADER_CHUNKS.VertexOutput}
 
   @group(0) @binding(0) var ssaoTexture: texture_2d<f32>;

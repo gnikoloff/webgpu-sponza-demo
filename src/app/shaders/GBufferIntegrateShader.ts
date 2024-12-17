@@ -15,7 +15,7 @@ const GetGBufferIntegrateShader = (
 ): string => wgsl/* wgsl */ `
   ${SHADER_CHUNKS.VertexOutput}
   ${SHADER_CHUNKS.Light}
-  ${SHADER_CHUNKS.CameraUniform}
+  ${SHADER_CHUNKS.Camera}
   ${SHADER_CHUNKS.Material}
   ${SHADER_CHUNKS.ShadowCascade}
   ${SHADER_CHUNKS.CommonHelpers}
@@ -69,11 +69,11 @@ const GetGBufferIntegrateShader = (
     #endif
     
     let viewSpacePos = calcViewSpacePos(camera, coord.xy, depth);
-    let worldSpacePos = calcWorldPos(camera, coord.xy, depth);
     
     let V = normalize(-viewSpacePos);
 
     #if ${lightPassType === RenderPassType.DirectionalAmbientLighting}
+    let worldSpacePos = calcWorldPos(camera, coord.xy, depth);
     let shadowLayerIdx = ShadowLayerIdxCalculate(worldSpacePos, camera, shadowCascades);
     let r = select(0.0, 1.0, shadowLayerIdx == 0);
     let g = select(0.0, 1.0, shadowLayerIdx == 1);

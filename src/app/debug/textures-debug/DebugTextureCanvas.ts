@@ -21,6 +21,8 @@ const TextureTypesToDisplayNames: Map<TextureDebugMeshType, string> = new Map([
 	[TextureDebugMeshType.Velocity, "Velocity"],
 	[TextureDebugMeshType.ShadowDepthCascade0, "Cascade #1"],
 	[TextureDebugMeshType.ShadowDepthCascade1, "Cascade #2"],
+	[TextureDebugMeshType.DepthMomentsCascade0, "Moments Depth Cascade #1"],
+	[TextureDebugMeshType.DepthMomentsCascade1, "Moments Depth Cascade #2"],
 ]);
 
 export default class DebugTextureCanvas {
@@ -146,9 +148,15 @@ export default class DebugTextureCanvas {
 
 		let baseArrayLayer = 0;
 		let dimension: GPUTextureViewDimension = "2d";
-		if (this.type === TextureDebugMeshType.ShadowDepthCascade0) {
+		if (
+			this.type === TextureDebugMeshType.ShadowDepthCascade0 ||
+			this.type === TextureDebugMeshType.DepthMomentsCascade0
+		) {
 			baseArrayLayer = 0;
-		} else if (this.type === TextureDebugMeshType.ShadowDepthCascade1) {
+		} else if (
+			this.type === TextureDebugMeshType.ShadowDepthCascade1 ||
+			this.type === TextureDebugMeshType.DepthMomentsCascade1
+		) {
 			baseArrayLayer = 1;
 		}
 

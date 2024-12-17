@@ -61,10 +61,10 @@ export const SHADER_CHUNKS = Object.freeze({
     `;
 	},
 
-	get CameraUniform(): string {
+	get Camera(): string {
 		return /* wgsl */ `
 
-      struct CameraUniform {
+      struct Camera {
         position: vec3f,
         projectionMatrix: mat4x4f,
         viewMatrix: mat4x4f,
@@ -80,7 +80,7 @@ export const SHADER_CHUNKS = Object.freeze({
 
       @must_use
       fn calcWorldPos(
-        camera: CameraUniform,
+        camera: Camera,
         coord: vec2f,
         depth: f32
       ) -> vec3f {
@@ -94,7 +94,7 @@ export const SHADER_CHUNKS = Object.freeze({
 
       @must_use
       fn calcViewSpacePos(
-        camera: CameraUniform,
+        camera: Camera,
         coord: vec2f,
         depth: f32
       ) -> vec3f {

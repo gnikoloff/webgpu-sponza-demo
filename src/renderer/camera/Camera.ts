@@ -72,11 +72,9 @@ export default class Camera extends Node {
 
 	constructor() {
 		super();
-		const cameraShaderDefs = makeShaderDataDefinitions(
-			SHADER_CHUNKS.CameraUniform,
-		);
+		const cameraShaderDefs = makeShaderDataDefinitions(SHADER_CHUNKS.Camera);
 		this.bufferUniformValues = makeStructuredView(
-			cameraShaderDefs.structs.CameraUniform,
+			cameraShaderDefs.structs.Camera,
 		);
 		this.bufferUniformValues.set({
 			viewMatrix: this.viewMatrix,

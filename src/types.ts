@@ -49,7 +49,9 @@ export enum TextureDebugMeshType {
 	Depth,
 	Velocity,
 	ShadowDepthCascade0,
+	DepthMomentsCascade0,
 	ShadowDepthCascade1,
+	DepthMomentsCascade1,
 	BDRF,
 }
 

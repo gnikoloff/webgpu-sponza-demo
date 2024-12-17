@@ -17,9 +17,9 @@ import Scene from "../../renderer/scene/Scene";
 import { RenderPassType } from "../../renderer/types";
 
 export default class DirectionalShadowRenderPass extends RenderPass {
-	public static readonly TEXTURE_SIZE = 4096;
+	public static readonly TEXTURE_SIZE = 4098;
 	public static readonly TEXTURE_CASCADES_COUNT = 2;
-	public static readonly TEXTURE_CASCADE_FAR_DISTANCES: number[] = [8, 18, 200];
+	public static readonly TEXTURE_CASCADE_FAR_DISTANCES: number[] = [6, 17, 200];
 
 	private shadowTextureCascade0: GPUTextureView;
 	private shadowTextureCascade1: GPUTextureView;
@@ -39,7 +39,7 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 	public set shadowMapSize(v: number) {
 		const oldTexture = this.outTextures[0];
 		this.outTextures[0] = RenderingContext.device.createTexture({
-			dimension: "2d",
+			label: "Directional Shadow Depth Texture",
 			format: "depth32float",
 			size: {
 				width: v,
@@ -48,9 +48,6 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 			},
 			usage:
 				GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
-			mipLevelCount: 1,
-			sampleCount: 1,
-			label: "Shadow Map Texture",
 		});
 
 		this.shadowTextureCascade0 = this.outTextures[0].createView({
@@ -105,7 +102,7 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 
 		this.outTextures.push(
 			RenderingContext.device.createTexture({
-				dimension: "2d",
+				label: "Directional Shadow Depth Texture",
 				format: "depth32float",
 				size: {
 					width: DirectionalShadowRenderPass.TEXTURE_SIZE,
@@ -115,10 +112,6 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 				},
 				usage:
 					GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
-				mipLevelCount: 1,
-
-				sampleCount: 1,
-				label: "Shadow Map Texture",
 			}),
 		);
 
@@ -136,14 +129,12 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 			dimension: "2d",
 		});
 
-		const cameraShaderDefs = makeShaderDataDefinitions(
-			SHADER_CHUNKS.CameraUniform,
-		);
+		const cameraShaderDefs = makeShaderDataDefinitions(SHADER_CHUNKS.Camera);
 		this.shadowCameraCascade0BufferUniformValues = makeStructuredView(
-			cameraShaderDefs.structs.CameraUniform,
+			cameraShaderDefs.structs.Camera,
 		);
 		this.shadowCameraCascade1BufferUniformValues = makeStructuredView(
-			cameraShaderDefs.structs.CameraUniform,
+			cameraShaderDefs.structs.Camera,
 		);
 
 		this.shadowCameraCascade0GPUBuffer = RenderingContext.device.createBuffer({

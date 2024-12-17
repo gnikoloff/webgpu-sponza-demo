@@ -45,9 +45,10 @@ export default class TexturesDebugSection {
 		texture: GPUTexture,
 		w = texture.width * 0.2,
 		h = texture.height * 0.2,
-	) {
+	): this {
 		const debugCanvas = this.canvases.get(type);
 		debugCanvas.setTexture(texture, w, h);
+		return this;
 	}
 
 	public render(commandEncoder: GPUCommandEncoder) {

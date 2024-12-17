@@ -4,7 +4,7 @@ import { SHADER_CHUNKS } from "../../renderer/shader/chunks";
 export const SSAOShaderName = "fragSSAO";
 
 const SSAOShaderSrc = /* wgsl */ `
-  ${SHADER_CHUNKS.CameraUniform}
+  ${SHADER_CHUNKS.Camera}
   ${SHADER_CHUNKS.VertexOutput}
   ${SHADER_CHUNKS.MathHelpers}
 
@@ -20,7 +20,7 @@ const SSAOShaderSrc = /* wgsl */ `
   @group(0) @binding(1) var depthTexture: texture_depth_2d;
   @group(0) @binding(2) var noiseTexture: texture_2d<f32>;
   @group(0) @binding(3) var<storage, read> kernelBuffer: array<vec4f>;
-  @group(0) @binding(4) var<uniform> camera: CameraUniform;
+  @group(0) @binding(4) var<uniform> camera: Camera;
   @group(0) @binding(5) var<uniform> settings: Settings; 
 
   @fragment

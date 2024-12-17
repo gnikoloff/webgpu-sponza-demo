@@ -4,10 +4,10 @@ export const DebugBoundingBoxesVertexShaderEntryFn = "vertMain";
 export const DebugBoundingBoxesFragmentShaderEntryFn = "fragMain";
 
 const DebugBoundingBoxesShaderUtils = /* wgsl */ `
-  ${SHADER_CHUNKS.CameraUniform}
+  ${SHADER_CHUNKS.Camera}
   ${SHADER_CHUNKS.AABB}
 
-  @group(0) @binding(0) var<uniform> camera: CameraUniform;
+  @group(0) @binding(0) var<uniform> camera: Camera;
   @group(1) @binding(0) var<storage, read> AABBs: array<AABB>;
 
   const EDGES_PER_CUBE = 12u;

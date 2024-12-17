@@ -9,7 +9,7 @@ const getGBufferCommonShaderBindings = (
   @group(0) @binding(1) var colorTexture: texture_2d<f32>;
   @group(0) @binding(2) var depthTexture: texture_depth_2d;
   @group(0) @binding(3) var aoTexture: texture_2d<f32>;
-  @group(0) @binding(4) var<uniform> camera: CameraUniform;
+  @group(0) @binding(4) var<uniform> camera: Camera;
   
   #if ${
 		renderPassType === RenderPassType.PointLightsLighting ||
@@ -26,7 +26,7 @@ const getGBufferCommonShaderBindings = (
 
   #if ${renderPassType === RenderPassType.DirectionalAmbientLighting}
   @group(1) @binding(0) var<storage, read> shadowCascades: array<ShadowCascade, 2>;
-  @group(1) @binding(1) var shadowMapSampler: sampler;
+  @group(1) @binding(1) var shadowMapSampler: sampler_comparison;
   @group(1) @binding(2) var shadowDepthTexture: texture_depth_2d_array;
   @group(1) @binding(3) var diffuseIBLTexture: texture_cube<f32>;
   @group(1) @binding(4) var specularIBLTexture: texture_cube<f32>;

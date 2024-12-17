@@ -67,10 +67,11 @@ export default class DirectionalAmbientLightRenderPass extends LightRenderPass {
 		super(RenderPassType.DirectionalAmbientLighting, width, height);
 
 		this.shadowSampler = SamplerController.createSampler({
-			addressModeU: "repeat",
-			addressModeV: "repeat",
+			// addressModeU: "repeat",
+			// addressModeV: "repeat",
 			minFilter: "linear",
 			magFilter: "linear",
+			compare: "less",
 		});
 		this.envSampler = SamplerController.createSampler({
 			minFilter: "linear",
@@ -102,7 +103,7 @@ export default class DirectionalAmbientLightRenderPass extends LightRenderPass {
 				binding: 1,
 				visibility: GPUShaderStage.FRAGMENT,
 				sampler: {
-					type: "filtering",
+					type: "comparison",
 				},
 			},
 			{
@@ -177,9 +178,7 @@ export default class DirectionalAmbientLightRenderPass extends LightRenderPass {
 			},
 			{
 				binding: 2,
-				resource: TextureLoader.dummyCubeTexture.createView({
-					dimension: "cube",
-				}),
+				resource: TextureLoader.dummyTexture.createView({}),
 			},
 			{
 				binding: 3,

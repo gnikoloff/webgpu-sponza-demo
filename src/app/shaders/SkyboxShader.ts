@@ -8,10 +8,10 @@ const SkyboxShader = /* wgsl */ `
   ${SHADER_CHUNKS.VertexInput}
   ${SHADER_CHUNKS.VertexOutput}
   ${SHADER_CHUNKS.GBufferOutput}
-  ${SHADER_CHUNKS.CameraUniform}
+  ${SHADER_CHUNKS.Camera}
   ${SHADER_CHUNKS.ModelUniform}
 
-  @group(${BIND_GROUP_LOCATIONS.CameraPlusOptionalLights}) @binding(0) var<uniform> camera: CameraUniform;
+  @group(${BIND_GROUP_LOCATIONS.CameraPlusOptionalLights}) @binding(0) var<uniform> camera: Camera;
   @group(1) @binding(0) var inTexture: texture_cube<f32>;
   @group(1) @binding(1) var inSampler: sampler;
   @group(1) @binding(2) var bayerDitherTexture: texture_2d<f32>;

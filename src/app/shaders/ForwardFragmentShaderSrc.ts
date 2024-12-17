@@ -14,7 +14,7 @@ export const getDefaultForwardPBRFragmentShader = ({
 	hasPBRTextures = false,
   isInstanced = false
 } = {}) => wgsl/* wgsl */ `
-  ${SHADER_CHUNKS.CameraUniform}
+  ${SHADER_CHUNKS.Camera}
   ${SHADER_CHUNKS.VertexOutput}
   ${SHADER_CHUNKS.GBufferOutput}
   ${SHADER_CHUNKS.ModelUniform}
@@ -23,7 +23,7 @@ export const getDefaultForwardPBRFragmentShader = ({
   ${SHADER_CHUNKS.CommonHelpers}
   ${SHADER_CHUNKS.Light}
 
-  @group(${BIND_GROUP_LOCATIONS.CameraPlusOptionalLights}) @binding(0) var<uniform> camera: CameraUniform;
+  @group(${BIND_GROUP_LOCATIONS.CameraPlusOptionalLights}) @binding(0) var<uniform> camera: Camera;
   @group(${BIND_GROUP_LOCATIONS.CameraPlusOptionalLights}) @binding(1) var<storage, read> lightsBuffer: array<Light>;
 
   @group(${BIND_GROUP_LOCATIONS.Model}) @binding(0) var<uniform> model: ModelUniform;

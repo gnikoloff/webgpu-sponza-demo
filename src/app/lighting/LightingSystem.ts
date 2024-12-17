@@ -169,7 +169,7 @@ export default class LightingSystem extends LightingManager {
 		super();
 
 		const dirLight = new DirectionalLight();
-		dirLight.setPosition(0.1, 100, 0.1);
+		dirLight.setPosition(0.1, 20, 0.1);
 		dirLight.setColor(0.2156, 0.2627, 0.3333);
 		dirLight.intensity = 2;
 		this.addLight(dirLight);

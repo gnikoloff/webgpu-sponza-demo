@@ -81,6 +81,8 @@ export default class Renderer extends RenderingContext {
 			requiredFeatures.push("timestamp-query");
 		}
 
+		requiredFeatures.push("float32-filterable");
+
 		RenderingContext.device = await adapter.requestDevice({
 			requiredFeatures,
 		});
@@ -416,6 +418,22 @@ export default class Renderer extends RenderingContext {
 			.addOutputTexture(RENDER_PASS_DIRECTIONAL_LIGHT_DEPTH_TEXTURE)
 			.setCamera(this.mainCamera);
 
+		// const momentsShadowComputePass = new DepthToMomentsDepthComputePass(
+		// 	width,
+		// 	height,
+		// )
+		// 	.addInputTexture(RENDER_PASS_DIRECTIONAL_LIGHT_DEPTH_TEXTURE)
+		// 	.addOutputTexture(RENDER_PASS_DIRECTIONAL_LIGHT_VARIANCE_DEPTH_TEXTURE);
+
+		// const momentsBlurShadowComputePass = new MomentsDepthBlurComputePass(
+		// 	width,
+		// 	height,
+		// )
+		// 	.addInputTexture(RENDER_PASS_DIRECTIONAL_LIGHT_VARIANCE_DEPTH_TEXTURE)
+		// 	.addOutputTexture(
+		// 		RENDER_PASS_DIRECTIONAL_LIGHT_VARIANCE_BLURRED_DEPTH_TEXTURE,
+		// 	);
+
 		const gbufferRenderPass = new GBufferRenderPass(width, height)
 			.setCamera(this.mainCamera)
 			.addOutputTextures([
@@ -573,6 +591,8 @@ export default class Renderer extends RenderingContext {
 
 		this.renderPassComposer
 			.addPass(shadowRenderPass)
+			// .addPass(momentsShadowComputePass)
+			// .addPass(momentsBlurShadowComputePass)
 			.addPass(gbufferRenderPass)
 			.addPass(ssaoRenderPass)
 			.addPass(ssaoBlurRenderPass)
@@ -619,61 +639,74 @@ export default class Renderer extends RenderingContext {
 		this.lightingManager.update(commandEncoder);
 		this.renderPassComposer.render(commandEncoder);
 
-		this.texturesDebugContainer.setTextureGBufferSection(
-			TextureDebugMeshType.Albedo,
-			this.renderPassComposer.getTexture(
-				RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
-			),
-		);
-		this.texturesDebugContainer.setTextureGBufferSection(
-			TextureDebugMeshType.Normal,
-			this.renderPassComposer.getTexture(
-				RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
-			),
-		);
-		this.texturesDebugContainer.setTextureGBufferSection(
-			TextureDebugMeshType.Metallic,
-			this.renderPassComposer.getTexture(
-				RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
-			),
-		);
-		this.texturesDebugContainer.setTextureGBufferSection(
-			TextureDebugMeshType.Roughness,
-			this.renderPassComposer.getTexture(
-				RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
-			),
-		);
-		this.texturesDebugContainer.setTextureGBufferSection(
-			TextureDebugMeshType.AO,
-			this.renderPassComposer.getTexture(RENDER_PASS_SSAO_BLUR_TEXTURE),
-		);
-		this.texturesDebugContainer.setTextureGBufferSection(
-			TextureDebugMeshType.Reflectance,
-			this.renderPassComposer.getTexture(
-				RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
-			),
-		);
-		this.texturesDebugContainer.setTextureGBufferSection(
-			TextureDebugMeshType.Depth,
-			this.renderPassComposer.getTexture(RENDER_PASS_DEPTH_STENCIL_TEXTURE),
-		);
-		this.texturesDebugContainer.setTextureGBufferSection(
-			TextureDebugMeshType.Velocity,
-			this.renderPassComposer.getTexture(RENDER_PASS_VELOCITY_TEXTURE),
-		);
-		this.texturesDebugContainer.shadowDebugSection.setTextureFor(
-			TextureDebugMeshType.ShadowDepthCascade0,
-			this.renderPassComposer.getTexture(
-				RENDER_PASS_DIRECTIONAL_LIGHT_DEPTH_TEXTURE,
-			),
-		);
-		this.texturesDebugContainer.shadowDebugSection.setTextureFor(
-			TextureDebugMeshType.ShadowDepthCascade1,
-			this.renderPassComposer.getTexture(
-				RENDER_PASS_DIRECTIONAL_LIGHT_DEPTH_TEXTURE,
-			),
-		);
-		this.texturesDebugContainer.render(commandEncoder);
+		this.texturesDebugContainer
+			.setTextureGBufferSection(
+				TextureDebugMeshType.Albedo,
+				this.renderPassComposer.getTexture(
+					RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
+				),
+			)
+			.setTextureGBufferSection(
+				TextureDebugMeshType.Normal,
+				this.renderPassComposer.getTexture(
+					RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
+				),
+			)
+			.setTextureGBufferSection(
+				TextureDebugMeshType.Metallic,
+				this.renderPassComposer.getTexture(
+					RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
+				),
+			)
+			.setTextureGBufferSection(
+				TextureDebugMeshType.Roughness,
+				this.renderPassComposer.getTexture(
+					RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
+				),
+			)
+			.setTextureGBufferSection(
+				TextureDebugMeshType.AO,
+				this.renderPassComposer.getTexture(RENDER_PASS_SSAO_BLUR_TEXTURE),
+			)
+			.setTextureGBufferSection(
+				TextureDebugMeshType.Reflectance,
+				this.renderPassComposer.getTexture(
+					RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
+				),
+			)
+			.setTextureGBufferSection(
+				TextureDebugMeshType.Depth,
+				this.renderPassComposer.getTexture(RENDER_PASS_DEPTH_STENCIL_TEXTURE),
+			)
+			.setTextureGBufferSection(
+				TextureDebugMeshType.Velocity,
+				this.renderPassComposer.getTexture(RENDER_PASS_VELOCITY_TEXTURE),
+			)
+			.setTextureShadowSection(
+				TextureDebugMeshType.ShadowDepthCascade0,
+				this.renderPassComposer.getTexture(
+					RENDER_PASS_DIRECTIONAL_LIGHT_DEPTH_TEXTURE,
+				),
+			)
+			// .setTextureShadowSection(
+			// 	TextureDebugMeshType.DepthMomentsCascade0,
+			// 	this.renderPassComposer.getTexture(
+			// 		RENDER_PASS_DIRECTIONAL_LIGHT_VARIANCE_BLURRED_DEPTH_TEXTURE,
+			// 	),
+			// )
+			.setTextureShadowSection(
+				TextureDebugMeshType.ShadowDepthCascade1,
+				this.renderPassComposer.getTexture(
+					RENDER_PASS_DIRECTIONAL_LIGHT_DEPTH_TEXTURE,
+				),
+			)
+			// .setTextureShadowSection(
+			// 	TextureDebugMeshType.DepthMomentsCascade1,
+			// 	this.renderPassComposer.getTexture(
+			// 		RENDER_PASS_DIRECTIONAL_LIGHT_VARIANCE_BLURRED_DEPTH_TEXTURE,
+			// 	),
+			// )
+			.render(commandEncoder);
 
 		RenderingContext.device.queue.submit([commandEncoder.finish()]);
 

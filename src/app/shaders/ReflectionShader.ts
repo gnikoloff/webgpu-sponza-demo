@@ -6,7 +6,7 @@ export const REFLECTION_PASS_COMPUTE_SHADER_ENTRY_NAME = "main";
 export const getReflectionComputeShader = (
 	pixelFormat: GPUTextureFormat,
 ): string => /* wgsl */ `
-  ${SHADER_CHUNKS.CameraUniform}
+  ${SHADER_CHUNKS.Camera}
 
   struct SSRSettings {
     isHiZ: i32,
@@ -18,7 +18,7 @@ export const getReflectionComputeShader = (
   @group(0) @binding(2) var albedoReflectanceTexture: texture_2d<f32>;
   @group(0) @binding(3) var depthTexture: texture_2d<f32>;
   @group(0) @binding(4) var outTexture: texture_storage_2d<${pixelFormat}, write>;
-  @group(0) @binding(5) var<uniform> camera: CameraUniform;
+  @group(0) @binding(5) var<uniform> camera: Camera;
   @group(0) @binding(6) var<uniform> settings: SSRSettings;
 
   override WORKGROUP_SIZE_X: u32;
