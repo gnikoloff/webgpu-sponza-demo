@@ -25,7 +25,7 @@ const getGBufferCommonShaderBindings = (
   #endif
 
   #if ${renderPassType === RenderPassType.DirectionalAmbientLighting}
-  @group(1) @binding(0) var<storage, read> shadowCascades: array<ShadowCascade, 3>;
+  @group(1) @binding(0) var<storage, read> shadowCascades: array<ShadowCascade, 2>;
   @group(1) @binding(1) var shadowMapSampler: sampler;
   @group(1) @binding(2) var shadowDepthTexture: texture_depth_2d_array;
   @group(1) @binding(3) var diffuseIBLTexture: texture_cube<f32>;

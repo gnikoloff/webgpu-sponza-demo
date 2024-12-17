@@ -4,7 +4,7 @@ const CSMShadowShaderUtils = /* wgsl */ `
   fn ShadowLayerIdxCalculate(
     worldPos: vec3f,
     camera: CameraUniform,
-    shadowCascades: array<ShadowCascade, 3>
+    shadowCascades: array<ShadowCascade, 2>
   ) -> i32 {
   let fragPosViewSpace = camera.viewMatrix * vec4f(worldPos, 1.0);
   let depthValue = abs(fragPosViewSpace.z);
@@ -19,7 +19,7 @@ const CSMShadowShaderUtils = /* wgsl */ `
     }
 
     if (layer == -1) {
-      layer = cascadesCount;
+      layer = 1;
     }
     return layer;
   }
@@ -31,7 +31,7 @@ const CSMShadowShaderUtils = /* wgsl */ `
     camera: CameraUniform,
     shadowTextureWidth: f32,
     shadowTextureHeight: f32,
-    shadowCascades: array<ShadowCascade, 3>,
+    shadowCascades: array<ShadowCascade, 2>,
     shadowDepthTexture: texture_depth_2d_array,
     shadowDepthSampler: sampler
   ) -> f32 {
@@ -57,31 +57,33 @@ const CSMShadowShaderUtils = /* wgsl */ `
     let lightDir = normalize(lightPosition);
     // float3 lightDir = normalize(shadowSettings.lightPosition);
 
-    // calculate bias (based on depth map resolution and slope)
-    //  float bias = max(0.05 * (dot(normal, lightDir)), 0.05);
-    let biasModifier = 0.5;
-    //
-    var bias = max(0.05 * (1.0 - dot(N, lightDir)), 0.005);
+    // let biasModifier = 0.5;
+    
+    // var bias = max(0.05 * (1.0 - dot(N, lightDir)), 0.005);
 
-    bias *= select(
-      1 / (shadowCascades[layer].distance * biasModifier),
-      1 / (100 * biasModifier),
-      layer == 3
-    );
+    // bias *= select(
+    //   1 / (shadowCascades[layer].distance * biasModifier),
+    //   1 / (100 * biasModifier),
+    //   layer == 1
+    // );
 
     // PCF
     var shadow: f32 = 0;
     let texSize = vec2f(shadowTextureWidth, shadowTextureHeight);
     let texelSize = 1.0 / texSize;
-    for (var x = -1; x <= 1; x++) {
-      for (var y = -1; y <= 1; y++) {
-        let uv = projCoords.xy + vec2f(f32(x), f32(y)) * texelSize;
-        let pcfDepth = textureSample(shadowDepthTexture, shadowDepthSampler, uv, layer);
-        // shadow += (currentDepth - bias) < pcfDepth ? 1 : 0.5;
-        shadow += select(1.0, 0.0, (currentDepth - bias > pcfDepth));
-      }
-    }
-    shadow /= 9;
+
+    let uv = projCoords.xy;
+    let pcfDepth = textureSample(shadowDepthTexture, shadowDepthSampler, uv, layer);
+    shadow += select(1.0, 0.0, (currentDepth >= pcfDepth));
+
+    // for (var x = -2; x <= 2; x++) {
+    //   for (var y = -2; y <= 2; y++) {
+    //     let uv = projCoords.xy + vec2f(f32(x), f32(y)) * texelSize;
+    //     let pcfDepth = textureSample(shadowDepthTexture, shadowDepthSampler, uv, layer);
+    //     shadow += select(1.0, 0.0, (currentDepth > pcfDepth));
+    //   }
+    // }
+    // shadow /= 16;
 
     return select(shadow, 0, projCoords.z > 1.0);
   }

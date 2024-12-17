@@ -17,9 +17,9 @@ import Scene from "../../renderer/scene/Scene";
 import { RenderPassType } from "../../renderer/types";
 
 export default class DirectionalShadowRenderPass extends RenderPass {
-	public static readonly TEXTURE_SIZE = 2048;
+	public static readonly TEXTURE_SIZE = 4096;
 	public static readonly TEXTURE_CASCADES_COUNT = 2;
-	public static readonly TEXTURE_CASCADE_FAR_DISTANCES: number[] = [6, 23, 200];
+	public static readonly TEXTURE_CASCADE_FAR_DISTANCES: number[] = [8, 18, 200];
 
 	private shadowTextureCascade0: GPUTextureView;
 	private shadowTextureCascade1: GPUTextureView;
@@ -200,7 +200,7 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 		this.shadowCascadesBuffer = RenderingContext.device.createBuffer({
 			label: "Directional Shadow Cascade ProjView Matrices",
 			size:
-				(DirectionalShadowRenderPass.TEXTURE_CASCADES_COUNT + 1) *
+				DirectionalShadowRenderPass.TEXTURE_CASCADES_COUNT *
 				this.shadowCascadeView.arrayBuffer.byteLength,
 			usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
 		});
@@ -227,10 +227,6 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 		vec3.normalize(this.sceneDirectionalLight.position, lightPos);
 		vec3.add(center, lightPos, shadowCamPos);
 
-		// console.log("------");
-		// console.log(shadowCamPos);
-		// console.log(center);
-
 		let viewMatrix = mat4.create();
 		mat4.lookAt(shadowCamPos, center, Camera.UP_VECTOR, viewMatrix);
 
@@ -253,19 +249,26 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 			maxZ = Math.max(maxZ, trf[2]);
 		}
 
-		let zMult = 10;
-		if (minZ < 0) {
-			minZ *= zMult;
-		} else {
-			minZ /= zMult;
-		}
+		// let zMult = 10;
+		// if (minZ < 0) {
+		// 	minZ *= zMult;
+		// } else {
+		// 	minZ /= zMult;
+		// }
 
-		if (maxZ < 0) {
-			maxZ /= zMult;
-		} else {
-			maxZ *= zMult;
-		}
-		// console.log({ minZ, maxZ });
+		// if (maxZ < 0) {
+		// 	maxZ /= zMult;
+		// } else {
+		// 	maxZ *= zMult;
+		// }
+
+		let temp = -minZ;
+		minZ = -maxZ;
+		maxZ = temp;
+
+		const mid = (maxZ - minZ) / 2;
+		minZ -= mid * 5;
+		maxZ += mid * 5;
 
 		const projectionMatrix = mat4.create();
 		mat4.ortho(minX, maxX, minY, maxY, minZ, maxZ, projectionMatrix);
@@ -338,7 +341,6 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 		renderPassEncoderCascade0.end();
 
 		// Render Cascade #1
-
 		this.camera.near =
 			DirectionalShadowRenderPass.TEXTURE_CASCADE_FAR_DISTANCES[0];
 		this.camera.far =

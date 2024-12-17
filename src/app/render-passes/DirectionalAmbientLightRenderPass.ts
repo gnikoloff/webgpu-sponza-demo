@@ -67,10 +67,10 @@ export default class DirectionalAmbientLightRenderPass extends LightRenderPass {
 		super(RenderPassType.DirectionalAmbientLighting, width, height);
 
 		this.shadowSampler = SamplerController.createSampler({
-			addressModeU: "clamp-to-edge",
-			addressModeV: "clamp-to-edge",
-			minFilter: "nearest",
-			magFilter: "nearest",
+			addressModeU: "repeat",
+			addressModeV: "repeat",
+			minFilter: "linear",
+			magFilter: "linear",
 		});
 		this.envSampler = SamplerController.createSampler({
 			minFilter: "linear",

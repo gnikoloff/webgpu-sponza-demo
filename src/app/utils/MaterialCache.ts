@@ -232,9 +232,9 @@ const MaterialCache = Object.freeze({
 				format: "depth32float",
 				depthWriteEnabled: true,
 				depthCompare: "less",
-				depthBias: 1,
-				depthBiasSlopeScale: 5,
-				// depthBiasClamp: 0,
+				depthBias: 0.15,
+				depthBiasSlopeScale: 0.0,
+				depthBiasClamp: 0.1,
 			},
 		});
 

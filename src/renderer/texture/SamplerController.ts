@@ -86,7 +86,7 @@ export default class SamplerController extends BaseUtilObject {
 				descriptor.mipmapFilter = "linear";
 				break;
 		}
-		descriptor.maxAnisotropy = 8;
+		descriptor.maxAnisotropy = 16;
 
 		return this.createSampler(descriptor);
 	}
