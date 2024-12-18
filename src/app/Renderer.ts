@@ -1,3 +1,4 @@
+import sponzaGltfModelUrl from "../assets/sponza/Sponza.gltf?url";
 import CameraFlyController from "../renderer/camera/CameraFlyController";
 import PerspectiveCamera from "../renderer/camera/PerspectiveCamera";
 import RenderPassComposer from "../renderer/core/RenderPassComposer";
@@ -366,7 +367,7 @@ export default class Renderer extends RenderingContext {
 
 		this.scene.skybox = new Skybox();
 
-		const sponzaModel = new GLTFModel("/sponza/Sponza.gltf");
+		const sponzaModel = new GLTFModel(sponzaGltfModelUrl);
 		this.scene.addChild(sponzaModel);
 		sponzaModel.setPositionY(2).updateWorldMatrix();
 

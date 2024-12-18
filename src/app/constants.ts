@@ -1,4 +1,10 @@
 import { Vec3, vec3 } from "wgpu-matrix";
+import envNxImgUrl from "../assets/textures/nx.hdr?url";
+import envNyImgUrl from "../assets/textures/ny.hdr?url";
+import envNzImgUrl from "../assets/textures/nz.hdr?url";
+import envPxImgUrl from "../assets/textures/px.hdr?url";
+import envPyImgUrl from "../assets/textures/py.hdr?url";
+import envPzImgUrl from "../assets/textures/pz.hdr?url";
 import { RENDER_TARGET_LOCATIONS } from "../renderer/core/RendererBindings";
 
 export const MAIN_CAMERA_NEAR = 0.1;
@@ -44,12 +50,12 @@ GBUFFER_OUTPUT_TARGETS[RENDER_TARGET_LOCATIONS.Velocity] = {
 };
 
 export const ENVIRONMENT_CUBE_TEXTURE_FACE_URLS: string[] = [
-	"textures/px.hdr",
-	"textures/nx.hdr",
-	"textures/py.hdr",
-	"textures/ny.hdr",
-	"textures/pz.hdr",
-	"textures/nz.hdr",
+	envNxImgUrl,
+	envNyImgUrl,
+	envNzImgUrl,
+	envPxImgUrl,
+	envPyImgUrl,
+	envPzImgUrl,
 ];
 
 export const SECOND_FLOOR_PARTICLES_CATMULL_CURVE_POINT_POSITIONS: Vec3[] = [
