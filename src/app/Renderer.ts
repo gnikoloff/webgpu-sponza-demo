@@ -268,6 +268,14 @@ export default class Renderer extends RenderingContext {
 		).maxIterations = v;
 	}
 
+	public set debugMissedSSR(v: boolean) {
+		(
+			this.renderPassComposer.getPass(
+				RenderPassType.Reflection,
+			) as ReflectionComputePass
+		).debugMissedIntersections = v;
+	}
+
 	public set ssrEnabled(v: boolean) {
 		this.renderPassComposer.getPass(RenderPassType.Reflection).enabled = v;
 		this.renderPassComposer

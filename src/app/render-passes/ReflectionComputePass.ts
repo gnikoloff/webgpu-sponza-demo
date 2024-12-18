@@ -21,18 +21,18 @@ export default class ReflectionComputePass extends RenderPass {
 	private settingsBuffer: GPUBuffer;
 
 	private _maxIterations = 150;
-	public get maxIterations(): number {
-		return this._maxIterations;
-	}
 	public set maxIterations(v: number) {
 		this._maxIterations = v;
 		this.updateSettingsBuffer();
 	}
 
-	private _isHiZ = true;
-	public get isHiZ(): boolean {
-		return this._isHiZ;
+	private _debugMissedIntersections = false;
+	public set debugMissedIntersections(v: boolean) {
+		this._debugMissedIntersections = v;
+		this.updateSettingsBuffer();
 	}
+
+	private _isHiZ = true;
 	public set isHiZ(v: boolean) {
 		this._isHiZ = v;
 		this.updateSettingsBuffer();
@@ -42,7 +42,11 @@ export default class ReflectionComputePass extends RenderPass {
 		RenderingContext.device.queue.writeBuffer(
 			this.settingsBuffer,
 			0,
-			new Int32Array([this._isHiZ ? 1 : 0, this._maxIterations]),
+			new Int32Array([
+				this._isHiZ ? 1 : 0,
+				this._maxIterations,
+				this._debugMissedIntersections ? 1 : 0,
+			]),
 		);
 	}
 
@@ -135,7 +139,11 @@ export default class ReflectionComputePass extends RenderPass {
 		VRAMUsageTracker.addBufferBytes(this.settingsBuffer);
 
 		new Int32Array(this.settingsBuffer.getMappedRange()).set(
-			new Int32Array([this.isHiZ ? 1 : 0, this.maxIterations]),
+			new Int32Array([
+				this._isHiZ ? 1 : 0,
+				this._maxIterations,
+				this._debugMissedIntersections ? 1 : 0,
+			]),
 		);
 		this.settingsBuffer.unmap();
 

@@ -16,6 +16,7 @@ export interface IGUIParams {
 	"Enable SSR": boolean;
 	"SSR Method": SSRMethod;
 	"SSR Max Iterations": number;
+	"Debug No Info Rays": boolean;
 	"Sun Intensity": number;
 	"Sun Position X": number;
 	"Sun Position Y": number;

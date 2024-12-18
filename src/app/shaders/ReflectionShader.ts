@@ -11,6 +11,7 @@ export const getReflectionComputeShader = (
   struct SSRSettings {
     isHiZ: i32,
     maxIterations: i32,
+    debugMissedIntersections: i32
   };
 
   @group(0) @binding(0) var sceneTexture: texture_2d<f32>;
@@ -98,8 +99,6 @@ export const getReflectionComputeShader = (
     var rayPosTexSpace = vec4f(samplePosInTexSpace.xyz + dp, 0);
     let rayDirTexSpace = vec4f(dp.xyz, 0);
     let rayPosStartTexSpace = rayPosTexSpace;
-
-    
 
     var hitIndex = -1;
     for (var i = 0; i < maxDist && i < settings.maxIterations; i += 4) {
@@ -289,7 +288,6 @@ export const getReflectionComputeShader = (
     let viewSize = vec2f(f32(viewportWidth), f32(viewportHeight));
     let texCoords = vec2u(intersection.xy * viewSize);
     let ssrColor = textureLoad(sceneTexture, texCoords, 0);
-    // return mix(vec4f(0.0), ssrColor, intensity);
     return ssrColor;
   }
 
@@ -303,28 +301,29 @@ export const getReflectionComputeShader = (
     let reflectanceMask = textureLoad(albedoReflectanceTexture, pos, 0).a;
 
     var reflectionColor = vec4f(0);
+    var intensity = 0.0;
 
-    if (reflectanceMask != 0) {
+    let isReflectance = reflectanceMask != 0;
+    if (isReflectance) {
       var samplePosInTexSpace = vec3f(0);
       var reflDirInTexSpace = vec3f(0);
       var maxTraceDistance = 0.0;
 
       ComputePosAndReflection(
-      pos.xy,
-      N,
-      camera.projectionMatrix,
-      camera.inverseProjectionMatrix,
-      camera.viewportWidth,
-      camera.viewportHeight,
-      depthTexture,
-      &samplePosInTexSpace,
-      &reflDirInTexSpace,
-      &maxTraceDistance
+        pos.xy,
+        N,
+        camera.projectionMatrix,
+        camera.inverseProjectionMatrix,
+        camera.viewportWidth,
+        camera.viewportHeight,
+        depthTexture,
+        &samplePosInTexSpace,
+        &reflDirInTexSpace,
+        &maxTraceDistance
       );
 
       var intersection = vec3f(0);
 
-      var intensity = 0.0;
       if (settings.isHiZ == 1) {
         intensity = FindIntersectionHiZ(
           samplePosInTexSpace,
@@ -356,7 +355,16 @@ export const getReflectionComputeShader = (
       );
     }
 
-    let finalColor = sceneColor + reflectionColor;
+    let combinedColor = sceneColor + reflectionColor;
+    let finalColor = select(
+      combinedColor,
+      mix(
+        select(combinedColor, vec4f(0, 1, 0, 1), isReflectance),
+        combinedColor,
+        intensity
+      ),
+      settings.debugMissedIntersections == 1
+    );
 
     textureStore(outTexture, pos, finalColor);
     
