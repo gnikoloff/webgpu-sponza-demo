@@ -233,7 +233,7 @@ export default class SSAORenderPass extends RenderPass {
 	}
 
 	private async loadBlueNoiseTexture() {
-		const url = "/textures/blueNoise.png";
+		const url = "textures/blueNoise.png";
 		const response = await fetch(url);
 		const blob = await response.blob();
 		const imageBitmap = await createImageBitmap(blob);

@@ -44,12 +44,12 @@ GBUFFER_OUTPUT_TARGETS[RENDER_TARGET_LOCATIONS.Velocity] = {
 };
 
 export const ENVIRONMENT_CUBE_TEXTURE_FACE_URLS: string[] = [
-	"/textures/px.hdr",
-	"/textures/nx.hdr",
-	"/textures/py.hdr",
-	"/textures/ny.hdr",
-	"/textures/pz.hdr",
-	"/textures/nz.hdr",
+	"textures/px.hdr",
+	"textures/nx.hdr",
+	"textures/py.hdr",
+	"textures/ny.hdr",
+	"textures/pz.hdr",
+	"textures/nz.hdr",
 ];
 
 export const SECOND_FLOOR_PARTICLES_CATMULL_CURVE_POINT_POSITIONS: Vec3[] = [
