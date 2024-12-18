@@ -59,24 +59,6 @@ export const ENVIRONMENT_CUBE_TEXTURE_FACE_URLS: string[] = [
   envPzImgUrl,
 ]
 
-// Loading animation
-export const SUN_LOAD_START_INTENSITY = 0
-export const SUN_LOAD_END_INTENSITY = 2
-export const SUN_LOAD_START_POSITION = vec3.create(1, 20, 10)
-export const SUN_LOAD_END_POSITION = vec3.create(0.1, 20, 0.1)
-export const SUN_LOAD_ANIM_DURATION_MS = 1500
-export const SUN_LOAD_ANIM_DELAY_MS = 300
-export const SUN_LOAD_ANIM_EASE: EaseType = 'circ_Out'
-export const BLIT_PASS_REVEAL_ANIM_DURATION_MS = 800
-export const MAIN_CAMERA_START_LOAD_START_POSITION = vec3.create(
-  9.5,
-  3.4,
-  -0.35
-)
-export const MAIN_CAMERA_START_LOAD_END_POSITION = vec3.create(9.3, 3.4, -0.35)
-export const MAIN_CAMERA_LOAD_ANIM_DURATION_MS = 1000
-export const MAIN_CAMERA_LOAD_ANIM_EASE: EaseType = 'sine_Out'
-
 export const SECOND_FLOOR_PARTICLES_CATMULL_CURVE_POINT_POSITIONS: Vec3[] = [
   vec3.create(5.5, 7.5, 3.25),
   vec3.create(4, 6.5, 0.5),
@@ -106,3 +88,24 @@ export const SECOND_FLOOR_PARTICLES_CATMULL_CURVE_POINT_POSITIONS: Vec3[] = [
   vec3.create(6, 6.5, 1),
   vec3.create(6, 7.5, 3.25),
 ]
+
+// Loading animation
+export const SUN_LOAD_START_INTENSITY = 0
+export const SUN_LOAD_END_INTENSITY = 2
+export const SUN_LOAD_START_POSITION = vec3.create(3, 20, 3)
+export const SUN_LOAD_END_POSITION = vec3.create(0.1, 20, 0.1)
+export const SUN_LOAD_ANIM_DURATION_MS = 1500
+export const SUN_LOAD_ANIM_DELAY_MS = 100
+export const SUN_LOAD_ANIM_EASE: EaseType = 'sine_InOut'
+export const BLIT_PASS_REVEAL_ANIM_DURATION_MS = 800
+export const MAIN_CAMERA_START_LOAD_START_POSITION = vec3.create(
+  9.7,
+  3.4,
+  -0.35
+)
+export const MAIN_CAMERA_START_LOAD_END_POSITION = vec3.create(9.3, 3.4, -0.35)
+export const MAIN_CAMERA_LOAD_ANIM_DURATION_MS = 1800
+export const MAIN_CAMERA_LOAD_ANIM_EASE: EaseType = 'quad_Out'
+export const FIREWORK_PARTICLES_LOAD_ANIM_DELAY_MS = 200
+export const FIREWORK_PARTICLES_LOAD_ANIM_DURATION_MS = 500
+export const FIREWORK_PARTICLES_LOAD_ANIM_EASE: EaseType = 'quad_Out'

@@ -15,11 +15,18 @@ import DiffuseIBLGenerator from '../renderer/texture/DiffuseIBLGenerator'
 import SpecularIBLGenerator from '../renderer/texture/SpecularIBLGenerator'
 import TextureController from '../renderer/texture/TextureController'
 import TextureLoader from '../renderer/texture/TextureLoader'
-import { DebugStatType, RenderPassType } from '../renderer/types'
+import {
+  DebugStatType,
+  RenderPassType,
+  placeholderFunc,
+} from '../renderer/types'
 import { TextureDebugMeshType } from '../types'
 import {
   BLIT_PASS_REVEAL_ANIM_DURATION_MS,
   ENVIRONMENT_CUBE_TEXTURE_FACE_URLS,
+  FIREWORK_PARTICLES_LOAD_ANIM_DELAY_MS,
+  FIREWORK_PARTICLES_LOAD_ANIM_DURATION_MS,
+  FIREWORK_PARTICLES_LOAD_ANIM_EASE,
   MAIN_CAMERA_FAR,
   MAIN_CAMERA_LOAD_ANIM_DURATION_MS,
   MAIN_CAMERA_LOAD_ANIM_EASE,
@@ -337,6 +344,8 @@ export default class Renderer extends RenderingContext {
     this.timingDebugContainer.toggleVisibility()
   }
 
+  public onIntroAnimComplete: placeholderFunc
+
   constructor() {
     super()
     this.mainCamera = new PerspectiveCamera(
@@ -428,6 +437,8 @@ export default class Renderer extends RenderingContext {
 
       // Add some artifical time to hide any possible lingering mipmap generation artefacts etc
       setTimeout(() => {
+        document.getElementById('loader').classList.toggle('faded')
+
         // Sun intro anim
         new Tween({
           durationMS: SUN_LOAD_ANIM_DURATION_MS,
@@ -451,11 +462,17 @@ export default class Renderer extends RenderingContext {
           },
           onComplete: () => {
             new Tween({
-              durationMS: 500,
-              delayMS: 0,
-              easeName: 'circ_In',
+              durationMS: FIREWORK_PARTICLES_LOAD_ANIM_DURATION_MS,
+              delayMS: FIREWORK_PARTICLES_LOAD_ANIM_DELAY_MS,
+              easeName: FIREWORK_PARTICLES_LOAD_ANIM_EASE,
               onUpdate: (t) => {
                 this.lightingManager.fireParticlesRevealFactor = t
+              },
+              onComplete: () => {
+                document.getElementById('logo').classList.toggle('faded')
+                if (this.onIntroAnimComplete) {
+                  this.onIntroAnimComplete()
+                }
               },
             }).start()
           },
@@ -477,7 +494,7 @@ export default class Renderer extends RenderingContext {
               .updateViewMatrix()
           },
           onComplete: () => {
-            document.getElementById('logo').classList.toggle('faded')
+            // ...
           },
         }).start()
 
