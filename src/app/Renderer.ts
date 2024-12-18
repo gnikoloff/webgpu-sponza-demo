@@ -1,4 +1,19 @@
+import CameraFlyController from "../renderer/camera/CameraFlyController";
 import PerspectiveCamera from "../renderer/camera/PerspectiveCamera";
+import RenderPassComposer from "../renderer/core/RenderPassComposer";
+import RenderingContext from "../renderer/core/RenderingContext";
+import CatmullRomCurve3 from "../renderer/math/CatmullRomCurve3";
+import RollingAverage from "../renderer/math/RollingAverage";
+import VRAMUsageTracker from "../renderer/misc/VRAMUsageTracker";
+import GLTFModel from "../renderer/scene/GLTFModel";
+import Scene from "../renderer/scene/Scene";
+import BDRFLutGenerator from "../renderer/texture/BDRFLutGenerator";
+import DiffuseIBLGenerator from "../renderer/texture/DiffuseIBLGenerator";
+import SpecularIBLGenerator from "../renderer/texture/SpecularIBLGenerator";
+import TextureController from "../renderer/texture/TextureController";
+import TextureLoader from "../renderer/texture/TextureLoader";
+import { DebugStatType, RenderPassType } from "../renderer/types";
+import { TextureDebugMeshType } from "../types";
 import {
 	ENVIRONMENT_CUBE_TEXTURE_FACE_URLS,
 	MAIN_CAMERA_FAR,
@@ -18,28 +33,13 @@ import {
 	SECOND_FLOOR_PARTICLES_CATMULL_CURVE_POINT_POSITIONS,
 } from "./constants";
 
-import CameraFlyController from "../renderer/camera/CameraFlyController";
-import RenderPassComposer from "../renderer/core/RenderPassComposer";
-import RenderingContext from "../renderer/core/RenderingContext";
-import CatmullRomCurve3 from "../renderer/math/CatmullRomCurve3";
-import RollingAverage from "../renderer/math/RollingAverage";
-import VRAMUsageTracker from "../renderer/misc/VRAMUsageTracker";
-import GLTFModel from "../renderer/scene/GLTFModel";
-import Scene from "../renderer/scene/Scene";
-import BDRFLutGenerator from "../renderer/texture/BDRFLutGenerator";
-import DiffuseIBLGenerator from "../renderer/texture/DiffuseIBLGenerator";
-import SpecularIBLGenerator from "../renderer/texture/SpecularIBLGenerator";
-import TextureController from "../renderer/texture/TextureController";
-import TextureLoader from "../renderer/texture/TextureLoader";
-import { DebugStatType, RenderPassType } from "../renderer/types";
-import { TextureDebugMeshType } from "../types";
 import LineDebugDrawable from "./debug/LineDebugDrawable";
 import TexturesDebugContainer from "./debug/textures-debug/TexturesDebugContainer";
 import DebugStatsContainer from "./debug/timings-debug/DebugStatsContainer";
 import LightingSystem from "./lighting/LightingSystem";
 import Skybox from "./meshes/Skybox";
 import BlitRenderPass from "./render-passes/BlitRenderPass";
-import { BloomDownscaleRenderPass } from "./render-passes/BloomDownscaleRenderPass";
+import BloomDownscaleRenderPass from "./render-passes/BloomDownscaleRenderPass";
 import BloomUpscaleRenderPass from "./render-passes/BloomUpscaleRenderPass";
 import DebugBoundsPass from "./render-passes/DebugBoundsPass";
 import DirectionalAmbientLightRenderPass from "./render-passes/DirectionalAmbientLightRenderPass";
@@ -75,13 +75,11 @@ export default class Renderer extends RenderingContext {
 
 		const requiredFeatures: GPUFeatureName[] = [];
 
-		const supportsGPUTimestampQuery = true; //adapter.features.has("timestamp-query");
+		const supportsGPUTimestampQuery = adapter.features.has("timestamp-query");
 
 		if (supportsGPUTimestampQuery) {
 			requiredFeatures.push("timestamp-query");
 		}
-
-		requiredFeatures.push("float32-filterable");
 
 		RenderingContext.device = await adapter.requestDevice({
 			requiredFeatures,
@@ -425,22 +423,6 @@ export default class Renderer extends RenderingContext {
 		)
 			.addOutputTexture(RENDER_PASS_DIRECTIONAL_LIGHT_DEPTH_TEXTURE)
 			.setCamera(this.mainCamera);
-
-		// const momentsShadowComputePass = new DepthToMomentsDepthComputePass(
-		// 	width,
-		// 	height,
-		// )
-		// 	.addInputTexture(RENDER_PASS_DIRECTIONAL_LIGHT_DEPTH_TEXTURE)
-		// 	.addOutputTexture(RENDER_PASS_DIRECTIONAL_LIGHT_VARIANCE_DEPTH_TEXTURE);
-
-		// const momentsBlurShadowComputePass = new MomentsDepthBlurComputePass(
-		// 	width,
-		// 	height,
-		// )
-		// 	.addInputTexture(RENDER_PASS_DIRECTIONAL_LIGHT_VARIANCE_DEPTH_TEXTURE)
-		// 	.addOutputTexture(
-		// 		RENDER_PASS_DIRECTIONAL_LIGHT_VARIANCE_BLURRED_DEPTH_TEXTURE,
-		// 	);
 
 		const gbufferRenderPass = new GBufferRenderPass(width, height)
 			.setCamera(this.mainCamera)

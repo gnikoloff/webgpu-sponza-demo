@@ -11,7 +11,7 @@ import {
 	BloomDownscaleShaderSrc,
 } from "../shaders/BloomDownscaleShader";
 
-export class BloomDownscaleRenderPass extends RenderPass {
+export default class BloomDownscaleRenderPass extends RenderPass {
 	private static readonly COMPUTE_WORKGROUP_SIZE_X = 8;
 	private static readonly COMPUTE_WORKGROUP_SIZE_Y = 8;
 
