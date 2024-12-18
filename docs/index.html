@@ -5,26 +5,76 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WebGPU SSR</title>
-  <style>
-    :root {
-      touch-action: pan-x pan-y;
-      height: 100%
-    }
-
-    body {
-      margin: 0;
-      overflow: hidden;
-    }
-
-    #c {
-      margin: 0;
-    }
-  </style>
-  <script type="module" crossorigin src="./assets/index-D_r3fLpk.js"></script>
+  <script type="module" crossorigin src="./assets/index-DwQFq9G-.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-HLMjQiVm.css">
 </head>
 
 <body>
+  <div class="logo fadable" id="logo">
+    <h1>WebGPU Tech Demo</h1>
+    <p>
+      More info and source code on <a href="https://github.com/gnikoloff/webgpu-tech-demo" target="_blank">GitHub</a>
+      <br />
+      Created by <a href="https://georgi-nikolov.com" target="_blank">Georgi Nikolov</a>
+    </p>
+    <hr />
+    <p>
+      Use QWASDE keys to navigate the scene.
+      <br />
+      Look around by dragging the mouse.
+    </p>
+  </div>
+
+  <div id="no-webgpu-wrapper">
+    <h1>Uh-oh, WebGPU not supported :(</h1>
+    <p>This demo requires the modern WebGPU graphics API to run. Seems like your browser does not support it.</p>
+    <p>Here are the steps to run it in your browser of choice:</p>
+    <ul>
+      <li>
+        <h3>Chromium (Chrome, Edge, Opera, etc.)</h3>
+        <ul>
+          <li>
+            WebGPU has begun shipping to Mac / Windows / ChromeOS since Chrome 113, Edge 113 and Opera 99
+          </li>
+        </ul>
+      </li>
+      <li>
+        <h3>Firefox</h3>
+        <ul>
+          <li>WebGPU WebGPU is enabled by default in <a
+              href="https://www.mozilla.org/en-US/firefox/channel/desktop/#nightly" target="_blank">Nightly Firefox</a>
+            builds.</li>
+        </ul>
+      </li>
+      <li>
+        <h3>Safari</h3>
+        <ul>
+          <li>WebGPU is enabled by default in <a href="https://developer.apple.com/safari/technology-preview/"
+              target="_blank">Safari Technology Preview</a>.</li>
+          <li>In macOS Sequoia betas it is testable via the "Feature Flags" in Safari Settings. See release notes for
+            <a href="https://www.webkit.org/blog/14885/release-notes-for-safari-technology-preview-185/"
+              target="_blank">Safari Technology Preview 185</a>.
+          </li>
+          <li>In the iOS 18 betas and visionOS 2 betas, it is available via Settings -> Apps -> Safari -> Advanced ->
+            Feature Flags -> WebGPU</li>
+        </ul>
+
+      </li>
+    </ul>
+  </div>
+
   <canvas id="c"></canvas>
+
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YN340LVPHE"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+
+    gtag('config', 'G-YN340LVPHE');
+  </script>
 
 </body>
 
