@@ -17,8 +17,8 @@
       <br />
       Created by <a href="https://georgi-nikolov.com" target="_blank">Georgi Nikolov</a>
     </p>
-    <hr />
-    <p>
+    <hr class="logo-border" />
+    <p class="keyboard-mouse-instructions">
       Use QWASDE keys to navigate the scene.
       <br />
       Look around by dragging the mouse.
@@ -27,6 +27,9 @@
 
   <div id="no-webgpu-wrapper">
     <h1>Uh-oh, WebGPU not supported :(</h1>
+
+    <div id="no-webgpu-preview"></div>
+
     <p>This demo requires the modern WebGPU graphics API to run. Seems like your browser does not support it.</p>
     <p>Here are the steps to run it in your browser of choice:</p>
     <ul>
@@ -34,7 +37,8 @@
         <h3>Chromium (Chrome, Edge, Opera, etc.)</h3>
         <ul>
           <li>
-            WebGPU has begun shipping to Mac / Windows / ChromeOS since Chrome 113, Edge 113 and Opera 99
+            WebGPU has begun shipping to Mac / Windows / ChromeOS since Chrome 113, Edge 113 and Opera 99. Please update
+            your browser to a latest version.
           </li>
         </ul>
       </li>
