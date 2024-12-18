@@ -38,7 +38,7 @@ const FIRE_PARTICLE_EMITTER_POSITIONS: Vec3[] = [
 const FIRE_PARTICLE_COLOR = vec3.scale(vec3.create(1, 0.01, 0.01), 10)
 
 export default class LightingSystem extends LightingManager {
-  private static readonly COMPUTE_WORKGROUP_SIZE_X = 8
+  private static readonly COMPUTE_WORKGROUP_SIZE_X = 64
   private static readonly COMPUTE_WORKGROUP_SIZE_Y = 1
 
   private static readonly MAIN_FIRE_LIGHT_RADIUS = 3

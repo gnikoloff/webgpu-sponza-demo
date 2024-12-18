@@ -54,12 +54,10 @@ function renderFrame() {
 }
 
 function resize() {
-  const w = Math.min(innerWidth, 1920)
-  const h = Math.min(innerHeight, 1080)
-  $canvas.width = w
-  $canvas.height = h
-  $canvas.style.setProperty('left', `${innerWidth * 0.5 - w * 0.5}px`)
-  $canvas.style.setProperty('top', `${innerHeight * 0.5 - h * 0.5}px`)
+  const w = innerWidth
+  const h = innerHeight
+  $canvas.width = w * devicePixelRatio
+  $canvas.height = h * devicePixelRatio
   $canvas.style.setProperty('width', `${w}px`)
   $canvas.style.setProperty('height', `${h}px`)
 

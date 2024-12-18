@@ -76,8 +76,6 @@ body {
 
 #c {
   margin: 0;
-  position: fixed;
-  z-index: -1;
 }
 
 #a {
