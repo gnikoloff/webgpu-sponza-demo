@@ -7,7 +7,7 @@ import { Vec3, vec3 } from "wgpu-matrix";
 import { LightTypeToShaderType } from "../constants";
 import Node from "../scene/Node";
 import { SHADER_CHUNKS } from "../shader/chunks";
-import { LightType, UUIDString } from "../types";
+import { LightType } from "../types";
 
 const _lightShaderDefs = makeShaderDataDefinitions(SHADER_CHUNKS.Light);
 const _lightsStorageView = makeStructuredView(_lightShaderDefs.structs.Light);
@@ -17,7 +17,6 @@ export default class Light extends Node {
 		return _lightsStorageView.arrayBuffer.byteLength;
 	}
 
-	public id: UUIDString = crypto.randomUUID();
 	public lightsStorageView: StructuredView;
 
 	private _color = vec3.create(1, 1, 0);

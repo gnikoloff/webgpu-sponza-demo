@@ -159,15 +159,9 @@ const PipelineStates = {
 	createRenderPipeline: (
 		descriptor: GPURenderPipelineDescriptor,
 	): GPURenderPipeline => {
-		// const key = JSON.stringify(descriptor);
+		// TODO: Some pipeline caching would be great
 		let renderPSO: GPURenderPipeline;
-		// if ((renderPSO = cachedRenderPSOs.get(key))) {
-		// 	return renderPSO;
-		// }
 		renderPSO = RenderingContext.device.createRenderPipeline(descriptor);
-
-		// cachedRenderPSOs.set(key, renderPSO);
-
 		return renderPSO;
 	},
 

@@ -20,7 +20,6 @@ export default class CameraFlyController {
 	private viewMat = mat4.create();
 	private rotMat = mat4.identity();
 
-	// private moving = false;
 	private lastX = 0;
 	private lastY = 0;
 
@@ -98,31 +97,23 @@ export default class CameraFlyController {
 			vec3.add(this.position, DIR, this.position);
 		}
 
-		// if (this.isDirty) {
 		const mv = this.viewMat;
 		mat4.identity(mv);
 		mat4.rotateX(mv, this.angles[0], mv);
 		mat4.rotateY(mv, this.angles[1], mv);
 		mat4.translate(mv, vec3.negate(this.position), mv);
-		// console.log(this.position[2]);
 		this.camera.setPosition(
 			this.position[0],
 			this.position[1],
 			this.position[2],
 		);
 		this.camera.updateViewMatrixWithMat(mv);
-
-		// this.isDirty = false;
-		// }
-
 		this.rafId = requestAnimationFrame(this.update);
 	};
 
 	private rotateView(xDelta: number, yDelta: number) {
 		if (xDelta || yDelta) {
 			this.angles[1] += xDelta;
-			// Keep our rotation in the range of [0, 2*PI]
-			// (Prevents numeric instability if you spin around a LOT.)
 			while (this.angles[1] < 0) {
 				this.angles[1] += Math.PI * 2.0;
 			}
@@ -131,7 +122,6 @@ export default class CameraFlyController {
 			}
 
 			this.angles[0] += yDelta;
-			// Clamp the up/down rotation to prevent us from flipping upside-down
 			if (this.angles[0] < -Math.PI * 0.5) {
 				this.angles[0] = -Math.PI * 0.5;
 			}
@@ -139,7 +129,6 @@ export default class CameraFlyController {
 				this.angles[0] = Math.PI * 0.5;
 			}
 
-			// Update the directional matrix
 			mat4.identity(this.rotMat);
 			mat4.rotateY(this.rotMat, -this.angles[1], this.rotMat);
 			mat4.rotateX(this.rotMat, -this.angles[0], this.rotMat);

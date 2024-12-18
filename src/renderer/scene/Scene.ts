@@ -83,51 +83,14 @@ export default class Scene extends Node {
 		}
 	}
 
-	public sortTransparentNodesFrom(camera: Camera) {
-		this.transparentMeshes.sort((a, b) => {
-			const aBBoxCenter = a.worldBoundingBox.boundingBoxCenter;
-			const bBBoxCenter = b.worldBoundingBox.boundingBoxCenter;
-			const aWorldPosX =
-				a.worldPosition[0] !== 0 ? a.worldPosition[0] : aBBoxCenter[0];
-			const aWorldPosY =
-				a.worldPosition[1] !== 0 ? a.worldPosition[1] : aBBoxCenter[0];
-			const aWorldPosZ =
-				a.worldPosition[2] !== 0 ? a.worldPosition[2] : aBBoxCenter[0];
-
-			const bWorldPosX =
-				b.worldPosition[0] !== 0 ? b.worldPosition[0] : bBBoxCenter[0];
-			const bWorldPosY =
-				b.worldPosition[1] !== 0 ? b.worldPosition[1] : bBBoxCenter[0];
-			const bWorldPosZ =
-				b.worldPosition[2] !== 0 ? b.worldPosition[2] : bBBoxCenter[0];
-			const diffAx = camera.position[0] - aWorldPosX;
-			const diffAy = camera.position[1] - aWorldPosY;
-			const diffAz = camera.position[2] - aWorldPosZ;
-
-			const diffBx = camera.position[0] - bWorldPosX;
-			const diffBy = camera.position[1] - bWorldPosY;
-			const diffBz = camera.position[2] - bWorldPosZ;
-
-			const d0 = diffAx * diffAy * diffAz;
-			const d1 = diffBx * diffBy * diffBz;
-
-			const out = d1 - d0;
-			return out;
-		});
-	}
-
 	protected override onChildAdd(child: Node): void {
 		if (child instanceof Drawable) {
 			if (child.isOpaque) {
 				this.opaqueMeshes.push(child);
 				this.culledOpaqueMeshes.push(child);
-				// console.log(`new opaque nodes count: ${this.opaqueMeshes.length}`);
 			} else {
 				this.transparentMeshes.push(child);
 				this.culledTransparentMeshes.push(child);
-				// console.log(
-				// 	`new transparent nodes count: ${this.transparentMeshes.length}`,
-				// );
 			}
 		}
 
