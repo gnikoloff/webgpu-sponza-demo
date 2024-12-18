@@ -130,7 +130,7 @@ export default class Camera extends Node {
 
 	public get frustumCornersWorldSpace(): Vec4[] {
 		const inv = this.inverseProjectionViewMatrix;
-		let frustumCorners: Vec4[] = [];
+		const frustumCorners: Vec4[] = [];
 
 		for (let x = 0; x < 2; x++) {
 			for (let y = 0; y < 2; y++) {
@@ -320,7 +320,7 @@ export default class Camera extends Node {
 		this.frustumPlanes[5].normal[2] = vpMatrix[11] - vpMatrix[10];
 		this.frustumPlanes[5].d = vpMatrix[15] - vpMatrix[14];
 
-		for (let plane of this.frustumPlanes) {
+		for (const plane of this.frustumPlanes) {
 			plane.normalize();
 		}
 	}

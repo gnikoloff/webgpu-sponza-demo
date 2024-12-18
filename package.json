@@ -7,7 +7,8 @@
 	"scripts": {
 		"dev": "vite",
 		"build": "vite build",
-		"preview": "vite preview"
+		"preview": "vite preview",
+		"lint": "eslint ./src"
 	},
 	"repository": {
 		"type": "git",
@@ -26,10 +27,14 @@
 	},
 	"homepage": "https://github.com/gnikoloff/webgpu-tech-demo/webgpu-ssr#readme",
 	"devDependencies": {
+		"@eslint/js": "^9.17.0",
 		"@types/byte-size": "^8.1.2",
 		"@types/dat.gui": "^0.7.13",
 		"@webgpu/types": "^0.1.51",
+		"eslint": "^9.17.0",
 		"terser": "^5.37.0",
+		"typescript": "^5.7.2",
+		"typescript-eslint": "^8.18.1",
 		"vite": "^5.4.11",
 		"vite-plugin-compression": "^0.5.1",
 		"vite-plugin-mkcert": "^1.17.6",

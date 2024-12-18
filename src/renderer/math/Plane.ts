@@ -5,7 +5,7 @@ export default class Plane {
 	constructor(public normal: Vec3, public d: number) {}
 
 	public normalize() {
-		let length = vec3.len(this.normal);
+		const length = vec3.len(this.normal);
 		vec3.normalize(this.normal, this.normal);
 		this.d /= length;
 	}

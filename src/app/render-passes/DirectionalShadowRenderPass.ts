@@ -206,19 +206,19 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 
 	private getLightSpaceMatrix(): Mat4 {
 		const frustumCorners = this.camera.frustumCornersWorldSpace;
-		let center = vec3.create(0, 0, 0);
+		const center = vec3.create(0, 0, 0);
 		for (let i = 0; i < frustumCorners.length; i++) {
 			const corner = frustumCorners[i];
 			vec3.add(center, corner, center);
 		}
 		vec3.divScalar(center, frustumCorners.length, center);
 
-		let shadowCamPos = vec3.create();
-		let lightPos = vec3.create();
+		const shadowCamPos = vec3.create();
+		const lightPos = vec3.create();
 		vec3.normalize(this.sceneDirectionalLight.position, lightPos);
 		vec3.add(center, lightPos, shadowCamPos);
 
-		let viewMatrix = mat4.create();
+		const viewMatrix = mat4.create();
 		mat4.lookAt(shadowCamPos, center, Camera.UP_VECTOR, viewMatrix);
 
 		let minX = Number.MAX_VALUE;
@@ -253,7 +253,7 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 		// 	maxZ *= zMult;
 		// }
 
-		let temp = -minZ;
+		const temp = -minZ;
 		minZ = -maxZ;
 		maxZ = temp;
 
@@ -273,7 +273,7 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 	public render(
 		commandEncoder: GPUCommandEncoder,
 		scene: Scene,
-		inputs: GPUTexture[],
+		_inputs: GPUTexture[],
 	): GPUTexture[] {
 		const oldCameraNear = this.camera.near;
 		const oldCameraFar = this.camera.far;

@@ -194,20 +194,20 @@ export default class Renderer extends RenderingContext {
 	}
 
 	public set debugGBuffer(v: boolean) {
-		v
-			? this.texturesDebugContainer.reveal()
-			: this.texturesDebugContainer.hide();
 		if (v) {
 			this.texturesDebugContainer.scrollIntoGbufferSection();
+			this.texturesDebugContainer.reveal();
+		} else {
+			this.texturesDebugContainer.hide();
 		}
 	}
 
 	public set debugShadowMap(v: boolean) {
-		v
-			? this.texturesDebugContainer.reveal()
-			: this.texturesDebugContainer.hide();
 		if (v) {
 			this.texturesDebugContainer.scrollToShadowSection();
+			this.texturesDebugContainer.reveal();
+		} else {
+			this.texturesDebugContainer.hide();
 		}
 	}
 

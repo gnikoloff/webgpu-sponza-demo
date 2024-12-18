@@ -70,7 +70,7 @@ export default class CubeTextureController extends BaseUtilObject {
 		}
 		const computeCopyPass = commandEncoder.beginComputePass();
 
-		let size = outTextureSize;
+		const size = outTextureSize;
 
 		for (let face = 0; face < 6; face++) {
 			TextureController.copyTextureView(

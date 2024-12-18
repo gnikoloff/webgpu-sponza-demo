@@ -151,13 +151,13 @@ export default class PointLightsNonCulledRenderPass extends LightRenderPass {
 					renderPass.setPipeline(this.frontFaceCullRenderPSO);
 				}
 				isPrevFrontFaceCullPSOBound = true;
-				isPrevFrontFaceCullPSOBound = false;
+				isPrevBackFaceCullPSOBound = false;
 			} else {
 				if (!isPrevBackFaceCullPSOBound) {
 					renderPass.setPipeline(this.backFaceCullRenderPSO);
 				}
 				isPrevFrontFaceCullPSOBound = false;
-				isPrevFrontFaceCullPSOBound = true;
+				isPrevBackFaceCullPSOBound = true;
 			}
 			renderPass.setBindGroup(1, pLight.bindGroup);
 

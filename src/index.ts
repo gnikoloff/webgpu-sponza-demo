@@ -46,7 +46,7 @@ const gui = new dat.GUI({ width: 270 });
 gui.add(GUI_PARAMS, "Play Animation").onChange((v: boolean) => {
 	renderer.enableAnimation = v;
 });
-gui.add(GUI_PARAMS, "Performance Stats").onChange((v: boolean) => {
+gui.add(GUI_PARAMS, "Performance Stats").onChange(() => {
 	renderer.toggleStatsVisibility();
 });
 gui
@@ -90,7 +90,7 @@ lightingFolder
 
 const shadowFolder = gui.addFolder("Shadow");
 shadowFolder.open();
-const debugShadowController = shadowFolder
+shadowFolder
 	.add(GUI_PARAMS, "Debug Shadow Map")
 	.onChange((v: boolean) => {
 		renderer.debugShadowMap = v;
@@ -153,17 +153,15 @@ ssaoFolder.add(GUI_PARAMS, "SSAO Strength", 0, 5).onChange((v: number) => {
 const ssrFolder = gui.addFolder("Screen space Reflections");
 ssrFolder.open();
 
-const ssrEnabledController = ssrFolder
-	.add(GUI_PARAMS, "Enable SSR")
-	.onChange((v: boolean) => {
-		renderer.ssrEnabled = v;
-	});
-const ssrMethodController = ssrFolder
+ssrFolder.add(GUI_PARAMS, "Enable SSR").onChange((v: boolean) => {
+	renderer.ssrEnabled = v;
+});
+ssrFolder
 	.add(GUI_PARAMS, "SSR Method", ["hi-z", "linear"])
 	.onChange((v: SSRMethod) => {
 		renderer.ssrIsHiZ = v === "hi-z";
 	});
-const ssrMaxIterationsController = ssrFolder
+ssrFolder
 	.add(GUI_PARAMS, "SSR Max Iterations", 0, 1500, 1)
 	.onChange((v: number) => {
 		renderer.ssrMaxIterations = v;

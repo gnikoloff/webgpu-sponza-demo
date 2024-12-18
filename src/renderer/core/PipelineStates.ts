@@ -8,7 +8,6 @@ let _defaultModelMaterialBindGroupLayout: GPUBindGroupLayout;
 let _instanceBindGroupLayout: GPUBindGroupLayout;
 
 const cachedShaderModules: Map<string, GPUShaderModule> = new Map([]);
-const cachedRenderPSOs: Map<string, GPURenderPipeline> = new Map([]);
 
 const PipelineStates = {
 	get defaultCameraPlusLightsBindGroupLayout(): GPUBindGroupLayout {
@@ -160,8 +159,7 @@ const PipelineStates = {
 		descriptor: GPURenderPipelineDescriptor,
 	): GPURenderPipeline => {
 		// TODO: Some pipeline caching would be great
-		let renderPSO: GPURenderPipeline;
-		renderPSO = RenderingContext.device.createRenderPipeline(descriptor);
+		const renderPSO = RenderingContext.device.createRenderPipeline(descriptor);
 		return renderPSO;
 	},
 

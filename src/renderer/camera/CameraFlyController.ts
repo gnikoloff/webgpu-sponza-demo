@@ -52,9 +52,7 @@ export default class CameraFlyController {
 		cancelAnimationFrame(this.rafId);
 	}
 
-	private update = (deltaTime: number) => {
-		deltaTime *= 0.001;
-
+	private update = (_deltaTime: number) => {
 		const speed = this.speed * 0.001;
 
 		vec3.set(0, 0, 0, DIR);
@@ -141,7 +139,7 @@ export default class CameraFlyController {
 		this.mouseDomElement.addEventListener("mousemove", this.onMouseMove);
 	};
 
-	private onMouseUp = (e: MouseEvent) => {
+	private onMouseUp = () => {
 		this.mouseDomElement.removeEventListener("mousemove", this.onMouseMove);
 	};
 
@@ -154,12 +152,12 @@ export default class CameraFlyController {
 	};
 
 	private onKeyDown = (e: KeyboardEvent) => {
-		// @ts-ignore
+		// @ts-expect-error Deprecated but still available
 		this.presedKeys[e.keyCode] = true;
 	};
 
 	private onKeyUp = (e: KeyboardEvent) => {
-		// @ts-ignore
+		// @ts-expect-error Deprecated but still available
 		this.presedKeys[e.keyCode] = false;
 	};
 }

@@ -11,10 +11,6 @@ export default class TransparentRenderPass extends RenderPass {
 		super(RenderPassType.Transparent, width, height);
 	}
 
-	public override toggleDebugCamera(v: boolean) {
-		// ...
-	}
-
 	public setCamera(camera: Camera): this {
 		this.camera = camera;
 		return this;

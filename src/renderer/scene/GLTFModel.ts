@@ -2,6 +2,7 @@ import { load } from "@loaders.gl/core";
 import {
 	GLTFLoader,
 	GLTFPostprocessed,
+	GLTFWithBuffers,
 	postProcessGLTF,
 } from "@loaders.gl/gltf";
 import {
@@ -97,8 +98,8 @@ export default class GLTFModel extends Node {
 		return this;
 	}
 
-	public async load(): Promise<any> {
-		const resourcesToLoad: Promise<any>[] = [];
+	public async load(): Promise<GLTFWithBuffers | GPUTexture[]> {
+		const resourcesToLoad: Promise<GLTFWithBuffers | GPUTexture[]>[] = [];
 		const gltfWithBuffers = load(this.url, GLTFLoader);
 		resourcesToLoad.push(gltfWithBuffers);
 		const gltfDefinition = postProcessGLTF(await gltfWithBuffers);
@@ -178,7 +179,7 @@ export default class GLTFModel extends Node {
 	}
 
 	private initGPUBuffersFrom(buffViews: GLTFBufferViewPostprocessed[]) {
-		for (let buffView of buffViews) {
+		for (const buffView of buffViews) {
 			let usage: GPUBufferUsageFlags = 0;
 
 			if (buffView.target === GL_ELEMENT_ARRAY_BUFFER) {

@@ -100,7 +100,7 @@ export default class Node {
 		return true;
 	}
 
-	public onVisibilityChange(v: boolean) {
+	public onVisibilityChange(_v: boolean) {
 		// ...
 	}
 
@@ -128,7 +128,7 @@ export default class Node {
 	public traverse(traverseFn: (node: Node) => void, recursive = true) {
 		traverseFn(this);
 		if (recursive) {
-			for (let child of this.children) {
+			for (const child of this.children) {
 				child.traverse(traverseFn, recursive);
 			}
 		}
@@ -139,7 +139,7 @@ export default class Node {
 		if (found) {
 			return this;
 		}
-		for (let child of this.children) {
+		for (const child of this.children) {
 			const found = child.findChild(traverseFn);
 			if (found) {
 				return child;
@@ -155,15 +155,15 @@ export default class Node {
 		return this.findChild(({ id: nodeId }) => id === nodeId);
 	}
 
-	public preRender(renderEncoder: GPURenderPassEncoder) {
+	public preRender(_renderEncoder: GPURenderPassEncoder) {
 		// noop
 	}
 
-	public onRender(renderEncoder: GPURenderPassEncoder) {
+	public onRender(_renderEncoder: GPURenderPassEncoder) {
 		// noop
 	}
 
-	public postRender(renderEncoder: GPURenderPassEncoder) {
+	public postRender(_renderEncoder: GPURenderPassEncoder) {
 		// noop
 	}
 

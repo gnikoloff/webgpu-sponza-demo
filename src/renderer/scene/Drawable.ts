@@ -181,12 +181,12 @@ export default class Drawable extends Node {
 	}
 
 	public setMaterial(material: Material, forRenderPassType?: RenderPassType) {
-		let renderPassType = forRenderPassType ?? RenderPassType.Deferred;
+		const renderPassType = forRenderPassType ?? RenderPassType.Deferred;
 		this.materials.set(renderPassType, material);
 	}
 
 	public getMaterial(forRenderPassType?: RenderPassType): Material {
-		let renderPassType = forRenderPassType ?? RenderPassType.Deferred;
+		const renderPassType = forRenderPassType ?? RenderPassType.Deferred;
 		return this.materials.get(renderPassType);
 	}
 

@@ -27,8 +27,8 @@ export default class Face {
 	}
 
 	public getArea(): number {
-		let v0 = vec3.sub(this.p2, this.p1);
-		let v1 = vec3.sub(this.p0, this.p1);
+		const v0 = vec3.sub(this.p2, this.p1);
+		const v1 = vec3.sub(this.p0, this.p1);
 		return vec3.len(vec3.cross(v0, v1)) * 0.5;
 	}
 }

@@ -95,7 +95,7 @@ export default class SpecularIBLGenerator extends BaseUtilObject {
 			dimension: "cube",
 		});
 
-		let levels = outTex.mipLevelCount;
+		const levels = outTex.mipLevelCount;
 
 		const inputBindGroupEntries: GPUBindGroupEntry[] = [
 			{
@@ -127,14 +127,14 @@ export default class SpecularIBLGenerator extends BaseUtilObject {
 			},
 		];
 
-		let commandEncoder = RenderingContext.device.createCommandEncoder({
+		const commandEncoder = RenderingContext.device.createCommandEncoder({
 			label: "Specular IBL Command Encoder",
 		});
 		if (RenderingContext.ENABLE_DEBUG_GROUPS) {
 			commandEncoder.pushDebugGroup("Begin Specular IBL Generation");
 		}
 
-		let computePass = commandEncoder.beginComputePass({
+		const computePass = commandEncoder.beginComputePass({
 			label: "Specular IBL Compute Pass",
 		});
 

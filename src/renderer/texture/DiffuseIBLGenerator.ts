@@ -136,7 +136,7 @@ export default class DiffuseIBLGenerator extends BaseUtilObject {
 		});
 
 		for (let i = 0; i < 6; i++) {
-			let faceBuffer = RenderingContext.device.createBuffer({
+			const faceBuffer = RenderingContext.device.createBuffer({
 				label: "Diffuse IBL Face GPUBuffer",
 				size: Uint32Array.BYTES_PER_ELEMENT,
 				usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,

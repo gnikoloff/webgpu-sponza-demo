@@ -119,7 +119,7 @@ export default class GBufferRenderPass extends RenderPass {
 	public override render(
 		commandEncoder: GPUCommandEncoder,
 		scene: Scene,
-		inputs: GPUTexture[],
+		_inputs: GPUTexture[],
 	): GPUTexture[] {
 		const renderPassDescriptor = this.createRenderPassDescriptor();
 		const renderPassEncoder =

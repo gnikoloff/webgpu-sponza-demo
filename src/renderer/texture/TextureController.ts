@@ -63,7 +63,7 @@ export default class TextureController extends BaseUtilObject {
 				vec2.create(texture.width, texture.height),
 			];
 			for (let level = 0; level < mipLevel; level++) {
-				let levelLabel = `MIP Level ${level}`;
+				const levelLabel = `MIP Level ${level}`;
 				textureViewDescriptor.label = levelLabel;
 				textureViewDescriptor.baseArrayLayer = face;
 				textureViewDescriptor.baseMipLevel = level;
@@ -208,7 +208,7 @@ export default class TextureController extends BaseUtilObject {
 		];
 
 		for (let level = 0; level < mipLevelCount; level++) {
-			let levelLabel = `MIP Level ${level}`;
+			const levelLabel = `MIP Level ${level}`;
 			textureViewDescriptor.label = levelLabel;
 			textureViewDescriptor.baseMipLevel = level;
 			textureMipViews.push(texture.createView(textureViewDescriptor));

@@ -67,7 +67,6 @@ export default class CubeGeometry extends Geometry {
 			const gridY1 = gridY + 1;
 
 			let vertexCounter = 0;
-			let groupCount = 0;
 
 			const vector = vec3.create();
 
@@ -159,10 +158,6 @@ export default class CubeGeometry extends Geometry {
 						uvs[d],
 					);
 					this.faces.push(face1);
-
-					// increase counter
-
-					groupCount += 6;
 				}
 			}
 

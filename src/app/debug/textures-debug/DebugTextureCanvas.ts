@@ -145,7 +145,7 @@ export default class DebugTextureCanvas {
 		this.$canvas.height = h;
 
 		let baseArrayLayer = 0;
-		let dimension: GPUTextureViewDimension = "2d";
+		const dimension: GPUTextureViewDimension = "2d";
 		if (this.type === TextureDebugMeshType.ShadowDepthCascade0) {
 			baseArrayLayer = 0;
 		} else if (this.type === TextureDebugMeshType.ShadowDepthCascade1) {

@@ -91,7 +91,7 @@ export default class LightingManager {
 		return this;
 	}
 
-	public render(renderPass: GPURenderPassEncoder) {
+	public render(_renderPass: GPURenderPassEncoder) {
 		throw new Error("Needs implementation");
 	}
 }

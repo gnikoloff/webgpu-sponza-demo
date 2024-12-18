@@ -175,9 +175,9 @@ export default class LightingSystem extends LightingManager {
 		this.addLight(dirLight);
 		this.mainDirLight = dirLight;
 
-		let r = 3;
-		let intesity = 0.3;
-		let p = new CameraFaceCulledPointLight();
+		const r = 3;
+		const intesity = 0.3;
+		const p = new CameraFaceCulledPointLight();
 		p.radius = r;
 		p.intensity = intesity;
 		p.setPositionAsVec3(MAIN_LAMP_POINT_LIGHT_POSITIONS[0]);
@@ -185,7 +185,7 @@ export default class LightingSystem extends LightingManager {
 		p.updateGPUBuffer();
 		this.addLight(p);
 
-		let p2 = new CameraFaceCulledPointLight();
+		const p2 = new CameraFaceCulledPointLight();
 		p2.radius = r;
 		p2.intensity = intesity;
 		p2.setPositionAsVec3(MAIN_LAMP_POINT_LIGHT_POSITIONS[1]);
@@ -193,7 +193,7 @@ export default class LightingSystem extends LightingManager {
 		p2.updateGPUBuffer();
 		this.addLight(p2);
 
-		let p3 = new CameraFaceCulledPointLight();
+		const p3 = new CameraFaceCulledPointLight();
 		p3.intensity = intesity;
 		p3.radius = r;
 		p3.setPositionAsVec3(MAIN_LAMP_POINT_LIGHT_POSITIONS[2]);
@@ -201,7 +201,7 @@ export default class LightingSystem extends LightingManager {
 		p3.updateGPUBuffer();
 		this.addLight(p3);
 
-		let p4 = new CameraFaceCulledPointLight();
+		const p4 = new CameraFaceCulledPointLight();
 		p4.intensity = intesity;
 		p4.radius = r;
 		p4.setPositionAsVec3(MAIN_LAMP_POINT_LIGHT_POSITIONS[3]);
@@ -252,7 +252,7 @@ export default class LightingSystem extends LightingManager {
 		curvePointsBuff.unmap();
 
 		// 2nd Floor Curve Particles
-		let zeroPos = vec3.create();
+		const zeroPos = vec3.create();
 		for (let i = 0; i < LightingSystem.PARTICLES_PER_CURVE; i++) {
 			const p = new PointLight();
 			p.setColor(

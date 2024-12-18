@@ -256,9 +256,9 @@ export default class RenderPass {
 	}
 
 	public render(
-		commandEncoder: GPUCommandEncoder,
-		scene: Scene,
-		inputs: GPUTexture[],
+		_commandEncoder: GPUCommandEncoder,
+		_scene: Scene,
+		_inputs: GPUTexture[],
 	): GPUTexture[] {
 		throw new Error("Needs implementation");
 	}

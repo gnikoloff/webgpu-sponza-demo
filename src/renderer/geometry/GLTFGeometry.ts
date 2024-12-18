@@ -23,7 +23,7 @@ export default class GLTFGeometry extends Geometry {
 		}
 
 		[positionAttrib, normalAttrib, texCoord0Attrib, tangentAttrib].forEach(
-			(attrib, i) => {
+			(attrib) => {
 				if (!attrib) {
 					const buffer = RenderingContext.device.createBuffer({
 						label: `Vertex Buffer Placeholder`,
