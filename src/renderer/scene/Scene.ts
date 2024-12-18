@@ -1,6 +1,7 @@
 import LineDebugDrawable from '../../app/debug/LineDebugDrawable'
 import Camera from '../camera/Camera'
 import LightingManager from '../lighting/LightingManager'
+import { placeholderFunc } from '../types'
 import Drawable from './Drawable'
 import Node from './Node'
 
@@ -18,7 +19,7 @@ export default class Scene extends Node {
   private nonCulledTransparentCount = 0
   private nonCulledOpaqueCount = 0
 
-  private onGraphChangedCallbacks: (() => void)[] = []
+  private onGraphChangedCallbacks: placeholderFunc[] = []
 
   public get nodesCount(): number {
     return this.opaqueMeshes.length + this.transparentMeshes.length
@@ -28,7 +29,7 @@ export default class Scene extends Node {
     return this.nonCulledOpaqueCount + this.nonCulledTransparentCount
   }
 
-  public addOnGraphChangedCallback(v: () => void) {
+  public addOnGraphChangedCallback(v: placeholderFunc) {
     this.onGraphChangedCallbacks.push(v)
   }
 
