@@ -1,4 +1,6 @@
+import { vec3 } from 'wgpu-matrix'
 import sponzaGltfModelUrl from '../assets/sponza/Sponza.gltf?url'
+import { Tween } from '../renderer/animation/Tween'
 import CameraFlyController from '../renderer/camera/CameraFlyController'
 import PerspectiveCamera from '../renderer/camera/PerspectiveCamera'
 import RenderPassComposer from '../renderer/core/RenderPassComposer'
@@ -16,9 +18,14 @@ import TextureLoader from '../renderer/texture/TextureLoader'
 import { DebugStatType, RenderPassType } from '../renderer/types'
 import { TextureDebugMeshType } from '../types'
 import {
+  BLIT_PASS_REVEAL_ANIM_DURATION_MS,
   ENVIRONMENT_CUBE_TEXTURE_FACE_URLS,
   MAIN_CAMERA_FAR,
+  MAIN_CAMERA_LOAD_ANIM_DURATION_MS,
+  MAIN_CAMERA_LOAD_ANIM_EASE,
   MAIN_CAMERA_NEAR,
+  MAIN_CAMERA_START_LOAD_END_POSITION,
+  MAIN_CAMERA_START_LOAD_START_POSITION,
   RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
   RENDER_PASS_BLOOM_TEXTURE,
   RENDER_PASS_COMPUTED_REFLECTIONS_TEXTURE,
@@ -32,8 +39,16 @@ import {
   RENDER_PASS_TAA_RESOLVE_TEXTURE,
   RENDER_PASS_VELOCITY_TEXTURE,
   SECOND_FLOOR_PARTICLES_CATMULL_CURVE_POINT_POSITIONS,
+  SUN_LOAD_ANIM_DELAY_MS,
+  SUN_LOAD_ANIM_DURATION_MS,
+  SUN_LOAD_ANIM_EASE,
+  SUN_LOAD_END_INTENSITY,
+  SUN_LOAD_END_POSITION,
+  SUN_LOAD_START_INTENSITY,
+  SUN_LOAD_START_POSITION,
 } from './constants'
 
+import { lerp } from '../renderer/math/math'
 import LineDebugDrawable from './debug/LineDebugDrawable'
 import TexturesDebugContainer from './debug/textures-debug/TexturesDebugContainer'
 import DebugStatsContainer from './debug/timings-debug/DebugStatsContainer'
@@ -116,6 +131,8 @@ export default class Renderer extends RenderingContext {
 
   private texturesDebugContainer: TexturesDebugContainer
   private timingDebugContainer: DebugStatsContainer
+
+  private resizeCounter = 0
 
   public set sunPositionX(v: number) {
     this.lightingManager.sunPositionX = v
@@ -329,7 +346,7 @@ export default class Renderer extends RenderingContext {
       MAIN_CAMERA_FAR
     )
     this.mainCamera.shouldJitter = true
-    this.mainCamera.setPosition(4, 3, 0)
+    this.mainCamera.setPositionAsVec3(MAIN_CAMERA_START_LOAD_START_POSITION)
     this.mainCamera.setLookAt(0, 2, 0)
     this.mainCamera.updateViewMatrix()
 
@@ -408,6 +425,68 @@ export default class Renderer extends RenderingContext {
           MaterialCache.defaultGLTFShadowMaterial,
           RenderPassType.Shadow
         )
+
+      // Add some artifical time to hide any possible lingering mipmap generation artefacts etc
+      setTimeout(() => {
+        // Sun intro anim
+        new Tween({
+          durationMS: SUN_LOAD_ANIM_DURATION_MS,
+          delayMS: SUN_LOAD_ANIM_DELAY_MS,
+          easeName: SUN_LOAD_ANIM_EASE,
+          onUpdate: (t) => {
+            const sunPos = vec3.lerp(
+              SUN_LOAD_START_POSITION,
+              SUN_LOAD_END_POSITION,
+              t
+            )
+            const sunIntensity = lerp(
+              SUN_LOAD_START_INTENSITY,
+              SUN_LOAD_END_INTENSITY,
+              t
+            )
+            this.sunPositionX = sunPos[0]
+            this.sunPositionY = sunPos[1]
+            this.sunPositionZ = sunPos[2]
+            this.sunIntensity = sunIntensity
+          },
+          onComplete: () => {
+            new Tween({
+              durationMS: 500,
+              delayMS: 0,
+              easeName: 'circ_In',
+              onUpdate: (t) => {
+                this.lightingManager.fireParticlesRevealFactor = t
+              },
+            }).start()
+          },
+        }).start()
+
+        // Camera intro anim
+        new Tween({
+          durationMS: MAIN_CAMERA_LOAD_ANIM_DURATION_MS,
+          easeName: MAIN_CAMERA_LOAD_ANIM_EASE,
+          onUpdate: (t) => {
+            this.mainCamera
+              .setPositionAsVec3(
+                vec3.lerp(
+                  MAIN_CAMERA_START_LOAD_START_POSITION,
+                  MAIN_CAMERA_START_LOAD_END_POSITION,
+                  t
+                )
+              )
+              .updateViewMatrix()
+          },
+          onComplete: () => {
+            document.getElementById('logo').classList.toggle('faded')
+          },
+        }).start()
+
+        const blitPass = this.renderPassComposer.getPass(
+          RenderPassType.Blit
+        ) as BlitRenderPass
+
+        blitPass.revealWithAnimation(BLIT_PASS_REVEAL_ANIM_DURATION_MS)
+      }, 500)
     })
   }
 
@@ -564,7 +643,11 @@ export default class Renderer extends RenderingContext {
       .addInputTexture(RENDER_PASS_BLOOM_TEXTURE)
       .addOutputTexture(RENDER_PASS_BLOOM_TEXTURE)
 
-    const blitRenderPass = new BlitRenderPass(width, height).addInputTextures([
+    const blitRenderPass = new BlitRenderPass(
+      width,
+      height,
+      this.resizeCounter > 0
+    ).addInputTextures([
       RENDER_PASS_BLOOM_TEXTURE,
       RENDER_PASS_TAA_RESOLVE_TEXTURE,
     ])
@@ -595,6 +678,7 @@ export default class Renderer extends RenderingContext {
     this.mainCamera.onResize(w, h)
 
     this.recreateRenderComposer(w, h)
+    this.resizeCounter++
   }
 
   public async renderFrame(elapsedTime: number) {

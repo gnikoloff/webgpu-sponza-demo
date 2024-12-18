@@ -1,11 +1,13 @@
+import { Tween } from '../../renderer/animation/Tween'
 import PipelineStates from '../../renderer/core/PipelineStates'
 import RenderPass from '../../renderer/core/RenderPass'
 import RenderingContext from '../../renderer/core/RenderingContext'
+import VRAMUsageTracker from '../../renderer/misc/VRAMUsageTracker'
 import Scene from '../../renderer/scene/Scene'
 import FullScreenVertexShaderUtils, {
   FullScreenVertexShaderEntryFn,
 } from '../../renderer/shader/FullScreenVertexShaderUtils'
-import { RenderPassType } from '../../renderer/types'
+import { EaseType, RenderPassType } from '../../renderer/types'
 import {
   BLIT_FRAGMENT_SHADER_ENTRY_NAME,
   BLIT_FRAGMENT_SHADER_SRC,
@@ -18,6 +20,17 @@ export default class BlitRenderPass extends RenderPass {
   private texturesBindGroupLayout: GPUBindGroupLayout
   private textureBindGroup: GPUBindGroup
   private bloomMixFactorBuffer: GPUBuffer
+  private timeBuffer: GPUBuffer
+  private revealFactorBuffer: GPUBuffer
+
+  public override destroy(): void {
+    VRAMUsageTracker.removeBufferBytes(this.bloomMixFactorBuffer)
+    VRAMUsageTracker.removeBufferBytes(this.timeBuffer)
+    VRAMUsageTracker.removeBufferBytes(this.revealFactorBuffer)
+    this.bloomMixFactorBuffer.destroy()
+    this.timeBuffer.destroy()
+    this.revealFactorBuffer.destroy()
+  }
 
   public set bloomEnabled(v: boolean) {
     RenderingContext.device.queue.writeBuffer(
@@ -27,7 +40,25 @@ export default class BlitRenderPass extends RenderPass {
     )
   }
 
-  constructor(width: number, height: number) {
+  public revealWithAnimation(duration = 500, easeName: EaseType = 'quad_Out') {
+    new Tween({
+      durationMS: duration,
+      easeName,
+      onUpdate: (t) => {
+        this.updateRevealFactor(t)
+      },
+    }).start()
+  }
+
+  private updateRevealFactor(v: number) {
+    RenderingContext.device.queue.writeBuffer(
+      this.revealFactorBuffer,
+      0,
+      new Float32Array([v])
+    )
+  }
+
+  constructor(width: number, height: number, alreadyRevealed = false) {
     super(RenderPassType.Blit, width, height)
     const vertexShaderModule = PipelineStates.createShaderModule(
       FullScreenVertexShaderUtils
@@ -55,6 +86,16 @@ export default class BlitRenderPass extends RenderPass {
       },
       {
         binding: 2,
+        visibility: GPUShaderStage.FRAGMENT,
+        buffer: {},
+      },
+      {
+        binding: 3,
+        visibility: GPUShaderStage.FRAGMENT,
+        buffer: {},
+      },
+      {
+        binding: 4,
         visibility: GPUShaderStage.FRAGMENT,
         buffer: {},
       },
@@ -93,11 +134,37 @@ export default class BlitRenderPass extends RenderPass {
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
       mappedAtCreation: true,
     })
+
+    VRAMUsageTracker.addBufferBytes(this.bloomMixFactorBuffer)
+
     new Float32Array(this.bloomMixFactorBuffer.getMappedRange()).set([
       BlitRenderPass.BLOOM_MIX_FACTOR,
     ])
 
     this.bloomMixFactorBuffer.unmap()
+
+    this.timeBuffer = RenderingContext.device.createBuffer({
+      label: 'Bloom Elapsed Time Buffer',
+      size: 1 * Float32Array.BYTES_PER_ELEMENT,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    })
+
+    VRAMUsageTracker.addBufferBytes(this.timeBuffer)
+
+    this.revealFactorBuffer = RenderingContext.device.createBuffer({
+      label: 'Blit Loading Reveal Factor Buffer',
+      size: 1 * Float32Array.BYTES_PER_ELEMENT,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      mappedAtCreation: true,
+    })
+
+    VRAMUsageTracker.addBufferBytes(this.revealFactorBuffer)
+
+    new Float32Array(this.revealFactorBuffer.getMappedRange()).set([
+      alreadyRevealed ? 1 : 0,
+    ])
+
+    this.revealFactorBuffer.unmap()
   }
 
   protected override createRenderPassDescriptor(): GPURenderPassDescriptor {
@@ -143,12 +210,30 @@ export default class BlitRenderPass extends RenderPass {
             buffer: this.bloomMixFactorBuffer,
           },
         },
+        {
+          binding: 3,
+          resource: {
+            buffer: this.timeBuffer,
+          },
+        },
+        {
+          binding: 4,
+          resource: {
+            buffer: this.revealFactorBuffer,
+          },
+        },
       ]
       this.textureBindGroup = RenderingContext.device.createBindGroup({
         layout: this.texturesBindGroupLayout,
         entries: texturesBindGroupEntries,
       })
     }
+
+    RenderingContext.device.queue.writeBuffer(
+      this.timeBuffer,
+      0,
+      new Float32Array([RenderingContext.elapsedTimeMs])
+    )
 
     const descriptor = this.createRenderPassDescriptor()
     descriptor.colorAttachments[0].view = RenderingContext.canvasContext

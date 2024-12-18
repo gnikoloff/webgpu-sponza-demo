@@ -10,6 +10,7 @@ import LightParticle from './LightParticle'
 
 import CameraFaceCulledPointLight from '../../renderer/lighting/CameraFaceCulledPointLight'
 import VRAMUsageTracker from '../../renderer/misc/VRAMUsageTracker'
+import { SUN_LOAD_START_INTENSITY, SUN_LOAD_START_POSITION } from '../constants'
 import {
   PARTICLES_RENDER_SHADER_SRC,
   PARTICLES_SHADER_FRAGMENT_ENTRY_FN,
@@ -40,6 +41,9 @@ export default class LightingSystem extends LightingManager {
   private static readonly COMPUTE_WORKGROUP_SIZE_X = 8
   private static readonly COMPUTE_WORKGROUP_SIZE_Y = 1
 
+  private static readonly MAIN_FIRE_LIGHT_RADIUS = 3
+  private static readonly MAIN_FIRE_LIGHT_INTENSITY = 0.3
+
   private static readonly PARTICLES_PER_FIRE = 64
   private static readonly PARTICLES_PER_CURVE = 150
   private static readonly PARTICLES_PER_CORRIDOR = 32
@@ -48,12 +52,15 @@ export default class LightingSystem extends LightingManager {
   private particles: LightParticle[] = []
   private particlesLength: number
 
+  private mainFireLights: CameraFaceCulledPointLight[] = []
+
   private computePSO: GPUComputePipeline
   private renderPSO: GPURenderPipeline
   private computeBindGroup: GPUBindGroup
   private renderBindGroup: GPUBindGroup
   private particleIndexBuffer: GPUBuffer
   private particleSimSettingsBuffer: GPUBuffer
+  private fireParticlesRevealBuffer: GPUBuffer
   private particlesSimSettingsArr = new Float32Array(2).fill(0)
 
   public mainDirLight: DirectionalLight
@@ -165,49 +172,68 @@ export default class LightingSystem extends LightingManager {
     this.particles = null
   }
 
+  public set fireParticlesRevealFactor(v: number) {
+    this.updateFireParticlesRevealBuffer(v)
+    for (const p of this.mainFireLights) {
+      p.radius = LightingSystem.MAIN_FIRE_LIGHT_RADIUS * v
+      p.intensity = LightingSystem.MAIN_FIRE_LIGHT_INTENSITY * v
+      p.updateGPUBuffer()
+    }
+  }
+
+  private updateFireParticlesRevealBuffer(v: number) {
+    RenderingContext.device.queue.writeBuffer(
+      this.fireParticlesRevealBuffer,
+      0,
+      new Float32Array([v])
+    )
+  }
+
   constructor(curvePoints: Vec3[]) {
     super()
 
     const dirLight = new DirectionalLight()
-    dirLight.setPosition(0.1, 20, 0.1)
+    dirLight.setPositionAsVec3(SUN_LOAD_START_POSITION)
     dirLight.setColor(0.2156, 0.2627, 0.3333)
-    dirLight.intensity = 2
+    dirLight.intensity = SUN_LOAD_START_INTENSITY
     this.addLight(dirLight)
     this.mainDirLight = dirLight
 
-    const r = 3
-    const intesity = 0.3
     const p = new CameraFaceCulledPointLight()
-    p.radius = r
-    p.intensity = intesity
+    p.radius = 0 // LightingSystem.MAIN_FIRE_LIGHT_RADIUS
+    p.intensity = 0 // LightingSystem.MAIN_FIRE_LIGHT_INTENSITY
     p.setPositionAsVec3(MAIN_LAMP_POINT_LIGHT_POSITIONS[0])
     p.setColorAsVec3(FIRE_PARTICLE_COLOR)
     p.updateGPUBuffer()
     this.addLight(p)
+    this.mainFireLights.push(p)
 
     const p2 = new CameraFaceCulledPointLight()
-    p2.radius = r
-    p2.intensity = intesity
+    p2.radius = 0 // LightingSystem.MAIN_FIRE_LIGHT_RADIUS
+    p2.intensity = 0 // LightingSystem.MAIN_FIRE_LIGHT_INTENSITY
     p2.setPositionAsVec3(MAIN_LAMP_POINT_LIGHT_POSITIONS[1])
     p2.setColorAsVec3(FIRE_PARTICLE_COLOR)
     p2.updateGPUBuffer()
     this.addLight(p2)
+    this.mainFireLights.push(p2)
 
     const p3 = new CameraFaceCulledPointLight()
-    p3.intensity = intesity
-    p3.radius = r
+    p3.intensity = 0 // LightingSystem.MAIN_FIRE_LIGHT_INTENSITY
+    p3.radius = 0 // LightingSystem.MAIN_FIRE_LIGHT_RADIUS
     p3.setPositionAsVec3(MAIN_LAMP_POINT_LIGHT_POSITIONS[2])
     p3.setColorAsVec3(FIRE_PARTICLE_COLOR)
     p3.updateGPUBuffer()
     this.addLight(p3)
+    this.mainFireLights.push(p3)
 
     const p4 = new CameraFaceCulledPointLight()
-    p4.intensity = intesity
-    p4.radius = r
+    p4.intensity = 0 // LightingSystem.MAIN_FIRE_LIGHT_INTENSITY
+    p4.radius = 0 // LightingSystem.MAIN_FIRE_LIGHT_RADIUS
     p4.setPositionAsVec3(MAIN_LAMP_POINT_LIGHT_POSITIONS[3])
     p4.setColorAsVec3(FIRE_PARTICLE_COLOR)
     p4.updateGPUBuffer()
     this.addLight(p4)
+    this.mainFireLights.push(p4)
 
     // Fire Particles
     for (let i = 0; i < LightingSystem.PARTICLES_PER_FIRE; i++) {
@@ -323,6 +349,19 @@ export default class LightingSystem extends LightingManager {
 
     VRAMUsageTracker.addBufferBytes(this.particleSimSettingsBuffer)
 
+    this.fireParticlesRevealBuffer = RenderingContext.device.createBuffer({
+      label: 'Fire Particles Reveal Factor Buffer',
+      size: 1 * Float32Array.BYTES_PER_ELEMENT,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      mappedAtCreation: true,
+    })
+
+    VRAMUsageTracker.addBufferBytes(this.fireParticlesRevealBuffer)
+
+    new Float32Array(this.fireParticlesRevealBuffer.getMappedRange()).set([0])
+
+    this.fireParticlesRevealBuffer.unmap()
+
     const computeBindGroupLayoutEntries: GPUBindGroupLayoutEntry[] = [
       {
         binding: 0,
@@ -351,6 +390,11 @@ export default class LightingSystem extends LightingManager {
         buffer: {
           type: 'read-only-storage',
         },
+      },
+      {
+        binding: 4,
+        visibility: GPUShaderStage.COMPUTE,
+        buffer: {},
       },
     ]
 
@@ -383,6 +427,12 @@ export default class LightingSystem extends LightingManager {
         binding: 3,
         resource: {
           buffer: curvePointsBuff,
+        },
+      },
+      {
+        binding: 4,
+        resource: {
+          buffer: this.fireParticlesRevealBuffer,
         },
       },
     ]
@@ -453,7 +503,8 @@ export default class LightingSystem extends LightingManager {
           WORKGROUP_SIZE_X: LightingSystem.COMPUTE_WORKGROUP_SIZE_X,
           WORKGROUP_SIZE_Y: LightingSystem.COMPUTE_WORKGROUP_SIZE_Y,
           ANIMATED_PARTICLES_OFFSET_START: 1,
-          FIREWORK_PARTICLES_OFFSET: 5,
+          FIREWORK_PARTICLES_OFFSET: 0,
+          FIREWORK_PARTICLES_COUNT: 4 * LightingSystem.PARTICLES_PER_FIRE,
           CURVE_PARTICLES_OFFSET: 4 * LightingSystem.PARTICLES_PER_FIRE,
           CURVE_PARTICLES_COUNT: LightingSystem.PARTICLES_PER_CURVE,
           CURVE_POSITIONS_COUNT: curvePoints.length,

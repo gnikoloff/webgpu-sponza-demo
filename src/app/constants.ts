@@ -6,6 +6,7 @@ import envPxImgUrl from '../assets/textures/px.hdr?url'
 import envPyImgUrl from '../assets/textures/py.hdr?url'
 import envPzImgUrl from '../assets/textures/pz.hdr?url'
 import { RENDER_TARGET_LOCATIONS } from '../renderer/core/RendererBindings'
+import { EaseType } from '../renderer/types'
 
 export const MAIN_CAMERA_NEAR = 0.1
 export const MAIN_CAMERA_FAR = 100
@@ -57,6 +58,24 @@ export const ENVIRONMENT_CUBE_TEXTURE_FACE_URLS: string[] = [
   envPyImgUrl,
   envPzImgUrl,
 ]
+
+// Loading animation
+export const SUN_LOAD_START_INTENSITY = 0
+export const SUN_LOAD_END_INTENSITY = 2
+export const SUN_LOAD_START_POSITION = vec3.create(1, 20, 10)
+export const SUN_LOAD_END_POSITION = vec3.create(0.1, 20, 0.1)
+export const SUN_LOAD_ANIM_DURATION_MS = 1500
+export const SUN_LOAD_ANIM_DELAY_MS = 300
+export const SUN_LOAD_ANIM_EASE: EaseType = 'circ_Out'
+export const BLIT_PASS_REVEAL_ANIM_DURATION_MS = 800
+export const MAIN_CAMERA_START_LOAD_START_POSITION = vec3.create(
+  9.5,
+  3.4,
+  -0.35
+)
+export const MAIN_CAMERA_START_LOAD_END_POSITION = vec3.create(9.3, 3.4, -0.35)
+export const MAIN_CAMERA_LOAD_ANIM_DURATION_MS = 1000
+export const MAIN_CAMERA_LOAD_ANIM_EASE: EaseType = 'sine_Out'
 
 export const SECOND_FLOOR_PARTICLES_CATMULL_CURVE_POINT_POSITIONS: Vec3[] = [
   vec3.create(5.5, 7.5, 3.25),

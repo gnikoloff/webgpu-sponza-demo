@@ -4,6 +4,8 @@ export const BLIT_FRAGMENT_SHADER_SRC = /* wgsl */ `
   @group(0) @binding(0) var bloomTexture: texture_2d<f32>;
   @group(0) @binding(1) var sceneTexture: texture_2d<f32>;
   @group(0) @binding(2) var<uniform> bloomMixFactor: f32;
+  @group(0) @binding(3) var<uniform> time: f32;
+  @group(0) @binding(4) var<uniform> revealFactor: f32;
 
   @must_use
   fn ACESFilm(x: vec3f) -> vec3f {
@@ -43,8 +45,10 @@ export const BLIT_FRAGMENT_SHADER_SRC = /* wgsl */ `
     color = pow(color, vec3f(1.0 / 2.2));
 
     let uv = coord.xy / texSize;
-    color = transition(uv, 1, vec3f(rand(uv)) * 0.1, color);
-
+    let aspect = texSize.x / texSize.y;
+    let timeFactor = 1.0;
+    let noise = vec3f(rand(vec2f(uv.x + time * timeFactor, uv.y * aspect + time * timeFactor))) * 0.1;
+    color = transition(uv, revealFactor, noise, color);
     return vec4f(vec3(color), 1.0);
   }
 `

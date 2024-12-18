@@ -42,6 +42,7 @@ const GUI_PARAMS: IGUIParams = {
 }
 
 const gui = new dat.GUI({ width: 270 })
+gui.close()
 
 gui.add(GUI_PARAMS, 'Play Animation').onChange((v: boolean) => {
   renderer.enableAnimation = v
@@ -226,8 +227,6 @@ function resize() {
 }
 
 function offsetLogoAndStats() {
-  document.getElementById('logo').classList.toggle('debug-open')
-  document
-    .getElementById('timings-debug-container')
-    .classList.toggle('debug-open')
+  document.getElementById('logo').classList.toggle('faded')
+  document.getElementById('timings-debug-container').classList.toggle('faded')
 }

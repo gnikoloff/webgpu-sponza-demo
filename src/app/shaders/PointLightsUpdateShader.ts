@@ -15,6 +15,7 @@ export const POINT_LIGHTS_UPDATE_SHADER_SRC = /* wgsl */ `
   @group(0) @binding(1) var<storage, read_write> lights: array<Light>;
   @group(0) @binding(2) var<uniform> simSettings: SimSettings;
   @group(0) @binding(3) var<storage, read> linePointPositions: array<vec4f>;
+  @group(0) @binding(4) var<uniform> fireParticlesRevealFactor: f32;
 
   override WORKGROUP_SIZE_X: u32;
   override WORKGROUP_SIZE_Y: u32;
@@ -78,13 +79,16 @@ export const POINT_LIGHTS_UPDATE_SHADER_SRC = /* wgsl */ `
       particle.life = 0;
     }
 
-    if (idx >= FIREWORK_PARTICLES_OFFSET && idx < CURVE_PARTICLES_OFFSET - 4) {
+    if (idx >= FIREWORK_PARTICLES_OFFSET && idx < FIREWORK_PARTICLES_COUNT) {
       let turbulence = curlNoise(
         particle.position * 0.05 + 
         vec3<f32>(0.0, simSettings.time * 0.05, 0.0)
       ) * 0.2;
       particle.position += (particle.velocity + turbulence) * simSettings.timeDelta;
-      light.intensity = (1 - particle.life);
+      light.intensity = saturate((1 - particle.life) * fireParticlesRevealFactor);
+      particle.radius = 0.025 * fireParticlesRevealFactor;
+      // light.radius *= fireParticlesRevealFactor;
+      // light.intensity *= fireParticlesRevealFactor;
     }
 
     if (idx >= CURVE_PARTICLES_OFFSET && idx < CURVE_PARTICLES_OFFSET + CURVE_PARTICLES_COUNT) {

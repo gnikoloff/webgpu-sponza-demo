@@ -93,7 +93,7 @@ body {
   transition: opacity 0.125s ease-in-out;
 }
 
-.fadable.debug-open {
+.fadable.faded {
   opacity: 0;
 }
 
