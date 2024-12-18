@@ -61,12 +61,12 @@ function renderFrame() {
 function resize() {
   const w = innerWidth
   const h = innerHeight
-  $canvas.width = w
-  $canvas.height = h
+  const dpr = Math.min(devicePixelRatio, 1.5)
+  $canvas.width = w * dpr
+  $canvas.height = h * dpr
   $canvas.style.setProperty('width', `${w}px`)
   $canvas.style.setProperty('height', `${h}px`)
-
-  renderer.resize(w, h)
+  renderer.resize(w * dpr, h * dpr)
 }
 
 function offsetLogoAndStats() {
