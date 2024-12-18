@@ -26,6 +26,23 @@ a {
   overflow: scroll;
 }
 
+.keyboard-mouse-instructions {
+  display: none;
+}
+
+.logo-border {
+  display: none;
+}
+
+@media (pointer: fine) {
+  .keyboard-mouse-instructions {
+    display: block;
+  }
+  .logo-border {
+    display: block;
+  }
+}
+
 #no-webgpu-wrapper h1 {
   margin: 0 0 1rem 0;
   text-wrap: balance;
@@ -40,11 +57,6 @@ a {
   position: fixed;
   left: 1rem;
   top: 1rem;
-
-  left: constant(safe-area-inset-top);
-  left: env(safe-area-inset-top);
-  top: constant(safe-area-inset-top);
-  top: env(safe-area-inset-top);
 }
 
 .logo hr {

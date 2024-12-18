@@ -56,6 +56,9 @@ export default class CameraFlyController {
   private isTouchLookActive = false
 
   public revealTouchControls() {
+    if (!isTouchDevice) {
+      return
+    }
     this.$touchMoveRoot.style.setProperty('opacity', '1')
     this.$touchLookRoot.style.setProperty('opacity', '1')
   }
