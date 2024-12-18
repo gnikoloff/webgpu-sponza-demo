@@ -23,7 +23,9 @@ export default class BlitRenderPass extends RenderPass {
   private timeBuffer: GPUBuffer
   private revealFactorBuffer: GPUBuffer
 
-  public override destroy(): void {
+  public override async destroy() {
+    super.destroy()
+    await RenderingContext.device.queue.onSubmittedWorkDone()
     VRAMUsageTracker.removeBufferBytes(this.bloomMixFactorBuffer)
     VRAMUsageTracker.removeBufferBytes(this.timeBuffer)
     VRAMUsageTracker.removeBufferBytes(this.revealFactorBuffer)

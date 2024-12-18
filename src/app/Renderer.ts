@@ -98,7 +98,10 @@ export default class Renderer extends RenderingContext {
 
     const requiredFeatures: GPUFeatureName[] = []
 
-    const supportsGPUTimestampQuery = adapter.features.has('timestamp-query')
+    // TODO: M3 MBP currently reports wrong timestamp queries.
+    // Need to implement and test them properly
+    // const supportsGPUTimestampQuery = adapter.features.has('timestamp-query')
+    const supportsGPUTimestampQuery = false
 
     if (supportsGPUTimestampQuery) {
       requiredFeatures.push('timestamp-query')
@@ -813,14 +816,17 @@ export default class Renderer extends RenderingContext {
       this.mainCameraCtrl.speed = 20
     }
 
+    if (RenderingContext.supportsGPUTimestampQuery) {
+      this.timingDebugContainer.setDisplayValue(
+        DebugStatType.GPUTotal,
+        gpuAverageStat > 0 ? `${gpuAverageStat.toFixed(1)}ms` : 'N/A'
+      )
+    }
+
     this.timingDebugContainer
       .setDisplayValue(
         DebugStatType.CPUTotal,
         cpuAverageStat !== 0 ? `${cpuAverageStat.toFixed(1)}ms` : 'N/A'
-      )
-      .setDisplayValue(
-        DebugStatType.GPUTotal,
-        gpuAverageStat > 0 ? `${gpuAverageStat.toFixed(1)}ms` : 'N/A'
       )
       .setDisplayValue(
         DebugStatType.FPS,

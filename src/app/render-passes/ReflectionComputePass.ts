@@ -50,8 +50,9 @@ export default class ReflectionComputePass extends RenderPass {
     )
   }
 
-  public override destroy(): void {
+  public override async destroy() {
     super.destroy()
+    await RenderingContext.device.queue.onSubmittedWorkDone()
     VRAMUsageTracker.removeBufferBytes(this.settingsBuffer)
     this.settingsBuffer.destroy()
   }

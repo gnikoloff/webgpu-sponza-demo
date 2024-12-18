@@ -34,13 +34,15 @@ export default class RenderPass {
 
   protected gpuTimingAverage = new RollingAverage()
 
-  public destroy() {
+  public async destroy() {
+    await RenderingContext.device.queue.onSubmittedWorkDone()
     for (const tex of this.outTextures) {
       VRAMUsageTracker.removeTextureBytes(tex)
       tex.destroy()
     }
     this.inputTextureViews.length = 0
     this.querySet?.destroy()
+    this.querySet = null
     if (this.resolveBuffer) {
       VRAMUsageTracker.removeBufferBytes(this.resolveBuffer)
       this.resolveBuffer.destroy()
@@ -69,7 +71,7 @@ export default class RenderPass {
     if (RenderingContext.supportsGPUTimestampQuery) {
       const renderPassName = RenderPassNames.get(type)
       this.querySet = RenderingContext.device.createQuerySet({
-        label: `Timestamp Query for Render Pass: ${renderPassName}`,
+        label: `Timestamp Query for Render Pass: ${renderPassName} ${type}`,
         type: 'timestamp',
         count: 2,
       })
@@ -192,7 +194,7 @@ export default class RenderPass {
   }
 
   public async getTimingResult(): Promise<RenderPassTiming> {
-    if (!RenderingContext.supportsGPUTimestampQuery) {
+    if (!RenderingContext.supportsGPUTimestampQuery || !this.querySet) {
       return {
         avgValue: 0,
         timings: [0, 0],

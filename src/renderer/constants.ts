@@ -23,7 +23,7 @@ export const AllRenderPassTypes: RenderPassType[] = [
 
 export const AllDebugStatTypes: DebugStatType[] = [
   DebugStatType.CPUTotal,
-  DebugStatType.GPUTotal,
+  // DebugStatType.GPUTotal,
   DebugStatType.FPS,
   DebugStatType.VRAM,
   DebugStatType.VisibleMeshes,
@@ -60,4 +60,6 @@ export const RenderPassNames: Map<RenderPassType, string> = new Map([
   [RenderPassType.Reflection, 'SSR Render Pass'],
   [RenderPassType.DebugBounds, 'Debug Bounds Render Pass'],
   [RenderPassType.Blit, 'Blit Render Pass'],
+  [RenderPassType.BloomDownsample, 'Bloom Downsample Render Pass'],
+  [RenderPassType.BloomUpsample, 'Bloom Upsample Render Pass'],
 ])

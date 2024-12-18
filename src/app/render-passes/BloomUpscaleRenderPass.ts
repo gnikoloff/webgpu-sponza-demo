@@ -20,7 +20,9 @@ export default class BloomUpscaleRenderPass extends RenderPass {
   private sampler: GPUSampler
   private filterRadiusBuffer: GPUBuffer
 
-  public override destroy(): void {
+  public override async destroy() {
+    super.destroy()
+    await RenderingContext.device.queue.onSubmittedWorkDone()
     VRAMUsageTracker.removeBufferBytes(this.filterRadiusBuffer)
     this.filterRadiusBuffer.destroy()
   }

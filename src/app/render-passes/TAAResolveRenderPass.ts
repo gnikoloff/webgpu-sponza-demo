@@ -27,7 +27,9 @@ export default class TAAResolveRenderPass extends RenderPass {
   private historyMixFactorBuffer: GPUBuffer
   private historyReset = false
 
-  public override destroy(): void {
+  public override async destroy() {
+    super.destroy()
+    await RenderingContext.device.queue.onSubmittedWorkDone()
     VRAMUsageTracker.removeBufferBytes(this.historyMixFactorBuffer)
     this.historyMixFactorBuffer.destroy()
   }

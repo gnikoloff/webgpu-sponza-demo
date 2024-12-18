@@ -50,7 +50,9 @@ export default class MomentsDepthBlurComputePass extends RenderPass {
   private blurDirHorizontalBuffer: GPUBuffer
   private blurDirVerticalBuffer: GPUBuffer
 
-  public override destroy(): void {
+  public override async destroy() {
+    super.destroy()
+    await RenderingContext.device.queue.onSubmittedWorkDone()
     VRAMUsageTracker.removeBufferBytes(this.blurDirHorizontalBuffer)
     VRAMUsageTracker.removeBufferBytes(this.blurDirVerticalBuffer)
     this.blurDirHorizontalBuffer.destroy()

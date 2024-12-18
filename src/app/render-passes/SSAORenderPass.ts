@@ -80,8 +80,9 @@ export default class SSAORenderPass extends RenderPass {
     )
   }
 
-  public override destroy(): void {
+  public override async destroy() {
     super.destroy()
+    await RenderingContext.device.queue.onSubmittedWorkDone()
     if (this.noiseTexture) {
       VRAMUsageTracker.removeTextureBytes(this.noiseTexture)
     }
