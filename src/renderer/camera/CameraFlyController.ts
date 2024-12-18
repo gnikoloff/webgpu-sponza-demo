@@ -1,4 +1,5 @@
 import { Vec3, mat4, vec2, vec3 } from 'wgpu-matrix'
+import RenderingContext from '../core/RenderingContext'
 import Camera from './Camera'
 
 const DIR = vec3.create()
@@ -14,7 +15,12 @@ const ARROW_LEFT_CHAR_CODE = 37
 const ARROW_RIGHT_CHAR_CODE = 39
 const ARROW_BACKWARD_CHAR_CODE = 40
 
+const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+
 export default class CameraFlyController {
+  private static readonly TOUCHMOVE_ROOT_SIZE = 150
+  private static readonly TOUCHMOVE_HANDLE_SIZE = 106
+
   private angles = vec2.create(0, -Math.PI * 0.5)
   private position: Vec3
   private viewMat = mat4.create()
@@ -27,7 +33,25 @@ export default class CameraFlyController {
 
   private rafId = -1
 
-  public speed = 20
+  public speed = 40
+
+  private $touchMoveRoot?: HTMLDivElement
+  private $touchMoveHandle?: HTMLDivElement
+  private $touchLookRoot?: HTMLDivElement
+  private $touchLookHandle?: HTMLDivElement
+
+  private touchMoveX = -CameraFlyController.TOUCHMOVE_HANDLE_SIZE * 0.5
+  private touchMoveY = -CameraFlyController.TOUCHMOVE_HANDLE_SIZE * 0.5
+  private touchMoveTargetX = -CameraFlyController.TOUCHMOVE_HANDLE_SIZE * 0.5
+  private touchMoveTargetY = -CameraFlyController.TOUCHMOVE_HANDLE_SIZE * 0.5
+  private touchMoveAngle = 0
+
+  private touchLookX = -CameraFlyController.TOUCHMOVE_HANDLE_SIZE * 0.5
+  private touchLookY = -CameraFlyController.TOUCHMOVE_HANDLE_SIZE * 0.5
+  private touchLookTargetX = -CameraFlyController.TOUCHMOVE_HANDLE_SIZE * 0.5
+  private touchLookTargetY = -CameraFlyController.TOUCHMOVE_HANDLE_SIZE * 0.5
+
+  private isTouchMoveActive = false
 
   constructor(
     private camera: Camera,
@@ -42,6 +66,172 @@ export default class CameraFlyController {
     mouseDomElement.addEventListener('mouseup', this.onMouseUp)
 
     this.rotateView(0.0075, 0.005)
+
+    if (isTouchDevice) {
+      // move controller
+
+      this.$touchMoveRoot = document.createElement('div')
+      this.$touchMoveRoot.style.setProperty('position', 'fixed')
+      this.$touchMoveRoot.style.setProperty('left', '24px')
+      this.$touchMoveRoot.style.setProperty('bottom', '24px')
+      this.$touchMoveRoot.style.setProperty(
+        'width',
+        `${CameraFlyController.TOUCHMOVE_ROOT_SIZE}px`
+      )
+      this.$touchMoveRoot.style.setProperty(
+        'height',
+        `${CameraFlyController.TOUCHMOVE_ROOT_SIZE}px`
+      )
+      // this.$touchMoveRoot.style.setProperty('background', 'red')
+      this.$touchMoveRoot.style.setProperty('border-radius', '50%')
+      this.$touchMoveRoot.style.setProperty('border', '2px solid white')
+      this.$touchMoveRoot.style.setProperty('z-index', '9999')
+
+      this.$touchMoveHandle = document.createElement('div')
+      this.$touchMoveHandle.style.setProperty(
+        'width',
+        `${CameraFlyController.TOUCHMOVE_HANDLE_SIZE}px`
+      )
+      this.$touchMoveHandle.style.setProperty(
+        'height',
+        `${CameraFlyController.TOUCHMOVE_HANDLE_SIZE}px`
+      )
+      this.$touchMoveHandle.style.setProperty('position', 'absolute')
+      this.$touchMoveHandle.style.setProperty('left', '50%')
+      this.$touchMoveHandle.style.setProperty('top', '50%')
+      this.$touchMoveHandle.style.setProperty(
+        'background-color',
+        'rgba(255, 255, 255, 0.72)'
+      )
+      this.$touchMoveHandle.style.setProperty('border-radius', '50%')
+      //
+      this.$touchMoveRoot.appendChild(this.$touchMoveHandle)
+      document.body.appendChild(this.$touchMoveRoot)
+
+      this.$touchMoveHandle.addEventListener(
+        'touchstart',
+        this.onMoveHandleTouchStart
+      )
+      this.$touchMoveHandle.addEventListener(
+        'touchmove',
+        this.onMoveHandleTouchMove
+      )
+      this.$touchMoveHandle.addEventListener(
+        'touchend',
+        this.onMoveHandleTouchEnd
+      )
+      this.$touchMoveHandle.addEventListener(
+        'touchcancel',
+        this.onMoveHandleTouchEnd
+      )
+
+      // Look controller
+      this.$touchLookRoot = document.createElement('div')
+      this.$touchLookRoot.style.setProperty('position', 'fixed')
+      this.$touchLookRoot.style.setProperty('bottom', '24px')
+      this.$touchLookRoot.style.setProperty('right', '24px')
+      this.$touchLookRoot.style.setProperty(
+        'width',
+        `${CameraFlyController.TOUCHMOVE_ROOT_SIZE}px`
+      )
+      this.$touchLookRoot.style.setProperty(
+        'height',
+        `${CameraFlyController.TOUCHMOVE_ROOT_SIZE}px`
+      )
+      this.$touchLookRoot.style.setProperty('border', '2px solid white')
+      this.$touchLookRoot.style.setProperty('border-radius', '50%')
+      this.$touchLookRoot.style.setProperty('z-index', '9999')
+
+      document.body.appendChild(this.$touchLookRoot)
+
+      this.$touchLookHandle = document.createElement('div')
+      this.$touchLookHandle.style.setProperty(
+        'width',
+        `${CameraFlyController.TOUCHMOVE_HANDLE_SIZE}px`
+      )
+      this.$touchLookHandle.style.setProperty(
+        'height',
+        `${CameraFlyController.TOUCHMOVE_HANDLE_SIZE}px`
+      )
+      this.$touchLookHandle.style.setProperty('position', 'absolute')
+      this.$touchLookHandle.style.setProperty('left', '50%')
+      this.$touchLookHandle.style.setProperty('top', '50%')
+      this.$touchLookHandle.style.setProperty(
+        'background-color',
+        'rgba(255, 255, 255, 0.72)'
+      )
+      this.$touchLookHandle.style.setProperty('border-radius', '50%')
+      this.$touchLookRoot.appendChild(this.$touchLookHandle)
+
+      // this.$touchMoveHandle.addEventListener(
+      //   'touchstart',
+      //   this.onLookHandleTouch
+      // )
+      this.$touchLookHandle.addEventListener(
+        'touchmove',
+        this.onLookHandleTouchMove
+      )
+      this.$touchLookHandle.addEventListener(
+        'touchend',
+        this.onLookHandleTouchEnd
+      )
+      this.$touchLookHandle.addEventListener(
+        'touchcancel',
+        this.onLookHandleTouchEnd
+      )
+    }
+  }
+
+  private onLookHandleTouchMove = (e: TouchEvent) => {
+    const px = e.touches[0].clientX
+    const py = e.touches[0].clientY
+    const cx = innerWidth - 24 - CameraFlyController.TOUCHMOVE_ROOT_SIZE * 0.5
+    const cy = innerHeight - 24 - CameraFlyController.TOUCHMOVE_ROOT_SIZE * 0.5
+    const dx = cx - px
+    const dy = cy - py
+    this.rotateView(-dx * 0.00075, -dy * 0.0005)
+    const d = Math.sqrt(dx * dx + dy * dy)
+    const angle = Math.atan2(-dy, -dx)
+    const nx =
+      Math.cos(angle) * d - CameraFlyController.TOUCHMOVE_HANDLE_SIZE * 0.5
+    const ny =
+      Math.sin(angle) * d - CameraFlyController.TOUCHMOVE_HANDLE_SIZE * 0.5
+    this.touchLookTargetX = nx
+    this.touchLookTargetY = ny
+  }
+
+  private onLookHandleTouchEnd = () => {
+    this.touchLookTargetX = -CameraFlyController.TOUCHMOVE_HANDLE_SIZE * 0.5
+    this.touchLookTargetY = -CameraFlyController.TOUCHMOVE_HANDLE_SIZE * 0.5
+  }
+
+  private onMoveHandleTouchStart = () => {
+    this.isTouchMoveActive = true
+  }
+
+  private onMoveHandleTouchEnd = () => {
+    this.touchMoveTargetX = -CameraFlyController.TOUCHMOVE_HANDLE_SIZE * 0.5
+    this.touchMoveTargetY = -CameraFlyController.TOUCHMOVE_HANDLE_SIZE * 0.5
+    this.isTouchMoveActive = false
+  }
+
+  private onMoveHandleTouchMove = (e: TouchEvent) => {
+    const px = e.touches[0].clientX
+    const py = e.touches[0].clientY
+    const cx = 24 + CameraFlyController.TOUCHMOVE_ROOT_SIZE * 0.5
+    const cy = innerHeight - 24 - CameraFlyController.TOUCHMOVE_ROOT_SIZE * 0.5
+    const dx = cx - px
+    const dy = cy - py
+    const d = Math.min(Math.sqrt(dx * dx + dy * dy), 60)
+
+    const angle = Math.atan2(-dy, -dx)
+    const nx =
+      Math.cos(angle) * d - CameraFlyController.TOUCHMOVE_HANDLE_SIZE * 0.5
+    const ny =
+      Math.sin(angle) * d - CameraFlyController.TOUCHMOVE_HANDLE_SIZE * 0.5
+    this.touchMoveTargetX = nx
+    this.touchMoveTargetY = ny
+    this.touchMoveAngle = angle
   }
 
   public startTick() {
@@ -54,41 +244,68 @@ export default class CameraFlyController {
 
   private update = (_deltaTime: number) => {
     const speed = this.speed * 0.001
-
     vec3.set(0, 0, 0, DIR)
 
-    if (
-      this.presedKeys[FORWARD_CHAR_CODE] ||
-      this.presedKeys[ARROW_FORWARD_CHAR_CODE]
-    ) {
-      DIR[2] -= speed
+    const dt = RenderingContext.deltaTimeMs
+
+    if (isTouchDevice) {
+      this.touchMoveX += (this.touchMoveTargetX - this.touchMoveX) * dt * 5
+      this.touchMoveY += (this.touchMoveTargetY - this.touchMoveY) * dt * 5
+
+      this.$touchMoveHandle?.style.setProperty(
+        'transform',
+        `translate3d(${this.touchMoveX}px, ${this.touchMoveY}px, 0)`
+      )
+
+      this.touchLookX += (this.touchLookTargetX - this.touchLookX) * dt * 5
+      this.touchLookY += (this.touchLookTargetY - this.touchLookY) * dt * 5
+
+      this.$touchLookHandle?.style.setProperty(
+        'transform',
+        `translate3d(${this.touchLookX}px, ${this.touchLookY}px, 0)`
+      )
+
+      if (this.isTouchMoveActive) {
+        const mx = Math.cos(this.touchMoveAngle)
+        const my = Math.sin(this.touchMoveAngle)
+        DIR[0] = mx * 0.05
+        DIR[2] = my * 0.05
+      }
+    } else {
+      if (
+        this.presedKeys[FORWARD_CHAR_CODE] ||
+        this.presedKeys[ARROW_FORWARD_CHAR_CODE]
+      ) {
+        DIR[2] -= speed
+      }
+      if (
+        this.presedKeys[BACKWARD_CHAR_CODE] ||
+        this.presedKeys[ARROW_BACKWARD_CHAR_CODE]
+      ) {
+        DIR[2] += speed
+      }
+      if (
+        this.presedKeys[LEFT_CHAR_CODE] ||
+        this.presedKeys[ARROW_LEFT_CHAR_CODE]
+      ) {
+        DIR[0] -= speed
+      }
+      if (
+        this.presedKeys[RIGHT_CHAR_CODE] ||
+        this.presedKeys[ARROW_RIGHT_CHAR_CODE]
+      ) {
+        DIR[0] += speed
+      }
+      if (this.presedKeys[UP_CHAR_CODE]) {
+        // Space, moves up
+        DIR[1] += speed
+      }
+      if (this.presedKeys[DOWN_CHAR_CODE]) {
+        // Shift, moves down
+        DIR[1] -= speed
+      }
     }
-    if (
-      this.presedKeys[BACKWARD_CHAR_CODE] ||
-      this.presedKeys[ARROW_BACKWARD_CHAR_CODE]
-    ) {
-      DIR[2] += speed
-    }
-    if (
-      this.presedKeys[LEFT_CHAR_CODE] ||
-      this.presedKeys[ARROW_LEFT_CHAR_CODE]
-    ) {
-      DIR[0] -= speed
-    }
-    if (
-      this.presedKeys[RIGHT_CHAR_CODE] ||
-      this.presedKeys[ARROW_RIGHT_CHAR_CODE]
-    ) {
-      DIR[0] += speed
-    }
-    if (this.presedKeys[UP_CHAR_CODE]) {
-      // Space, moves up
-      DIR[1] += speed
-    }
-    if (this.presedKeys[DOWN_CHAR_CODE]) {
-      // Shift, moves down
-      DIR[1] -= speed
-    }
+
     if (DIR[0] !== 0 || DIR[1] !== 0 || DIR[2] !== 0) {
       // Move the camera in the direction we are facing
       vec3.transformMat4(DIR, this.rotMat, DIR)
