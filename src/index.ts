@@ -10,6 +10,7 @@ if (renderer === undefined) {
   document
     .getElementById('no-webgpu-wrapper')
     .style.setProperty('display', 'block')
+  document.getElementById('loader').classList.toggle('faded')
 }
 
 const GUI_PARAMS: IGUIParams = {
