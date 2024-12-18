@@ -1,7 +1,7 @@
 {
-	"name": "webgpu-ssr",
+	"name": "webgpu-tech-demo",
 	"version": "1.0.0",
-	"description": "WebGPU Screen Space Reflections",
+	"description": "WebGPU Tech Demo Showcasing Various Rendering Techniques",
 	"main": "index.js",
 	"type": "module",
 	"scripts": {
@@ -11,31 +11,34 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/gnikoloff/webgpu-ssr.git"
+		"url": "git+https://github.com/gnikoloff/webgpu-tech-demo"
 	},
 	"keywords": [
 		"webgpu",
-		"ssr",
-		"hi-z"
+		"wgsl",
+		"shaders",
+		"rendering"
 	],
 	"author": "Georgi Nikolov",
-	"license": "ISC",
+	"license": "CC0-1.0",
 	"bugs": {
-		"url": "https://github.com/gnikoloff/webgpu-ssr/issues"
+		"url": "https://github.com/gnikoloff/webgpu-tech-demo/issues"
 	},
-	"homepage": "https://github.com/gnikoloff/webgpu-ssr#readme",
+	"homepage": "https://github.com/gnikoloff/webgpu-tech-demo/webgpu-ssr#readme",
 	"devDependencies": {
+		"@types/byte-size": "^8.1.2",
 		"@types/dat.gui": "^0.7.13",
 		"@webgpu/types": "^0.1.51",
 		"vite": "^5.4.11",
+		"vite-plugin-mkcert": "^1.17.6",
 		"vite-plugin-top-level-await": "^1.4.4"
 	},
 	"dependencies": {
 		"@loaders.gl/core": "^4.3.3",
 		"@loaders.gl/gltf": "^4.3.3",
+		"byte-size": "^9.0.1",
 		"dat.gui": "^0.7.9",
 		"hdr.js": "^0.2.0",
-		"obj-file-parser-ts": "^0.6.5",
 		"webgpu-utils": "^1.9.3",
 		"wgpu-matrix": "^3.3.0",
 		"wgsl-preprocessor": "^1.0.1"
