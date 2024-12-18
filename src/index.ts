@@ -25,6 +25,7 @@ const GUI_PARAMS: IGUIParams = {
 	"Enable SSR": true,
 	"SSR Method": "hi-z",
 	"SSR Max Iterations": 30,
+	"Debug No Info Rays": false,
 	"Sun Intensity": 2,
 	"Sun Position X": 0.1,
 	"Sun Position Y": 100,
@@ -72,7 +73,7 @@ lightingFolder
 		renderer.sunIntensity = v;
 	});
 lightingFolder
-	.add(GUI_PARAMS, "Sun Position X", -60, 60)
+	.add(GUI_PARAMS, "Sun Position X", -60, 60, 0.5)
 	.onChange((v: number) => {
 		renderer.sunPositionZ = v;
 	});
@@ -82,7 +83,7 @@ lightingFolder
 // 		renderer.sunPositionY = v;
 // 	});
 lightingFolder
-	.add(GUI_PARAMS, "Sun Position Z", -150, 150)
+	.add(GUI_PARAMS, "Sun Position Z", -150, 150, 0.5)
 	.onChange((v: number) => {
 		renderer.sunPositionX = v;
 	});
@@ -167,6 +168,9 @@ const ssrMaxIterationsController = ssrFolder
 	.onChange((v: number) => {
 		renderer.ssrMaxIterations = v;
 	});
+ssrFolder.add(GUI_PARAMS, "Debug No Info Rays").onChange((v: boolean) => {
+	renderer.debugMissedSSR = v;
+});
 
 const bloomFolder = gui.addFolder("Bloom");
 bloomFolder.open();

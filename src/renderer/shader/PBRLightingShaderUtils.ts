@@ -75,9 +75,6 @@ const GetPBRLightingShaderUtils = (
     var Lo = vec3f(0.0);
     let albedoOverPi = albedo / PI;
 
-    var ambientOcclusion = material.ambientOcclusion;
-    ambientOcclusion *= (1 - shadow * 0.5);
-
     let roughness = material.roughness;
     let roughnessSq = roughness * roughness;
     let roughnessQuad = roughnessSq * roughnessSq;
@@ -170,10 +167,10 @@ const GetPBRLightingShaderUtils = (
       let uv = vec2f(max(dot(worldSpaceNorm, worldSpaceV), 0.0), roughness);
       let envBDRF = textureSample(bdrfLutTexture, envTexSampler, uv).rg;
       specular = prefilteredColor * (F * envBDRF.x + envBDRF.y);
-      specular = mix(specular, specular * 0.2, 1 - shadow);
+      // specular = mix(specular, specular * 0.2, 1 - shadow);
 
       let diffuse = irradiance * albedo;
-      let ambient = (kD * diffuse + specular * metallic) * ambientOcclusion;
+      let ambient = (kD * diffuse + specular * metallic) * material.ambientOcclusion;
 
       // let ambient = vec3f(0.03) * albedo * material.ambientOcclusion;
       
