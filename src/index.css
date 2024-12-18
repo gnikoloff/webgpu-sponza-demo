@@ -26,6 +26,15 @@ a {
   overflow: scroll;
 }
 
+#no-webgpu-preview {
+  max-width: 70%;
+}
+
+#no-webgpu-preview img {
+  width: 100%;
+  display: block;
+}
+
 .keyboard-mouse-instructions {
   display: none;
 }
@@ -46,7 +55,7 @@ a {
 #no-webgpu-wrapper h1 {
   margin: 0 0 1rem 0;
   text-wrap: balance;
-  font-size: 18px;
+  font-size: 21px;
 }
 
 #no-webgpu-wrapper ul li li {

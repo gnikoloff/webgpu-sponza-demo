@@ -11,6 +11,10 @@ if (renderer === undefined) {
     .getElementById('no-webgpu-wrapper')
     .style.setProperty('display', 'block')
   document.getElementById('loader').classList.toggle('faded')
+
+  const previewImg = document.createElement('img')
+  previewImg.src = 'no-webgpu.png'
+  document.getElementById('no-webgpu-preview').appendChild(previewImg)
 }
 
 const GUI_PARAMS: IGUIParams = {
