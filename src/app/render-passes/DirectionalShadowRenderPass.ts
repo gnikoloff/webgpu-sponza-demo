@@ -14,7 +14,7 @@ import RenderingContext from '../../renderer/core/RenderingContext'
 import DirectionalLight from '../../renderer/lighting/DirectionalLight'
 import VRAMUsageTracker from '../../renderer/misc/VRAMUsageTracker'
 import Scene from '../../renderer/scene/Scene'
-import { RenderPassType, placeholderFunc } from '../../renderer/types'
+import { RenderPassType } from '../../renderer/types'
 
 export default class DirectionalShadowRenderPass extends RenderPass {
   public static readonly TEXTURE_SIZE = 4098
@@ -70,7 +70,7 @@ export default class DirectionalShadowRenderPass extends RenderPass {
     })
   }
 
-  public override async destroy(cb?: placeholderFunc) {
+  public override async destroy() {
     super.destroy()
     await RenderingContext.device.queue.onSubmittedWorkDone()
     VRAMUsageTracker.removeBufferBytes(this.shadowCascadesBuffer)
