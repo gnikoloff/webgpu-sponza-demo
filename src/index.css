@@ -27,7 +27,13 @@ a {
 }
 
 #no-webgpu-preview {
-  max-width: 70%;
+  max-width: 100%;
+}
+
+@media (min-width: 920px) {
+  #no-webgpu-preview {
+    width: 70%;
+  }
 }
 
 #no-webgpu-preview img {
