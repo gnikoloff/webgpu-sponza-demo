@@ -23,6 +23,7 @@ a {
   padding: 1rem 3rem 1rem 1rem;
   box-sizing: border-box;
   font-size: 14px;
+  overflow: scroll;
 }
 
 #no-webgpu-wrapper h1 {
