@@ -18,8 +18,8 @@ const ARROW_BACKWARD_CHAR_CODE = 40
 const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
 
 export default class CameraFlyController {
-  private static readonly TOUCHMOVE_ROOT_SIZE = 150
-  private static readonly TOUCHMOVE_HANDLE_SIZE = 106
+  private static readonly TOUCHMOVE_ROOT_SIZE = 120
+  private static readonly TOUCHMOVE_HANDLE_SIZE = 90
 
   private angles = vec2.create(0, -Math.PI * 0.5)
   private position: Vec3
@@ -50,8 +50,15 @@ export default class CameraFlyController {
   private touchLookY = -CameraFlyController.TOUCHMOVE_HANDLE_SIZE * 0.5
   private touchLookTargetX = -CameraFlyController.TOUCHMOVE_HANDLE_SIZE * 0.5
   private touchLookTargetY = -CameraFlyController.TOUCHMOVE_HANDLE_SIZE * 0.5
+  private touchLookAngle = 0
 
   private isTouchMoveActive = false
+  private isTouchLookActive = false
+
+  public revealTouchControls() {
+    this.$touchMoveRoot.style.setProperty('opacity', '1')
+    this.$touchLookRoot.style.setProperty('opacity', '1')
+  }
 
   constructor(
     private camera: Camera,
@@ -86,6 +93,8 @@ export default class CameraFlyController {
       this.$touchMoveRoot.style.setProperty('border-radius', '50%')
       this.$touchMoveRoot.style.setProperty('border', '2px solid white')
       this.$touchMoveRoot.style.setProperty('z-index', '9999')
+      this.$touchMoveRoot.style.setProperty('transition', 'opacity 0.125s ease')
+      this.$touchMoveRoot.style.setProperty('opacity', '0')
 
       this.$touchMoveHandle = document.createElement('div')
       this.$touchMoveHandle.style.setProperty(
@@ -108,23 +117,6 @@ export default class CameraFlyController {
       this.$touchMoveRoot.appendChild(this.$touchMoveHandle)
       document.body.appendChild(this.$touchMoveRoot)
 
-      this.$touchMoveHandle.addEventListener(
-        'touchstart',
-        this.onMoveHandleTouchStart
-      )
-      this.$touchMoveHandle.addEventListener(
-        'touchmove',
-        this.onMoveHandleTouchMove
-      )
-      this.$touchMoveHandle.addEventListener(
-        'touchend',
-        this.onMoveHandleTouchEnd
-      )
-      this.$touchMoveHandle.addEventListener(
-        'touchcancel',
-        this.onMoveHandleTouchEnd
-      )
-
       // Look controller
       this.$touchLookRoot = document.createElement('div')
       this.$touchLookRoot.style.setProperty('position', 'fixed')
@@ -141,6 +133,8 @@ export default class CameraFlyController {
       this.$touchLookRoot.style.setProperty('border', '2px solid white')
       this.$touchLookRoot.style.setProperty('border-radius', '50%')
       this.$touchLookRoot.style.setProperty('z-index', '9999')
+      this.$touchLookRoot.style.setProperty('transition', 'opacity 0.125s ease')
+      this.$touchLookRoot.style.setProperty('opacity', '0')
 
       document.body.appendChild(this.$touchLookRoot)
 
@@ -163,10 +157,27 @@ export default class CameraFlyController {
       this.$touchLookHandle.style.setProperty('border-radius', '50%')
       this.$touchLookRoot.appendChild(this.$touchLookHandle)
 
-      // this.$touchMoveHandle.addEventListener(
-      //   'touchstart',
-      //   this.onLookHandleTouch
-      // )
+      this.$touchMoveHandle.addEventListener(
+        'touchstart',
+        this.onMoveHandleTouchStart
+      )
+      this.$touchMoveHandle.addEventListener(
+        'touchmove',
+        this.onMoveHandleTouchMove
+      )
+      this.$touchMoveHandle.addEventListener(
+        'touchend',
+        this.onMoveHandleTouchEnd
+      )
+      this.$touchMoveHandle.addEventListener(
+        'touchcancel',
+        this.onMoveHandleTouchEnd
+      )
+
+      this.$touchLookHandle.addEventListener(
+        'touchstart',
+        this.onLookHandleTouchStart
+      )
       this.$touchLookHandle.addEventListener(
         'touchmove',
         this.onLookHandleTouchMove
@@ -182,15 +193,19 @@ export default class CameraFlyController {
     }
   }
 
+  private onLookHandleTouchStart = () => {
+    this.isTouchLookActive = true
+  }
+
   private onLookHandleTouchMove = (e: TouchEvent) => {
-    const px = e.touches[0].clientX
-    const py = e.touches[0].clientY
+    e.preventDefault()
+    const px = e.targetTouches[0].clientX
+    const py = e.targetTouches[0].clientY
     const cx = innerWidth - 24 - CameraFlyController.TOUCHMOVE_ROOT_SIZE * 0.5
     const cy = innerHeight - 24 - CameraFlyController.TOUCHMOVE_ROOT_SIZE * 0.5
     const dx = cx - px
     const dy = cy - py
-    this.rotateView(-dx * 0.00075, -dy * 0.0005)
-    const d = Math.sqrt(dx * dx + dy * dy)
+    const d = Math.min(Math.sqrt(dx * dx + dy * dy), 60)
     const angle = Math.atan2(-dy, -dx)
     const nx =
       Math.cos(angle) * d - CameraFlyController.TOUCHMOVE_HANDLE_SIZE * 0.5
@@ -198,11 +213,13 @@ export default class CameraFlyController {
       Math.sin(angle) * d - CameraFlyController.TOUCHMOVE_HANDLE_SIZE * 0.5
     this.touchLookTargetX = nx
     this.touchLookTargetY = ny
+    this.touchLookAngle = angle
   }
 
   private onLookHandleTouchEnd = () => {
     this.touchLookTargetX = -CameraFlyController.TOUCHMOVE_HANDLE_SIZE * 0.5
     this.touchLookTargetY = -CameraFlyController.TOUCHMOVE_HANDLE_SIZE * 0.5
+    this.isTouchLookActive = false
   }
 
   private onMoveHandleTouchStart = () => {
@@ -216,8 +233,9 @@ export default class CameraFlyController {
   }
 
   private onMoveHandleTouchMove = (e: TouchEvent) => {
-    const px = e.touches[0].clientX
-    const py = e.touches[0].clientY
+    e.preventDefault()
+    const px = e.targetTouches[0].clientX
+    const py = e.targetTouches[0].clientY
     const cx = 24 + CameraFlyController.TOUCHMOVE_ROOT_SIZE * 0.5
     const cy = innerHeight - 24 - CameraFlyController.TOUCHMOVE_ROOT_SIZE * 0.5
     const dx = cx - px
@@ -264,6 +282,12 @@ export default class CameraFlyController {
         'transform',
         `translate3d(${this.touchLookX}px, ${this.touchLookY}px, 0)`
       )
+
+      if (this.isTouchLookActive) {
+        const dx = Math.cos(this.touchLookAngle)
+        const dy = Math.sin(this.touchLookAngle)
+        this.rotateView(dx * 0.03, dy * 0.03)
+      }
 
       if (this.isTouchMoveActive) {
         const mx = Math.cos(this.touchMoveAngle)

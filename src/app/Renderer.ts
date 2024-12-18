@@ -470,6 +470,7 @@ export default class Renderer extends RenderingContext {
               },
               onComplete: () => {
                 document.getElementById('logo').classList.toggle('faded')
+                this.mainCameraCtrl.revealTouchControls()
                 if (this.onIntroAnimComplete) {
                   this.onIntroAnimComplete()
                 }

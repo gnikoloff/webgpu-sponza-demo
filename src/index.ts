@@ -56,8 +56,8 @@ function renderFrame() {
 function resize() {
   const w = innerWidth
   const h = innerHeight
-  $canvas.width = w * devicePixelRatio
-  $canvas.height = h * devicePixelRatio
+  $canvas.width = w
+  $canvas.height = h
   $canvas.style.setProperty('width', `${w}px`)
   $canvas.style.setProperty('height', `${h}px`)
 
