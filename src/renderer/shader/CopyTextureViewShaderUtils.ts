@@ -1,4 +1,4 @@
-export const CopyTextureViewShaderUtilsEntryFn = "main";
+export const CopyTextureViewShaderUtilsEntryFn = 'main'
 
 const CopyTextureViewShaderUtils = /* wgsl */ `
   @group(0) @binding(0) var inTexture: texture_2d<f32>;
@@ -15,6 +15,6 @@ const CopyTextureViewShaderUtils = /* wgsl */ `
     let inColor = textureLoad(inTexture, id.xy * inOutTextureScaleFactor, 0);
     textureStore(outTexture, id.xy, inColor);
   }
-`;
+`
 
-export default CopyTextureViewShaderUtils;
+export default CopyTextureViewShaderUtils

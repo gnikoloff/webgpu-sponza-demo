@@ -72,6 +72,6 @@ const CSMShadowShaderUtils = /* wgsl */ `
 
     return shadow;
   }
-`;
+`
 
-export default CSMShadowShaderUtils;
+export default CSMShadowShaderUtils

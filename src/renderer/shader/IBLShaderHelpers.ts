@@ -61,6 +61,6 @@ const IBLShaderHelpers = /* wgsl */ `
     }
     return 0.0;
   }
-`;
+`
 
-export default IBLShaderHelpers;
+export default IBLShaderHelpers

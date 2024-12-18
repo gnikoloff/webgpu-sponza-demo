@@ -1,7 +1,7 @@
-export const MipComputeGeneratorShaderEntryFn = "computeMipMap";
+export const MipComputeGeneratorShaderEntryFn = 'computeMipMap'
 
 export const GetMipComputeGeneratorShaderUtils = (
-	textureFormat: GPUTextureFormat = "rgba8unorm",
+  textureFormat: GPUTextureFormat = 'rgba8unorm'
 ): string => /* wgsl */ `
   @group(0) @binding(0) var prevMipLevel: texture_2d<f32>;
   @group(0) @binding(1) var nextMipLevel: texture_storage_2d<${textureFormat}, write>;
@@ -17,4 +17,4 @@ export const GetMipComputeGeneratorShaderUtils = (
     ) * 0.25;
     textureStore(nextMipLevel, id.xy, color);
   }
-`;
+`

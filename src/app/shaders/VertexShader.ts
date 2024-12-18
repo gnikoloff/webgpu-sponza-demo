@@ -1,25 +1,25 @@
-import { wgsl } from "wgsl-preprocessor/wgsl-preprocessor.js";
+import { wgsl } from 'wgsl-preprocessor/wgsl-preprocessor.js'
 import {
-	BIND_GROUP_LOCATIONS,
-	PBR_TEXTURES_LOCATIONS,
-} from "../../renderer/core/RendererBindings";
-import { SHADER_CHUNKS } from "../../renderer/shader/chunks";
+  BIND_GROUP_LOCATIONS,
+  PBR_TEXTURES_LOCATIONS,
+} from '../../renderer/core/RendererBindings'
+import { SHADER_CHUNKS } from '../../renderer/shader/chunks'
 
-export const DefaultVertexShaderEntryFn = "vertexMain";
+export const DefaultVertexShaderEntryFn = 'vertexMain'
 
 export interface IVertexShader {
-	isInstanced?: boolean;
-	isShadow?: boolean;
+  isInstanced?: boolean
+  isShadow?: boolean
 }
 
 export const getVertexShader = (
-	{ isInstanced, isShadow }: IVertexShader = {
-		isInstanced: false,
-		isShadow: false,
-	},
+  { isInstanced, isShadow }: IVertexShader = {
+    isInstanced: false,
+    isShadow: false,
+  }
 ): string => {
-	// prettier-ignore
-	return wgsl/* wgsl */ `
+  // prettier-ignore
+  return wgsl/* wgsl */ `
     ${SHADER_CHUNKS.VertexInput}
     ${SHADER_CHUNKS.VertexOutput}
     ${SHADER_CHUNKS.ModelUniform}
@@ -98,4 +98,4 @@ export const getVertexShader = (
       return out;
     }
   `;
-};
+}

@@ -1,9 +1,9 @@
-import { wgsl } from "wgsl-preprocessor/wgsl-preprocessor.js";
-import { RenderPassType } from "../../renderer/types";
-import { LightPassType } from "../../types";
+import { wgsl } from 'wgsl-preprocessor/wgsl-preprocessor.js'
+import { RenderPassType } from '../../renderer/types'
+import { LightPassType } from '../../types'
 
 const getGBufferCommonShaderBindings = (
-	renderPassType: LightPassType,
+  renderPassType: LightPassType
 ) => wgsl/* wgsl */ `
   @group(0) @binding(0) var normalTexture: texture_2d<f32>;
   @group(0) @binding(1) var colorTexture: texture_2d<f32>;
@@ -12,10 +12,10 @@ const getGBufferCommonShaderBindings = (
   @group(0) @binding(4) var<uniform> camera: Camera;
   
   #if ${
-		renderPassType === RenderPassType.PointLightsLighting ||
-		renderPassType === RenderPassType.PointLightsStencilMask ||
-		renderPassType === RenderPassType.DirectionalAmbientLighting
-	}
+    renderPassType === RenderPassType.PointLightsLighting ||
+    renderPassType === RenderPassType.PointLightsStencilMask ||
+    renderPassType === RenderPassType.DirectionalAmbientLighting
+  }
   @group(0) @binding(5) var<storage, read> lightsBuffer: array<Light>;
   @group(0) @binding(6) var<uniform> debugLightsInfo: LightSettings;
   #endif
@@ -34,6 +34,6 @@ const getGBufferCommonShaderBindings = (
   @group(1) @binding(6) var envTexSampler: sampler;
   @group(1) @binding(7) var<uniform> ssaoMixFactor: f32;
   #endif
-`;
+`
 
-export default getGBufferCommonShaderBindings;
+export default getGBufferCommonShaderBindings

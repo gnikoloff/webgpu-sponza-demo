@@ -1,4 +1,4 @@
-export const HI_Z_COPY_DEPTH_COMPUTE_SHADER_ENTRY_FN = "copyDepth";
+export const HI_Z_COPY_DEPTH_COMPUTE_SHADER_ENTRY_FN = 'copyDepth'
 
 export const HI_Z_COPY_DEPTH_COMPUTE_SHADER_SRC = /* wgsl */ `
 
@@ -22,4 +22,4 @@ export const HI_Z_COPY_DEPTH_COMPUTE_SHADER_SRC = /* wgsl */ `
     textureStore(destDepth, pos.xy, vec4f(src));
   }
 
-`;
+`

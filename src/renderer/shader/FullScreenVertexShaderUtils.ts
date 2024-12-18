@@ -1,6 +1,6 @@
-import { SHADER_CHUNKS } from "./chunks";
+import { SHADER_CHUNKS } from './chunks'
 
-export const FullScreenVertexShaderEntryFn = "fullscreenVertex";
+export const FullScreenVertexShaderEntryFn = 'fullscreenVertex'
 
 const FullScreenVertexShaderUtils = /* wgsl */ `
   ${SHADER_CHUNKS.VertexOutput}
@@ -23,6 +23,6 @@ const FullScreenVertexShaderUtils = /* wgsl */ `
     out.instanceId = instanceId;
     return out;
   }
-`;
+`
 
-export default FullScreenVertexShaderUtils;
+export default FullScreenVertexShaderUtils

@@ -1,4 +1,4 @@
-export const BloomDownscaleShaderEntryFn = "main";
+export const BloomDownscaleShaderEntryFn = 'main'
 
 export const BloomDownscaleShaderSrc = /* wgsl */ `
   @group(0) @binding(0) var srcTexture: texture_2d<f32>;
@@ -71,4 +71,4 @@ export const BloomDownscaleShaderSrc = /* wgsl */ `
     textureStore(outTexture, tid.xy, vec4f(downsample, 1.0));
     // textureStore(outTexture, tid.xy, vec4f(texCoords, 0.0, 1.0));
   }
-`;
+`

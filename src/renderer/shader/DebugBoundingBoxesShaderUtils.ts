@@ -1,7 +1,7 @@
-import { SHADER_CHUNKS } from "./chunks";
+import { SHADER_CHUNKS } from './chunks'
 
-export const DebugBoundingBoxesVertexShaderEntryFn = "vertMain";
-export const DebugBoundingBoxesFragmentShaderEntryFn = "fragMain";
+export const DebugBoundingBoxesVertexShaderEntryFn = 'vertMain'
+export const DebugBoundingBoxesFragmentShaderEntryFn = 'fragMain'
 
 const DebugBoundingBoxesShaderUtils = /* wgsl */ `
   ${SHADER_CHUNKS.Camera}
@@ -81,6 +81,6 @@ const DebugBoundingBoxesShaderUtils = /* wgsl */ `
     return vec4f(1.0);
   }
   
-`;
+`
 
-export default DebugBoundingBoxesShaderUtils;
+export default DebugBoundingBoxesShaderUtils

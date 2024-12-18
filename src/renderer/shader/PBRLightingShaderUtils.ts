@@ -1,9 +1,9 @@
-import { wgsl } from "wgsl-preprocessor/wgsl-preprocessor.js";
-import { LightPassType } from "../../types";
-import { LightType, RenderPassType } from "../types";
+import { wgsl } from 'wgsl-preprocessor/wgsl-preprocessor.js'
+import { LightPassType } from '../../types'
+import { LightType, RenderPassType } from '../types'
 
 const GetPBRLightingShaderUtils = (
-	lightPassType: LightPassType,
+  lightPassType: LightPassType
 ) => wgsl/* wgsl */ `
   @must_use
   fn DistributionGGX(viewSpaceNormal: vec3f, H: vec3f, roughness: f32) -> f32 {
@@ -181,6 +181,6 @@ const GetPBRLightingShaderUtils = (
 
     return vec4f(color, opacity);
   }
-`;
+`
 
-export default GetPBRLightingShaderUtils;
+export default GetPBRLightingShaderUtils

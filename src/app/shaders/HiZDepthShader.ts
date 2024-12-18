@@ -1,4 +1,4 @@
-export const HI_Z_DEPTH_COMPUTE_SHADER_ENTRY_FN = "computeHiZMips";
+export const HI_Z_DEPTH_COMPUTE_SHADER_ENTRY_FN = 'computeHiZMips'
 
 export const COMPUTE_HI_Z_DEPTH_COMPUTE_SHADER_SRC = /* wgsl */ `
   @group(0) @binding(0) var prevMipLevel: texture_2d<f32>;
@@ -74,4 +74,4 @@ export const COMPUTE_HI_Z_DEPTH_COMPUTE_SHADER_SRC = /* wgsl */ `
     textureStore(nextMipLevel, pos.xy, vec4f(minDepth));
 
   }
-`;
+`

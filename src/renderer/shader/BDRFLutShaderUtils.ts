@@ -1,7 +1,7 @@
-import IBLShaderHelpers from "./IBLShaderHelpers";
-import { SHADER_CHUNKS } from "./chunks";
+import IBLShaderHelpers from './IBLShaderHelpers'
+import { SHADER_CHUNKS } from './chunks'
 
-export const BDRFLutShaderEntryFn = "main";
+export const BDRFLutShaderEntryFn = 'main'
 
 const BDRFLutShaderUtils = /* wgsl */ `
   ${SHADER_CHUNKS.CommonHelpers}
@@ -60,6 +60,6 @@ const BDRFLutShaderUtils = /* wgsl */ `
     let result = vec4f(integrate(uv.x, uv.y), 0, 0);
     textureStore(outTexture, id.xy, result);
   }
-`;
+`
 
-export default BDRFLutShaderUtils;
+export default BDRFLutShaderUtils

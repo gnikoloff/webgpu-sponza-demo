@@ -1,188 +1,188 @@
 :root {
-	touch-action: pan-x pan-y;
-	height: 100%;
+  touch-action: pan-x pan-y;
+  height: 100%;
 }
 
 * {
-	box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 a {
-	color: white;
+  color: white;
 }
 
 #no-webgpu-wrapper {
-	position: fixed;
-	top: 0;
-	left: 0;
-	width: 100vw;
-	height: 100vh;
-	z-index: 999;
-	background-color: black;
-	display: none;
-	padding: 1rem 3rem 1rem 1rem;
-	box-sizing: border-box;
-	font-size: 14px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 999;
+  background-color: black;
+  display: none;
+  padding: 1rem 3rem 1rem 1rem;
+  box-sizing: border-box;
+  font-size: 14px;
 }
 
 #no-webgpu-wrapper h1 {
-	margin: 0 0 1rem 0;
-	text-wrap: balance;
-	font-size: 18px;
+  margin: 0 0 1rem 0;
+  text-wrap: balance;
+  font-size: 18px;
 }
 
 #no-webgpu-wrapper ul li li {
-	margin-bottom: 1rem;
+  margin-bottom: 1rem;
 }
 
 .logo {
-	position: fixed;
-	left: 1rem;
-	top: 1rem;
+  position: fixed;
+  left: 1rem;
+  top: 1rem;
 }
 
 .logo hr {
-	opacity: 0.2;
+  opacity: 0.2;
 }
 
 .logo h1 {
-	font-size: 17px;
-	margin: 0 0 0.75rem 0;
+  font-size: 17px;
+  margin: 0 0 0.75rem 0;
 }
 
 .logo p {
-	font-size: 12px;
-	margin: 0;
-	line-height: 21px;
+  font-size: 12px;
+  margin: 0;
+  line-height: 21px;
 }
 
 .dg .property-name {
-	width: 55% !important;
+  width: 55% !important;
 }
 
 .dg .c {
-	width: 45% !important;
+  width: 45% !important;
 }
 
 body {
-	background-color: black;
-	color: white;
-	margin: 0;
-	overflow: hidden;
-	font-family: ui-monospace, Menlo, Monaco, "Cascadia Mono", "Segoe UI Mono",
-		"Roboto Mono", "Oxygen Mono", "Ubuntu Mono", "Source Code Pro", "Fira Mono",
-		"Droid Sans Mono", "Consolas", "Courier New", monospace;
+  background-color: black;
+  color: white;
+  margin: 0;
+  overflow: hidden;
+  font-family: ui-monospace, Menlo, Monaco, 'Cascadia Mono', 'Segoe UI Mono',
+    'Roboto Mono', 'Oxygen Mono', 'Ubuntu Mono', 'Source Code Pro', 'Fira Mono',
+    'Droid Sans Mono', 'Consolas', 'Courier New', monospace;
 }
 
 #c {
-	margin: 0;
-	position: fixed;
-	z-index: -1;
+  margin: 0;
+  position: fixed;
+  z-index: -1;
 }
 
 #a {
-	position: fixed;
-	bottom: 1rem;
-	left: 1rem;
-	background: black;
-	color: white;
-	font-size: 16px;
+  position: fixed;
+  bottom: 1rem;
+  left: 1rem;
+  background: black;
+  color: white;
+  font-size: 16px;
 }
 
 .fadable {
-	transition: opacity 0.125s ease-in-out;
+  transition: opacity 0.125s ease-in-out;
 }
 
 .fadable.debug-open {
-	opacity: 0;
+  opacity: 0;
 }
 
 #webgpu-debug-root {
-	position: fixed;
-	bottom: 0;
-	left: 0;
-	height: 100vh;
-	width: 25vw;
-	min-width: 300px;
-	max-width: 400px;
-	border-radius: 1px dotted red;
-	color: white;
-	background: rgba(0, 0, 0, 1);
-	z-index: 999;
-	overflow: auto;
-	transition: transform 0.175s ease-in-out;
-	transform: translate3d(-100%, 0, 0);
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  height: 100vh;
+  width: 25vw;
+  min-width: 300px;
+  max-width: 400px;
+  border-radius: 1px dotted red;
+  color: white;
+  background: rgba(0, 0, 0, 1);
+  z-index: 999;
+  overflow: auto;
+  transition: transform 0.175s ease-in-out;
+  transform: translate3d(-100%, 0, 0);
 }
 
 #webgpu-debug-root.open {
-	transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
 }
 
 .section {
-	display: flex;
-	flex-wrap: wrap;
-	padding: 0 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  padding: 0 1rem;
 }
 
 .texture-debug-wrapper:first-of-type .section-headline {
-	border-top: none;
+  border-top: none;
 }
 
 .section-headline {
-	background: black;
-	border-top: 1px solid rgba(255, 255, 255, 0.2);
-	border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-	padding: 1rem 1rem;
-	margin-top: 0;
-	margin-bottom: 0.5rem;
+  background: black;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 1rem 1rem;
+  margin-top: 0;
+  margin-bottom: 0.5rem;
 }
 
 .debug-canvas-wrapper {
-	margin-right: 0.75rem;
-	width: 100%;
-	padding-bottom: 1.5rem;
-	border-bottom: 1px solid rgba(255, 255, 255, 0.24);
-	/* margin-bottom: 0.5rem; */
+  margin-right: 0.75rem;
+  width: 100%;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.24);
+  /* margin-bottom: 0.5rem; */
 }
 
 .debug-canvas-wrapper:last-of-type {
-	border-bottom: none;
+  border-bottom: none;
 }
 
 .debug-canvas {
-	width: 100%;
-	border: 1px solid rgba(255, 255, 255, 0.12);
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 #timings-debug-container {
-	position: fixed;
-	bottom: 1rem;
-	left: 1rem;
+  position: fixed;
+  bottom: 1rem;
+  left: 1rem;
 }
 
 #timings-debug-container.hidden {
-	opacity: 0;
+  opacity: 0;
 }
 
 #timings-debug-container {
-	color: white;
+  color: white;
 }
 
 .timing-container {
-	display: flex;
-	border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-	border-right: 1px solid rgba(255, 255, 255, 0.12);
-	border-left: 1px solid rgba(255, 255, 255, 0.12);
-	padding: 0.5rem;
-	font-size: 12px;
-	user-select: none;
+  display: flex;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  border-right: 1px solid rgba(255, 255, 255, 0.12);
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 0.5rem;
+  font-size: 12px;
+  user-select: none;
 }
 
 .timing-container:first-of-type {
-	border-top: 1px solid rgba(255, 255, 255, 0.12);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .timing-label {
-	width: 120px;
-	margin-right: 0.5rem;
+  width: 120px;
+  margin-right: 0.5rem;
 }

@@ -1,11 +1,11 @@
 import {
-	RENDER_TARGET_LOCATIONS,
-	SHADER_ATTRIB_LOCATIONS,
-} from "../core/RendererBindings";
+  RENDER_TARGET_LOCATIONS,
+  SHADER_ATTRIB_LOCATIONS,
+} from '../core/RendererBindings'
 
 export const SHADER_CHUNKS = Object.freeze({
-	get VertexInput(): string {
-		return /* wgsl */ `
+  get VertexInput(): string {
+    return /* wgsl */ `
 
       struct VertexInput {
         @location(${SHADER_ATTRIB_LOCATIONS.Position}) position: vec4f,
@@ -14,11 +14,11 @@ export const SHADER_CHUNKS = Object.freeze({
         @location(${SHADER_ATTRIB_LOCATIONS.Tangent}) tangent: vec4f,
       };
 
-    `;
-	},
+    `
+  },
 
-	get VertexOutput(): string {
-		return /* wgsl */ `
+  get VertexOutput(): string {
+    return /* wgsl */ `
     
       struct VertexOutput {
         @builtin(position) position: vec4f,
@@ -32,21 +32,21 @@ export const SHADER_CHUNKS = Object.freeze({
         @location(7) @interpolate(flat) instanceId: u32,
       };
 
-    `;
-	},
+    `
+  },
 
-	get InstanceInput(): string {
-		return /* wgsl */ `
+  get InstanceInput(): string {
+    return /* wgsl */ `
       struct InstanceInput {
         worldMatrix: mat4x4f,
         metallic: f32,
         roughness: f32,
       };
-    `;
-	},
+    `
+  },
 
-	get ModelUniform(): string {
-		return /* wgsl */ `
+  get ModelUniform(): string {
+    return /* wgsl */ `
 
       struct ModelUniform {
         worldMatrix: mat4x4f,
@@ -58,11 +58,11 @@ export const SHADER_CHUNKS = Object.freeze({
         roughness: f32,
       };
 
-    `;
-	},
+    `
+  },
 
-	get Camera(): string {
-		return /* wgsl */ `
+  get Camera(): string {
+    return /* wgsl */ `
 
       struct Camera {
         position: vec3f,
@@ -106,11 +106,11 @@ export const SHADER_CHUNKS = Object.freeze({
         return viewSpacePos.xyz / viewSpacePos.w;
       }
 
-    `;
-	},
+    `
+  },
 
-	get GBufferOutput(): string {
-		return /* wgsl */ `
+  get GBufferOutput(): string {
+    return /* wgsl */ `
 
       struct GBufferOutput {
         @location(${RENDER_TARGET_LOCATIONS.NormalMetallicRoughness}) normalMetallicRoughness: vec4f,
@@ -118,20 +118,20 @@ export const SHADER_CHUNKS = Object.freeze({
         @location(${RENDER_TARGET_LOCATIONS.Velocity}) velocity: vec4f,
       };
       
-    `;
-	},
+    `
+  },
 
-	get AABB(): string {
-		return /* wgsl */ `
+  get AABB(): string {
+    return /* wgsl */ `
       struct AABB {
         min: vec3f,
         max: vec3f,
       };
-    `;
-	},
+    `
+  },
 
-	get Particle(): string {
-		return /* wgsl */ `
+  get Particle(): string {
+    return /* wgsl */ `
       struct Particle {
         radius: f32,
         position: vec3f,
@@ -140,11 +140,11 @@ export const SHADER_CHUNKS = Object.freeze({
         lifeSpeed: f32,
         life: f32
       };
-    `;
-	},
+    `
+  },
 
-	get Light(): string {
-		return /* wgsl */ `
+  get Light(): string {
+    return /* wgsl */ `
 
       struct Light {
         lightType: u32, // 0 - Directional Light, 1 - Point Light, 2 - Ambient Light
@@ -154,11 +154,11 @@ export const SHADER_CHUNKS = Object.freeze({
         color: vec3f,
       };
 
-    `;
-	},
+    `
+  },
 
-	get Material(): string {
-		return /* wgsl */ `
+  get Material(): string {
+    return /* wgsl */ `
     
       struct Material {
         metallic: f32,
@@ -167,20 +167,20 @@ export const SHADER_CHUNKS = Object.freeze({
         ambientOcclusion: f32,
       };
 
-    `;
-	},
+    `
+  },
 
-	get ShadowCascade(): string {
-		return /* wgsl */ `
+  get ShadowCascade(): string {
+    return /* wgsl */ `
       struct ShadowCascade {
         projViewMatrix: mat4x4<f32>,
         distance: f32,
       };
-    `;
-	},
+    `
+  },
 
-	get CommonHelpers(): string {
-		const out = /* wgsl */ `
+  get CommonHelpers(): string {
+    const out = /* wgsl */ `
 
       const WORLD_UP = vec3f(0.0, 1.0, 0.0);
       const WORLD_FORWARD = vec3f(0.0, 0.0, 1.0);
@@ -216,12 +216,12 @@ export const SHADER_CHUNKS = Object.freeze({
         vec4<f32>(0.0, 0.0, 1.0, 0.0),
         vec4<f32>(0.0, 1.0, 0.0, PI)
       );
-    `;
+    `
 
-		return out;
-	},
-	get MathHelpers(): string {
-		return /* wgsl */ `
+    return out
+  },
+  get MathHelpers(): string {
+    return /* wgsl */ `
 
       @must_use
       fn rotateAxisAngle(inAxis: vec3f, angle: f32) -> mat3x3f {
@@ -237,6 +237,6 @@ export const SHADER_CHUNKS = Object.freeze({
         );
       }
       
-    `;
-	},
-});
+    `
+  },
+})

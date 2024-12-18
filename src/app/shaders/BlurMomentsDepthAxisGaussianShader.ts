@@ -1,4 +1,4 @@
-export const BLUR_MOMENTS_AXIS_GAUSSIAN_SHADER_ENTRY_FN = "main";
+export const BLUR_MOMENTS_AXIS_GAUSSIAN_SHADER_ENTRY_FN = 'main'
 
 export const BLUR_MOMENTS_AXIS_GAUSSIAN_SHADER_SRC = /* wgsl */ `
   const GAUSSIAN_KERNEL = array<f32, 5>(
@@ -81,4 +81,4 @@ export const BLUR_MOMENTS_AXIS_GAUSSIAN_SHADER_SRC = /* wgsl */ `
     
     return blurredColor;
   }
-`;
+`

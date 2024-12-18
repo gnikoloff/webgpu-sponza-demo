@@ -1,6 +1,6 @@
-import { SHADER_CHUNKS } from "../../renderer/shader/chunks";
+import { SHADER_CHUNKS } from '../../renderer/shader/chunks'
 
-export const POINT_LIGHTS_SHADER_COMPUTE_ENTRY_FN = `updatePointLights`;
+export const POINT_LIGHTS_SHADER_COMPUTE_ENTRY_FN = `updatePointLights`
 
 export const POINT_LIGHTS_UPDATE_SHADER_SRC = /* wgsl */ `
   ${SHADER_CHUNKS.Particle}
@@ -105,4 +105,4 @@ export const POINT_LIGHTS_UPDATE_SHADER_SRC = /* wgsl */ `
     light.position = particle.position;
 
   }
-`;
+`

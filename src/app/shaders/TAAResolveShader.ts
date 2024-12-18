@@ -1,4 +1,4 @@
-export const TAA_RESOLVE_FRAGMENT_SHADER_ENTRY_NAME = "main";
+export const TAA_RESOLVE_FRAGMENT_SHADER_ENTRY_NAME = 'main'
 
 export const TAA_RESOLVE_FRAGMENT_SHADER_SRC = /*wgsl*/ `
 
@@ -30,4 +30,4 @@ export const TAA_RESOLVE_FRAGMENT_SHADER_SRC = /*wgsl*/ `
 
     return color;
   }
-`;
+`

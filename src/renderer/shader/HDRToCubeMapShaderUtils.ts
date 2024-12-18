@@ -1,7 +1,7 @@
-import { SHADER_CHUNKS } from "./chunks";
+import { SHADER_CHUNKS } from './chunks'
 
-export const HDRToCubeMapShaderUtilsEntryVertexFn = "vertexMain";
-export const HDRToCubeMapShaderUtilsEntryFragmentFn = "fragmentMain";
+export const HDRToCubeMapShaderUtilsEntryVertexFn = 'vertexMain'
+export const HDRToCubeMapShaderUtilsEntryFragmentFn = 'fragmentMain'
 
 const HDRToCubeMapShaderUtils = /* wgsl */ `
   ${SHADER_CHUNKS.VertexInput}
@@ -35,6 +35,6 @@ const HDRToCubeMapShaderUtils = /* wgsl */ `
     let color = textureSample(inTexture, inSampler, uv).rgb;
     return vec4f(color, 1);
   }
-`;
+`
 
-export default HDRToCubeMapShaderUtils;
+export default HDRToCubeMapShaderUtils

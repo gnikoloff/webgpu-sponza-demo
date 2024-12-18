@@ -1,13 +1,13 @@
-import { wgsl } from "wgsl-preprocessor/wgsl-preprocessor.js";
+import { wgsl } from 'wgsl-preprocessor/wgsl-preprocessor.js'
 import {
-	BIND_GROUP_LOCATIONS,
-	PBR_TEXTURES_LOCATIONS,
-	SAMPLER_LOCATIONS,
-} from "../../renderer/core/RendererBindings";
-import GetPBRLightingShaderUtils from "../../renderer/shader/PBRLightingShaderUtils";
-import { SHADER_CHUNKS } from "../../renderer/shader/chunks";
+  BIND_GROUP_LOCATIONS,
+  PBR_TEXTURES_LOCATIONS,
+  SAMPLER_LOCATIONS,
+} from '../../renderer/core/RendererBindings'
+import GetPBRLightingShaderUtils from '../../renderer/shader/PBRLightingShaderUtils'
+import { SHADER_CHUNKS } from '../../renderer/shader/chunks'
 
-export const ForwardRenderPBRShaderEntryFn = "forwardPBRFrag";
+export const ForwardRenderPBRShaderEntryFn = 'forwardPBRFrag'
 
 /* prettier-ignore */
 export const getDefaultForwardPBRFragmentShader = ({

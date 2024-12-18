@@ -1,7 +1,7 @@
-import NormalEncoderShaderUtils from "../../renderer/shader/NormalEncoderShaderUtils";
-import { SHADER_CHUNKS } from "../../renderer/shader/chunks";
+import NormalEncoderShaderUtils from '../../renderer/shader/NormalEncoderShaderUtils'
+import { SHADER_CHUNKS } from '../../renderer/shader/chunks'
 
-export const SSAOShaderName = "fragSSAO";
+export const SSAOShaderName = 'fragSSAO'
 
 const SSAOShaderSrc = /* wgsl */ `
   ${SHADER_CHUNKS.Camera}
@@ -75,6 +75,6 @@ const SSAOShaderSrc = /* wgsl */ `
 
     return vec4f(finalOcclusion);
   }
-`;
+`
 
-export default SSAOShaderSrc;
+export default SSAOShaderSrc

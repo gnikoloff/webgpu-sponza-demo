@@ -1,17 +1,17 @@
-import { wgsl } from "wgsl-preprocessor/wgsl-preprocessor.js";
-import CSMShadowShaderUtils from "../../renderer/shader/CSMShadowShaderUtils";
-import NormalEncoderShaderUtils from "../../renderer/shader/NormalEncoderShaderUtils";
-import GetPBRLightingShaderUtils from "../../renderer/shader/PBRLightingShaderUtils";
-import { SHADER_CHUNKS } from "../../renderer/shader/chunks";
-import { RenderPassType } from "../../renderer/types";
-import { LightPassType } from "../../types";
-import DirectionalShadowRenderPass from "../render-passes/DirectionalShadowRenderPass";
-import getGBufferCommonShaderBindings from "./GBufferCommonShaderBindings";
+import { wgsl } from 'wgsl-preprocessor/wgsl-preprocessor.js'
+import CSMShadowShaderUtils from '../../renderer/shader/CSMShadowShaderUtils'
+import NormalEncoderShaderUtils from '../../renderer/shader/NormalEncoderShaderUtils'
+import GetPBRLightingShaderUtils from '../../renderer/shader/PBRLightingShaderUtils'
+import { SHADER_CHUNKS } from '../../renderer/shader/chunks'
+import { RenderPassType } from '../../renderer/types'
+import { LightPassType } from '../../types'
+import DirectionalShadowRenderPass from '../render-passes/DirectionalShadowRenderPass'
+import getGBufferCommonShaderBindings from './GBufferCommonShaderBindings'
 
-export const GBufferIntegrateShaderEntryFn = "integrateMain";
+export const GBufferIntegrateShaderEntryFn = 'integrateMain'
 
 const GetGBufferIntegrateShader = (
-	lightPassType: LightPassType,
+  lightPassType: LightPassType
 ): string => wgsl/* wgsl */ `
   ${SHADER_CHUNKS.VertexOutput}
   ${SHADER_CHUNKS.Light}
@@ -130,6 +130,6 @@ const GetGBufferIntegrateShader = (
     return color;
     #endif
   }
-`;
+`
 
-export default GetGBufferIntegrateShader;
+export default GetGBufferIntegrateShader

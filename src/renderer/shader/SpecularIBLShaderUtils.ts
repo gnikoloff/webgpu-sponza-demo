@@ -1,7 +1,7 @@
-import IBLShaderHelpers from "./IBLShaderHelpers";
-import { SHADER_CHUNKS } from "./chunks";
+import IBLShaderHelpers from './IBLShaderHelpers'
+import { SHADER_CHUNKS } from './chunks'
 
-export const SpecularIBLShaderUtilsEntryFn = "main";
+export const SpecularIBLShaderUtilsEntryFn = 'main'
 
 const SpecularIBLShaderUtils = /* wgsl */ `
   ${SHADER_CHUNKS.CommonHelpers}
@@ -69,6 +69,6 @@ const SpecularIBLShaderUtils = /* wgsl */ `
     prefilteredColor = prefilteredColor / totalWeight;
     textureStore(outTexture, id.xy, vec4f(prefilteredColor, 1.0));
   }
-`;
+`
 
-export default SpecularIBLShaderUtils;
+export default SpecularIBLShaderUtils

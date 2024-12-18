@@ -1,7 +1,7 @@
-import { SHADER_CHUNKS } from "../../renderer/shader/chunks";
+import { SHADER_CHUNKS } from '../../renderer/shader/chunks'
 
-export const PARTICLES_SHADER_VERTEX_ENTRY_FN = "vertexMain";
-export const PARTICLES_SHADER_FRAGMENT_ENTRY_FN = "fragMain";
+export const PARTICLES_SHADER_VERTEX_ENTRY_FN = 'vertexMain'
+export const PARTICLES_SHADER_FRAGMENT_ENTRY_FN = 'fragMain'
 
 export const PARTICLES_RENDER_SHADER_SRC = /* wgsl */ `
   ${SHADER_CHUNKS.Particle}
@@ -68,4 +68,4 @@ export const PARTICLES_RENDER_SHADER_SRC = /* wgsl */ `
     let lightColor = light.color;
     return vec4f(light.color * mask * 0.8, 1);
   }
-`;
+`

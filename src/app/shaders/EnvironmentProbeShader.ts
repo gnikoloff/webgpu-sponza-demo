@@ -1,7 +1,7 @@
-import { BIND_GROUP_LOCATIONS } from "../../renderer/core/RendererBindings";
-import { SHADER_CHUNKS } from "../../renderer/shader/chunks";
+import { BIND_GROUP_LOCATIONS } from '../../renderer/core/RendererBindings'
+import { SHADER_CHUNKS } from '../../renderer/shader/chunks'
 
-export const EnvironmentProbeShaderEntryFn = "main";
+export const EnvironmentProbeShaderEntryFn = 'main'
 
 export default /* wgsl */ `
   ${SHADER_CHUNKS.VertexInput}
@@ -29,4 +29,4 @@ export default /* wgsl */ `
 
     // return out;
   }
-`;
+`

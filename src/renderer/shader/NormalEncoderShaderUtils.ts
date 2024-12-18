@@ -18,6 +18,6 @@ const NormalEncoderShaderUtils = /* wgsl */ `
       1 - f / 2
     );
   }
-`;
+`
 
-export default NormalEncoderShaderUtils;
+export default NormalEncoderShaderUtils

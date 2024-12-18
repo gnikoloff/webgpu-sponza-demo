@@ -1,10 +1,10 @@
-import NormalEncoderShaderUtils from "../../renderer/shader/NormalEncoderShaderUtils";
-import { SHADER_CHUNKS } from "../../renderer/shader/chunks";
+import NormalEncoderShaderUtils from '../../renderer/shader/NormalEncoderShaderUtils'
+import { SHADER_CHUNKS } from '../../renderer/shader/chunks'
 
-export const REFLECTION_PASS_COMPUTE_SHADER_ENTRY_NAME = "main";
+export const REFLECTION_PASS_COMPUTE_SHADER_ENTRY_NAME = 'main'
 
 export const getReflectionComputeShader = (
-	pixelFormat: GPUTextureFormat,
+  pixelFormat: GPUTextureFormat
 ): string => /* wgsl */ `
   ${SHADER_CHUNKS.Camera}
 
@@ -369,4 +369,4 @@ export const getReflectionComputeShader = (
     textureStore(outTexture, pos, finalColor);
     
   }
-`;
+`

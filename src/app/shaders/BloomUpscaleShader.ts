@@ -1,6 +1,6 @@
-import { SHADER_CHUNKS } from "../../renderer/shader/chunks";
+import { SHADER_CHUNKS } from '../../renderer/shader/chunks'
 
-export const BloomUpscaleShaderEntryFn = "main";
+export const BloomUpscaleShaderEntryFn = 'main'
 
 export const BloomUpscaleShaderSrc = /* wgsl */ `
   ${SHADER_CHUNKS.VertexOutput}
@@ -40,4 +40,4 @@ export const BloomUpscaleShaderSrc = /* wgsl */ `
 
     return vec4f(upsample, 1.0);
   }
-`;
+`

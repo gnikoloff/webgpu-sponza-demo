@@ -1,8 +1,8 @@
-import { BIND_GROUP_LOCATIONS } from "../../renderer/core/RendererBindings";
-import { SHADER_CHUNKS } from "../../renderer/shader/chunks";
+import { BIND_GROUP_LOCATIONS } from '../../renderer/core/RendererBindings'
+import { SHADER_CHUNKS } from '../../renderer/shader/chunks'
 
-export const SkyboxShaderVertexEntryFn = "vertexMain";
-export const SkyboxShaderFragmentEntryFn = "fragmentMain";
+export const SkyboxShaderVertexEntryFn = 'vertexMain'
+export const SkyboxShaderFragmentEntryFn = 'fragmentMain'
 
 const SkyboxShader = /* wgsl */ `
   ${SHADER_CHUNKS.VertexInput}
@@ -42,6 +42,6 @@ const SkyboxShader = /* wgsl */ `
     color.b += o;
     return vec4f(color.rgb, 1.0);
   }
-`;
+`
 
-export default SkyboxShader;
+export default SkyboxShader

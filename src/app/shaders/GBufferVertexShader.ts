@@ -1,12 +1,12 @@
-import { wgsl } from "wgsl-preprocessor/wgsl-preprocessor.js";
-import { SHADER_CHUNKS } from "../../renderer/shader/chunks";
-import { RenderPassType } from "../../renderer/types";
-import { LightPassType } from "../../types";
+import { wgsl } from 'wgsl-preprocessor/wgsl-preprocessor.js'
+import { SHADER_CHUNKS } from '../../renderer/shader/chunks'
+import { RenderPassType } from '../../renderer/types'
+import { LightPassType } from '../../types'
 
-export const GBufferVertexEntryFn = "pointLightVertex";
+export const GBufferVertexEntryFn = 'pointLightVertex'
 
 const GetGBufferVertexShader = (
-	lightPassType: LightPassType,
+  lightPassType: LightPassType
 ): string => wgsl/* wgsl */ `
 
   ${SHADER_CHUNKS.VertexInput}
@@ -26,9 +26,9 @@ const GetGBufferVertexShader = (
   #endif
 
   #if ${
-		lightPassType === RenderPassType.PointLightsLighting ||
-		lightPassType === RenderPassType.DirectionalAmbientLighting
-	}
+    lightPassType === RenderPassType.PointLightsLighting ||
+    lightPassType === RenderPassType.DirectionalAmbientLighting
+  }
   @group(0) @binding(5) var<storage, read> lightsBuffer: array<Light>;
   @group(0) @binding(6) var<uniform> debugLights: f32;
   #endif
@@ -62,6 +62,6 @@ const GetGBufferVertexShader = (
     out.instanceId = trueInstanceId;
     return out;
   }
-`;
+`
 
-export default GetGBufferVertexShader;
+export default GetGBufferVertexShader

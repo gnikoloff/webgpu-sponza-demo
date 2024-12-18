@@ -1,4 +1,4 @@
-export const BLIT_FRAGMENT_SHADER_ENTRY_NAME = "blit";
+export const BLIT_FRAGMENT_SHADER_ENTRY_NAME = 'blit'
 
 export const BLIT_FRAGMENT_SHADER_SRC = /* wgsl */ `
   @group(0) @binding(0) var bloomTexture: texture_2d<f32>;
@@ -47,4 +47,4 @@ export const BLIT_FRAGMENT_SHADER_SRC = /* wgsl */ `
 
     return vec4f(vec3(color), 1.0);
   }
-`;
+`

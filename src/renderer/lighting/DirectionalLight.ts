@@ -1,8 +1,8 @@
-import { LightType } from "../types";
-import Light from "./Light";
+import { LightType } from '../types'
+import Light from './Light'
 
 export default class DirectionalLight extends Light {
-	constructor() {
-		super(LightType.Directional);
-	}
+  constructor() {
+    super(LightType.Directional)
+  }
 }

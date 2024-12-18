@@ -1,6 +1,6 @@
-import { SHADER_CHUNKS } from "../../renderer/shader/chunks";
+import { SHADER_CHUNKS } from '../../renderer/shader/chunks'
 
-export const SSSAOBlurShaderName = "fragBlurSSAO";
+export const SSSAOBlurShaderName = 'fragBlurSSAO'
 
 const SSAOBlurShaderSrc = /* wgsl */ `
   ${SHADER_CHUNKS.Camera}
@@ -21,6 +21,6 @@ const SSAOBlurShaderSrc = /* wgsl */ `
     }
     return vec4f(result / 16.0, 0, 0, 1);
   }
-`;
+`
 
-export default SSAOBlurShaderSrc;
+export default SSAOBlurShaderSrc

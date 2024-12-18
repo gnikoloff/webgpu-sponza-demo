@@ -1,44 +1,44 @@
-import { RenderPassType } from "../types";
+import { RenderPassType } from '../types'
 
 export default class RenderingContext {
-	public static readonly ENABLE_DEBUG_GROUPS = false;
+  public static readonly ENABLE_DEBUG_GROUPS = false
 
-	public static $canvas: HTMLCanvasElement;
-	public static canvasContext: GPUCanvasContext;
-	public static device: GPUDevice;
-	public static supportsGPUTimestampQuery: boolean;
-	public static elapsedTimeMs = 0;
-	public static deltaTimeMs = 0;
-	public static frameIndex = 0;
-	public static pixelFormat: GPUTextureFormat;
-	public static readonly depthStencilFormat: GPUTextureFormat =
-		"depth24plus-stencil8";
+  public static $canvas: HTMLCanvasElement
+  public static canvasContext: GPUCanvasContext
+  public static device: GPUDevice
+  public static supportsGPUTimestampQuery: boolean
+  public static elapsedTimeMs = 0
+  public static deltaTimeMs = 0
+  public static frameIndex = 0
+  public static pixelFormat: GPUTextureFormat
+  public static readonly depthStencilFormat: GPUTextureFormat =
+    'depth24plus-stencil8'
 
-	protected static prevTimeMs = 0;
+  protected static prevTimeMs = 0
 
-	protected static activeRenderPassType?: RenderPassType;
-	protected static activeRenderPassEncoder?: GPURenderPassEncoder;
-	protected static currentlyBoundRenderPSO?: GPURenderPipeline;
+  protected static activeRenderPassType?: RenderPassType
+  protected static activeRenderPassEncoder?: GPURenderPassEncoder
+  protected static currentlyBoundRenderPSO?: GPURenderPipeline
 
-	public static getActiveRenderPassType(): RenderPassType | null {
-		return this.activeRenderPassType;
-	}
+  public static getActiveRenderPassType(): RenderPassType | null {
+    return this.activeRenderPassType
+  }
 
-	public static setActiveRenderPass(
-		type: RenderPassType,
-		renderPassEncoder: GPURenderPassEncoder,
-	) {
-		this.activeRenderPassType = type;
-		this.activeRenderPassEncoder = renderPassEncoder;
+  public static setActiveRenderPass(
+    type: RenderPassType,
+    renderPassEncoder: GPURenderPassEncoder
+  ) {
+    this.activeRenderPassType = type
+    this.activeRenderPassEncoder = renderPassEncoder
 
-		this.currentlyBoundRenderPSO = null;
-	}
+    this.currentlyBoundRenderPSO = null
+  }
 
-	public static bindRenderPSO(v: GPURenderPipeline) {
-		if (v === this.currentlyBoundRenderPSO) {
-			return;
-		}
-		this.currentlyBoundRenderPSO = v;
-		this.activeRenderPassEncoder?.setPipeline(v);
-	}
+  public static bindRenderPSO(v: GPURenderPipeline) {
+    if (v === this.currentlyBoundRenderPSO) {
+      return
+    }
+    this.currentlyBoundRenderPSO = v
+    this.activeRenderPassEncoder?.setPipeline(v)
+  }
 }

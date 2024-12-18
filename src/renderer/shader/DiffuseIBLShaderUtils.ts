@@ -1,6 +1,6 @@
-import { SHADER_CHUNKS } from "./chunks";
+import { SHADER_CHUNKS } from './chunks'
 
-export const DiffuseIBLShaderEntryFn = `main`;
+export const DiffuseIBLShaderEntryFn = `main`
 
 const DiffuseIBLShaderUtils = /* wgsl */ `
   ${SHADER_CHUNKS.CommonHelpers}
@@ -51,6 +51,6 @@ const DiffuseIBLShaderUtils = /* wgsl */ `
     irradiance = PI * irradiance / f32(sampleCount);
     textureStore(outTexture, id.xy, vec4f(irradiance, 1.0));
   }
-`;
+`
 
-export default DiffuseIBLShaderUtils;
+export default DiffuseIBLShaderUtils

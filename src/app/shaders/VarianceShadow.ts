@@ -1,4 +1,4 @@
-export const VARIANCE_SHADOW_SHADER_ENTRY_FN = "main";
+export const VARIANCE_SHADOW_SHADER_ENTRY_FN = 'main'
 
 export const VARIANCE_SHADOW_SHADER_SRC = /* wgsl */ `
 
@@ -20,4 +20,4 @@ export const VARIANCE_SHADOW_SHADER_SRC = /* wgsl */ `
     let src = textureLoad(srcTexture, tid.xy, 0);
     textureStore(outTexture, tid.xy, vec4f(src, src * src, 0, 0));
   }
-`;
+`

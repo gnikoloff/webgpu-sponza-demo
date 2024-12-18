@@ -1,12 +1,12 @@
-import { wgsl } from "wgsl-preprocessor/wgsl-preprocessor.js";
-import NormalEncoderShaderUtils from "../../../../renderer/shader/NormalEncoderShaderUtils";
-import { SHADER_CHUNKS } from "../../../../renderer/shader/chunks";
-import { TextureDebugMeshType } from "../../../../types";
+import { wgsl } from 'wgsl-preprocessor/wgsl-preprocessor.js'
+import NormalEncoderShaderUtils from '../../../../renderer/shader/NormalEncoderShaderUtils'
+import { SHADER_CHUNKS } from '../../../../renderer/shader/chunks'
+import { TextureDebugMeshType } from '../../../../types'
 
-export const DebugFragmentShaderEntryFn = "fragmentShaderDebugTexture";
+export const DebugFragmentShaderEntryFn = 'fragmentShaderDebugTexture'
 
 export const getDebugFragmentShader = (
-	debugTexType: TextureDebugMeshType,
+  debugTexType: TextureDebugMeshType
 ): string => wgsl/* wgsl */ `
   ${SHADER_CHUNKS.VertexOutput}
 
@@ -15,10 +15,10 @@ export const getDebugFragmentShader = (
   @group(0) @binding(0) var mySampler: sampler;
 
   #if ${
-		debugTexType === TextureDebugMeshType.Depth ||
-		debugTexType === TextureDebugMeshType.ShadowDepthCascade0 ||
-		debugTexType === TextureDebugMeshType.ShadowDepthCascade1
-	}
+    debugTexType === TextureDebugMeshType.Depth ||
+    debugTexType === TextureDebugMeshType.ShadowDepthCascade0 ||
+    debugTexType === TextureDebugMeshType.ShadowDepthCascade1
+  }
     @group(0) @binding(1) var myTexture: texture_depth_2d;
   #else
     @group(0) @binding(1) var myTexture: texture_2d<f32>;
@@ -52,9 +52,9 @@ export const getDebugFragmentShader = (
     color = vec4f(vec3f(depth_ndc), 1);
 
     #elif ${
-			debugTexType === TextureDebugMeshType.ShadowDepthCascade0 ||
-			debugTexType === TextureDebugMeshType.ShadowDepthCascade1
-		}
+      debugTexType === TextureDebugMeshType.ShadowDepthCascade0 ||
+      debugTexType === TextureDebugMeshType.ShadowDepthCascade1
+    }
     let depth = textureSample(myTexture, mySampler, uv);
 
     let near: f32 = 0.1; // Example near plane
@@ -79,7 +79,7 @@ export const getDebugFragmentShader = (
     #endif
     return color;
   }
-`;
+`
 
 // import { wgsl } from "wgsl-preprocessor/wgsl-preprocessor.js";
 // import NormalEncoderShaderUtils from "../../../renderer/shader/NormalEncoderShaderUtils";
