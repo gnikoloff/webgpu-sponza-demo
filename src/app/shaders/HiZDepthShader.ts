@@ -23,16 +23,22 @@ export const COMPUTE_HI_Z_DEPTH_COMPUTE_SHADER_SRC = /* wgsl */ `
     let vWriteCoord = pos.xy;
 
     let depthSamples = vec4f(
-      textureLoad(prevMipLevel, vReadCoord, 0u).r,
-      textureLoad(prevMipLevel, vReadCoord + vec2u(1, 0), 0u).r,
-      textureLoad(prevMipLevel, vReadCoord + vec2u(0, 1), 0u).r,
-      textureLoad(prevMipLevel, vReadCoord + vec2u(1, 1), 0u).r
+      textureLoad(prevMipLevel, vReadCoord, 0).r,
+      textureLoad(prevMipLevel, vReadCoord + vec2u(1, 0), 0).r,
+      textureLoad(prevMipLevel, vReadCoord + vec2u(0, 1), 0).r,
+      textureLoad(prevMipLevel, vReadCoord + vec2u(1, 1), 0).r
     );
 
-    var minDepth = min(depthSamples.x, min(depthSamples.y, min(depthSamples.z, depthSamples.w)));
+    var minDepth = min(
+      depthSamples.x,
+      min(
+        depthSamples.y,
+        min(depthSamples.z, depthSamples.w)
+      )
+    );
 
-    let needExtraSampleX = ratio.x > 2.0;
-    let needExtraSampleY = ratio.y > 2.0;
+    let needExtraSampleX = ratio.x > 2.01;
+    let needExtraSampleY = ratio.y > 2.01;
 
     minDepth = select(
       minDepth,
