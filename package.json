@@ -1,56 +1,58 @@
 {
-    "name": "webgpu-tech-demo",
-    "version": "1.0.0",
-    "description": "WebGPU Tech Demo Showcasing Various Rendering Techniques",
-    "main": "index.js",
-    "type": "module",
-    "scripts": {
-        "dev": "vite",
-        "build": "vite build",
-        "preview": "vite preview",
-        "lint": "eslint ./src",
-        "format": "npx prettier ./src --write"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/gnikoloff/webgpu-tech-demo"
-    },
-    "keywords": [
-        "webgpu",
-        "wgsl",
-        "shaders",
-        "rendering"
-    ],
-    "author": "Georgi Nikolov",
-    "license": "CC0-1.0",
-    "bugs": {
-        "url": "https://github.com/gnikoloff/webgpu-tech-demo/issues"
-    },
-    "homepage": "https://github.com/gnikoloff/webgpu-tech-demo/webgpu-ssr#readme",
-    "devDependencies": {
-        "@eslint/js": "^9.17.0",
-        "@types/byte-size": "^8.1.2",
-        "@types/dat.gui": "^0.7.13",
-        "@webgpu/types": "^0.1.51",
-        "eslint": "^9.17.0",
-        "prettier": "3.4.2",
-        "terser": "^5.37.0",
-        "typescript": "^5.7.2",
-        "typescript-eslint": "^8.18.1",
-        "vite": "^5.4.11",
-        "vite-plugin-compression": "^0.5.1",
-        "vite-plugin-mkcert": "^1.17.6",
-        "vite-plugin-static-copy": "^2.2.0",
-        "vite-plugin-top-level-await": "^1.4.4"
-    },
-    "dependencies": {
-        "@loaders.gl/core": "^4.3.3",
-        "@loaders.gl/gltf": "^4.3.3",
-        "byte-size": "^9.0.1",
-        "dat.gui": "^0.7.9",
-        "hdr.js": "^0.2.0",
-        "webgpu-utils": "^1.9.3",
-        "wgpu-matrix": "^3.3.0",
-        "wgsl-preprocessor": "^1.0.1"
-    }
+  "name": "webgpu-tech-demo",
+  "version": "1.0.0",
+  "description": "WebGPU Tech Demo Showcasing Various Rendering Techniques",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint ./src",
+    "format": "npx prettier ./src --write",
+    "prepare": "husky"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gnikoloff/webgpu-tech-demo"
+  },
+  "keywords": [
+    "webgpu",
+    "wgsl",
+    "shaders",
+    "rendering"
+  ],
+  "author": "Georgi Nikolov",
+  "license": "CC0-1.0",
+  "bugs": {
+    "url": "https://github.com/gnikoloff/webgpu-tech-demo/issues"
+  },
+  "homepage": "https://github.com/gnikoloff/webgpu-tech-demo/webgpu-ssr#readme",
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "@types/byte-size": "^8.1.2",
+    "@types/dat.gui": "^0.7.13",
+    "@webgpu/types": "^0.1.51",
+    "eslint": "^9.17.0",
+    "husky": "^9.1.7",
+    "prettier": "3.4.2",
+    "terser": "^5.37.0",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.18.1",
+    "vite": "^5.4.11",
+    "vite-plugin-compression": "^0.5.1",
+    "vite-plugin-mkcert": "^1.17.6",
+    "vite-plugin-static-copy": "^2.2.0",
+    "vite-plugin-top-level-await": "^1.4.4"
+  },
+  "dependencies": {
+    "@loaders.gl/core": "^4.3.3",
+    "@loaders.gl/gltf": "^4.3.3",
+    "byte-size": "^9.0.1",
+    "dat.gui": "^0.7.9",
+    "hdr.js": "^0.2.0",
+    "webgpu-utils": "^1.9.3",
+    "wgpu-matrix": "^3.3.0",
+    "wgsl-preprocessor": "^1.0.1"
+  }
 }
