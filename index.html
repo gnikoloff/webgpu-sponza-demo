@@ -3,13 +3,14 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
   <title>WebGPU SSR</title>
   <link href="src/index.css" rel="stylesheet" />
 </head>
 
 <body>
-  <div class="logo fadable" id="logo">
+  <div class="logo fadable faded" id="logo">
     <h1>WebGPU Tech Demo</h1>
     <p>
       More info and source code on <a href="https://github.com/gnikoloff/webgpu-tech-demo" target="_blank">GitHub</a>
@@ -63,6 +64,8 @@
   </div>
 
   <canvas id="c"></canvas>
+
+  <div class="fadable" id="loader"></div>
 
   <script type="module" src="src/index.ts"></script>
 

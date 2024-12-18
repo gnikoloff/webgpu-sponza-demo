@@ -40,6 +40,11 @@ a {
   position: fixed;
   left: 1rem;
   top: 1rem;
+
+  left: constant(safe-area-inset-top);
+  left: env(safe-area-inset-top);
+  top: constant(safe-area-inset-top);
+  top: env(safe-area-inset-top);
 }
 
 .logo hr {
