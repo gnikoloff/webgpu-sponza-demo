@@ -809,6 +809,10 @@ export default class Renderer extends RenderingContext {
     const fpsAverageStat = this.fpsDisplayAverage.get()
     const gpuAverageStat = this.gpuAverage.get()
 
+    if (fpsAverageStat > 70) {
+      this.mainCameraCtrl.speed = 20
+    }
+
     this.timingDebugContainer
       .setDisplayValue(
         DebugStatType.CPUTotal,
