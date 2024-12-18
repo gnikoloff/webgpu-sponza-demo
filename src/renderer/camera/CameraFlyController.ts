@@ -197,7 +197,7 @@ export default class CameraFlyController {
   }
 
   private onLookHandleTouchStart = () => {
-    this.isTouchLookActive = true
+    // ...
   }
 
   private onLookHandleTouchMove = (e: TouchEvent) => {
@@ -217,6 +217,8 @@ export default class CameraFlyController {
     this.touchLookTargetX = nx
     this.touchLookTargetY = ny
     this.touchLookAngle = angle
+
+    this.isTouchLookActive = true
   }
 
   private onLookHandleTouchEnd = () => {
@@ -226,7 +228,7 @@ export default class CameraFlyController {
   }
 
   private onMoveHandleTouchStart = () => {
-    this.isTouchMoveActive = true
+    // ...
   }
 
   private onMoveHandleTouchEnd = () => {
@@ -253,6 +255,8 @@ export default class CameraFlyController {
     this.touchMoveTargetX = nx
     this.touchMoveTargetY = ny
     this.touchMoveAngle = angle
+
+    this.isTouchMoveActive = true
   }
 
   public startTick() {
