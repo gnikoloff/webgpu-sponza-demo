@@ -15,15 +15,6 @@ export default class ShadowDebugSection extends TexturesDebugSection {
 			shadowCascade0Debug,
 		);
 
-		const momentsShadowCascade0Debug = new DebugTextureCanvas(
-			TextureDebugMeshType.DepthMomentsCascade0,
-		);
-		momentsShadowCascade0Debug.appendTo(this.$main);
-		this.canvases.set(
-			TextureDebugMeshType.DepthMomentsCascade0,
-			momentsShadowCascade0Debug,
-		);
-
 		const shadowCascade1Debug = new DebugTextureCanvas(
 			TextureDebugMeshType.ShadowDepthCascade1,
 		);
@@ -31,15 +22,6 @@ export default class ShadowDebugSection extends TexturesDebugSection {
 		this.canvases.set(
 			TextureDebugMeshType.ShadowDepthCascade1,
 			shadowCascade1Debug,
-		);
-
-		const momentsShadowCascade1Debug = new DebugTextureCanvas(
-			TextureDebugMeshType.DepthMomentsCascade1,
-		);
-		momentsShadowCascade1Debug.appendTo(this.$main);
-		this.canvases.set(
-			TextureDebugMeshType.DepthMomentsCascade1,
-			momentsShadowCascade1Debug,
 		);
 	}
 }

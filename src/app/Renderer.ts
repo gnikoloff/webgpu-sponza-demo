@@ -581,17 +581,6 @@ export default class Renderer extends RenderingContext {
 			.addInputTexture(RENDER_PASS_BLOOM_TEXTURE)
 			.addOutputTexture(RENDER_PASS_BLOOM_TEXTURE);
 
-		// const debugBBoxesPass = new DebugBoundsPass(width, height)
-		// 	.addInputTextures([
-		// 		RENDER_PASS_TAA_RESOLVE_TEXTURE,
-		// 		RENDER_PASS_DEPTH_STENCIL_TEXTURE,
-		// 	])
-		// 	.addOutputTexture(RENDER_PASS_TAA_RESOLVE_TEXTURE)
-		// 	.setScene(this.scene)
-		// 	.setCamera(this.mainCamera);
-
-		// debugBBoxesPass.enabled = false;
-
 		const blitRenderPass = new BlitRenderPass(width, height).addInputTextures([
 			RENDER_PASS_BLOOM_TEXTURE,
 			RENDER_PASS_TAA_RESOLVE_TEXTURE,
@@ -599,8 +588,6 @@ export default class Renderer extends RenderingContext {
 
 		this.renderPassComposer
 			.addPass(shadowRenderPass)
-			// .addPass(momentsShadowComputePass)
-			// .addPass(momentsBlurShadowComputePass)
 			.addPass(gbufferRenderPass)
 			.addPass(ssaoRenderPass)
 			.addPass(ssaoBlurRenderPass)
@@ -696,24 +683,12 @@ export default class Renderer extends RenderingContext {
 					RENDER_PASS_DIRECTIONAL_LIGHT_DEPTH_TEXTURE,
 				),
 			)
-			// .setTextureShadowSection(
-			// 	TextureDebugMeshType.DepthMomentsCascade0,
-			// 	this.renderPassComposer.getTexture(
-			// 		RENDER_PASS_DIRECTIONAL_LIGHT_VARIANCE_BLURRED_DEPTH_TEXTURE,
-			// 	),
-			// )
 			.setTextureShadowSection(
 				TextureDebugMeshType.ShadowDepthCascade1,
 				this.renderPassComposer.getTexture(
 					RENDER_PASS_DIRECTIONAL_LIGHT_DEPTH_TEXTURE,
 				),
 			)
-			// .setTextureShadowSection(
-			// 	TextureDebugMeshType.DepthMomentsCascade1,
-			// 	this.renderPassComposer.getTexture(
-			// 		RENDER_PASS_DIRECTIONAL_LIGHT_VARIANCE_BLURRED_DEPTH_TEXTURE,
-			// 	),
-			// )
 			.render(commandEncoder);
 
 		RenderingContext.device.queue.submit([commandEncoder.finish()]);
