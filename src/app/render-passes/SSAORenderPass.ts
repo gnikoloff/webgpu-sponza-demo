@@ -1,5 +1,4 @@
 import { vec4 } from 'wgpu-matrix'
-import blueNoiseImgUrl from '../../assets/textures/blueNoise.png?url'
 import PipelineStates from '../../renderer/core/PipelineStates'
 import RenderPass from '../../renderer/core/RenderPass'
 import RenderingContext from '../../renderer/core/RenderingContext'
@@ -9,11 +8,12 @@ import Scene from '../../renderer/scene/Scene'
 import FullScreenVertexShaderUtils, {
   FullScreenVertexShaderEntryFn,
 } from '../../renderer/shader/FullScreenVertexShaderUtils'
-import TextureLoader from '../../renderer/texture/TextureLoader'
 import { RenderPassType } from '../../renderer/types'
 import SSAOShaderSrc, { SSAOShaderName } from '../shaders/SSAOShader'
 
 export default class SSAORenderPass extends RenderPass {
+  private static noiseTexture: GPUTexture
+  private static kernelBuffer: GPUBuffer
   public static readonly SSAO_SCALE_FACTOR = 0.5
 
   private outTextureView: GPUTextureView
@@ -23,11 +23,9 @@ export default class SSAORenderPass extends RenderPass {
   private gbufferTexturesBindGroup: GPUBindGroup
 
   private renderPSO: GPURenderPipeline
-  private noiseTexture?: GPUTexture
-  private kernelBuffer: GPUBuffer
   private settingsBuffer: GPUBuffer
 
-  private startKernelSize = 8
+  private startKernelSize = 64
 
   private _kernelSize = 128
   public get kernelSize(): number {
@@ -47,7 +45,7 @@ export default class SSAORenderPass extends RenderPass {
     this.updateSettingsBufferRadius()
   }
 
-  private _strength = 2
+  private _strength = 1
   public get strength(): number {
     return this._strength
   }
@@ -80,51 +78,42 @@ export default class SSAORenderPass extends RenderPass {
     )
   }
 
-  public override async destroy() {
-    super.destroy()
-    await RenderingContext.device.queue.onSubmittedWorkDone()
-    if (this.noiseTexture) {
-      VRAMUsageTracker.removeTextureBytes(this.noiseTexture)
-    }
-    VRAMUsageTracker.removeBufferBytes(this.kernelBuffer)
-    this.noiseTexture?.destroy()
-    this.kernelBuffer.destroy()
-  }
-
   constructor(width: number, height: number) {
     super(RenderPassType.SSAO, width, height)
 
-    const kernelSize = this.kernelSize
-    const kernel = new Float32Array(kernelSize * 4)
+    if (!SSAORenderPass.kernelBuffer) {
+      const kernelSize = this.kernelSize
+      const kernel = new Float32Array(kernelSize * 4)
 
-    for (let i = 0; i < kernelSize; i++) {
-      const sample = vec4.create(
-        Math.random() * 2 - 1,
-        Math.random() * 2 - 1,
-        Math.random(),
-        0
-      )
+      for (let i = 0; i < kernelSize; i++) {
+        const sample = vec4.create(
+          Math.random() * 2 - 1,
+          Math.random() * 2 - 1,
+          Math.random(),
+          0
+        )
 
-      // bias sampler closer to the origin
-      const scale = i / kernelSize
+        // bias sampler closer to the origin
+        const scale = i / kernelSize
 
-      vec4.scale(sample, lerp(0.1, 1, scale * scale), sample)
+        vec4.scale(sample, lerp(0.1, 1, scale * scale), sample)
 
-      // vec4.normalize(sample, sample);
-      kernel.set(sample, i * 4)
+        // vec4.normalize(sample, sample);
+        kernel.set(sample, i * 4)
+      }
+
+      SSAORenderPass.kernelBuffer = RenderingContext.device.createBuffer({
+        label: 'SSAO Kernel Buffer',
+        mappedAtCreation: true,
+        size: kernelSize * 4 * Float32Array.BYTES_PER_ELEMENT,
+        usage: GPUBufferUsage.STORAGE,
+      })
+
+      VRAMUsageTracker.addBufferBytes(SSAORenderPass.kernelBuffer)
+
+      new Float32Array(SSAORenderPass.kernelBuffer.getMappedRange()).set(kernel)
+      SSAORenderPass.kernelBuffer.unmap()
     }
-
-    this.kernelBuffer = RenderingContext.device.createBuffer({
-      label: 'SSAO Kernel Buffer',
-      mappedAtCreation: true,
-      size: kernelSize * 4 * Float32Array.BYTES_PER_ELEMENT,
-      usage: GPUBufferUsage.STORAGE,
-    })
-
-    VRAMUsageTracker.addBufferBytes(this.kernelBuffer)
-
-    new Float32Array(this.kernelBuffer.getMappedRange()).set(kernel)
-    this.kernelBuffer.unmap()
 
     this.settingsBuffer = RenderingContext.device.createBuffer({
       label: 'SSAO Settings GPU Buffer',
@@ -212,9 +201,6 @@ export default class SSAORenderPass extends RenderPass {
       },
     })
 
-    // Render SSAO at half res
-    // width *= SSAORenderPass.SSAO_SCALE_FACTOR;
-    // height *= SSAORenderPass.SSAO_SCALE_FACTOR;
     this.outTextures.push(
       RenderingContext.device.createTexture({
         dimension: '2d',
@@ -231,33 +217,36 @@ export default class SSAORenderPass extends RenderPass {
 
     VRAMUsageTracker.addTextureBytes(this.outTextures[0])
 
-    this.loadBlueNoiseTexture()
-  }
+    if (!SSAORenderPass.noiseTexture) {
+      const noiseTexSize = 16
+      SSAORenderPass.noiseTexture = RenderingContext.device.createTexture({
+        label: 'SSAO Render Pass Noise Texture',
+        size: { width: noiseTexSize, height: noiseTexSize },
+        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+        format: 'rgba32float',
+      })
 
-  private async loadBlueNoiseTexture() {
-    const url = blueNoiseImgUrl
-    const response = await fetch(url)
-    const blob = await response.blob()
-    const imageBitmap = await createImageBitmap(blob)
-    this.noiseTexture = RenderingContext.device.createTexture({
-      label: 'Blue Noise Texture',
-      format: 'rgba32float',
-      size: { width: imageBitmap.width, height: imageBitmap.height },
-      usage: GPUTextureUsage.TEXTURE_BINDING,
-    })
-    RenderingContext.device.queue.copyExternalImageToTexture(
-      {
-        source: imageBitmap,
-      },
-      {
-        texture: this.noiseTexture,
-      },
-      {
-        width: imageBitmap.width,
-        height: imageBitmap.height,
+      const noiseVals = new Float32Array(noiseTexSize * noiseTexSize * 4)
+      for (let i = 0; i < noiseTexSize * noiseTexSize; i++) {
+        noiseVals[i * 4 + 0] = Math.random() * 2 - 1
+        noiseVals[i * 4 + 1] = Math.random() * 2 - 1
+        noiseVals[i * 4 + 2] = Math.random() * 2 - 1
+        noiseVals[i * 4 + 3] = 0
       }
-    )
-    imageBitmap.close()
+      RenderingContext.device.queue.writeTexture(
+        { texture: SSAORenderPass.noiseTexture, mipLevel: 0 },
+        noiseVals,
+        {
+          offset: 0,
+          bytesPerRow: noiseTexSize * 4 * Float32Array.BYTES_PER_ELEMENT,
+        },
+        {
+          width: noiseTexSize,
+          height: noiseTexSize,
+          depthOrArrayLayers: 1,
+        }
+      )
+    }
   }
 
   protected override createRenderPassDescriptor(): GPURenderPassDescriptor {
@@ -266,7 +255,7 @@ export default class SSAORenderPass extends RenderPass {
     }
     const colorAttachments: GPURenderPassColorAttachment[] = [
       {
-        loadOp: 'load',
+        loadOp: 'clear',
         storeOp: 'store',
         view: this.outTextureView,
       },
@@ -301,14 +290,12 @@ export default class SSAORenderPass extends RenderPass {
         },
         {
           binding: 2,
-          resource:
-            this.noiseTexture?.createView() ||
-            TextureLoader.dummyTexture.createView(),
+          resource: SSAORenderPass.noiseTexture.createView(),
         },
         {
           binding: 3,
           resource: {
-            buffer: this.kernelBuffer,
+            buffer: SSAORenderPass.kernelBuffer,
           },
         },
         {

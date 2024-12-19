@@ -36,7 +36,7 @@ const SSAOShaderSrc = /* wgsl */ `
 
     let noiseScale = vec2i(textureDimensions(noiseTexture).xy);
     let sampleCoords = pixelCoords % noiseScale;
-    var randomVec = textureLoad(noiseTexture, sampleCoords, 0).rgb;
+    var randomVec = textureLoad(noiseTexture, sampleCoords, 0).rgb * 2 - 1;
     randomVec = (camera.viewMatrix * vec4f(randomVec, 0)).xyz;
 
     let viewTangent = normalize(randomVec - viewNormal * dot(randomVec, viewNormal));
@@ -65,7 +65,7 @@ const SSAOShaderSrc = /* wgsl */ `
       var sampleDepth = textureLoad(depthTexture, screenCoord, 0);
       sampleDepth = calcViewSpacePos(camera, vec2f(screenCoord), sampleDepth).z;
       
-      let rangeCheck = smoothstep(0.0, 1.0, radius / abs(viewSpacePos.z - sampleDepth));
+      let rangeCheck = smoothstep(0.1, 1.0, radius / abs(viewSpacePos.z - sampleDepth));
 
       occlusion += select(0.0, 1.0, sampleDepth > viewSamplePos.z) * rangeCheck * NdotS;
     }
