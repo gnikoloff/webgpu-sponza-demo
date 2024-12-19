@@ -48,7 +48,7 @@ const GUI_PARAMS: IGUIParams = {
   'SSAO Strength': 2,
 }
 
-const fpsDisplayAverage = new RollingAverage(2000)
+const fpsDisplayAverage = new RollingAverage(200)
 let oldTimeMs = 0
 let introAnimPlayed = false
 let ssrEnabledManuallySet = false
@@ -56,6 +56,7 @@ let ssrEnabledPerfAutomaticallySet = false
 let bloomEnabledManuallySet = false
 let bloomEnabledPerfAutomaticallySet = false
 let ssaoEnabledManuallySet = false
+let ssaoEnabledPerfAutomaticallySet = false
 
 renderer.onIntroAnimComplete = onIntroAnimComplete
 requestAnimationFrame(renderFrame)
@@ -67,51 +68,52 @@ function renderFrame() {
   const dt = (nowMs - oldTimeMs) / 1000
   oldTimeMs = nowMs
 
-  fpsDisplayAverage.addSample(1 / dt)
   const fpsAverageStat = fpsDisplayAverage.get()
-
-  if (
-    GUI_PARAMS['Enable SSR'] &&
-    !ssrEnabledManuallySet &&
-    fpsDisplayAverage.getSamplesCount() > PROFILE_MAX_FRAMES_COUNT &&
-    fpsAverageStat < 55
-  ) {
-    console.log('1. performance too low. disabling ssr')
-    GUI_PARAMS['Enable SSR'] = false
-    renderer.ssrEnabled = false
-    ssrEnabledPerfAutomaticallySet = true
-    fpsDisplayAverage.clearSamples()
-  }
-
   if (
     GUI_PARAMS['Enable Bloom'] &&
     !bloomEnabledManuallySet &&
-    ssrEnabledPerfAutomaticallySet &&
-    fpsDisplayAverage.getSamplesCount() > PROFILE_MAX_FRAMES_COUNT / 2 &&
+    fpsDisplayAverage.getSamplesCount() > PROFILE_MAX_FRAMES_COUNT &&
     fpsAverageStat < 55
   ) {
-    console.log('2. performance still too low. disabling bloom')
+    console.log('1. performance too low. disabling bloom')
     GUI_PARAMS['Enable Bloom'] = false
     renderer.bloomEnabled = false
     bloomEnabledPerfAutomaticallySet = true
-    fpsDisplayAverage.clearSamples()
+    // fpsDisplayAverage.clearSamples()
   }
 
   if (
     GUI_PARAMS['Enable SSAO'] &&
     !ssaoEnabledManuallySet &&
     bloomEnabledPerfAutomaticallySet &&
-    fpsDisplayAverage.getSamplesCount() > PROFILE_MAX_FRAMES_COUNT / 3 &&
+    fpsDisplayAverage.getSamplesCount() > PROFILE_MAX_FRAMES_COUNT &&
     fpsAverageStat < 55
   ) {
-    console.log('3. performance still too low. disabling ssao')
+    console.log('2. performance still too low. disabling ssao')
     GUI_PARAMS['Enable SSAO'] = false
     renderer.ssaoEnabled = false
+    ssaoEnabledPerfAutomaticallySet = true
     fpsDisplayAverage.clearSamples()
+  }
+
+  if (
+    GUI_PARAMS['Enable SSR'] &&
+    !ssrEnabledManuallySet &&
+    ssaoEnabledPerfAutomaticallySet &&
+    fpsDisplayAverage.getSamplesCount() > PROFILE_MAX_FRAMES_COUNT &&
+    fpsAverageStat < 55
+  ) {
+    console.log('3. performance still too low. disabling ssr')
+    GUI_PARAMS['Enable SSR'] = false
+    renderer.ssrEnabled = false
+    ssrEnabledPerfAutomaticallySet = true
+    // fpsDisplayAverage.clearSamples()
   }
 
   renderer.renderFrame(nowMs)
   requestAnimationFrame(renderFrame)
+
+  fpsDisplayAverage.addSample(1 / dt)
 }
 
 function resize() {
@@ -231,10 +233,13 @@ function onIntroAnimComplete() {
 
   const ssaoFolder = gui.addFolder('Screen space Ambient Occlusion')
   ssaoFolder.open()
-  ssaoFolder.add(GUI_PARAMS, 'Enable SSAO').onChange((v: boolean) => {
-    ssaoEnabledManuallySet = true
-    renderer.ssaoEnabled = v
-  })
+  ssaoFolder
+    .add(GUI_PARAMS, 'Enable SSAO')
+    .onChange((v: boolean) => {
+      ssaoEnabledManuallySet = true
+      renderer.ssaoEnabled = v
+    })
+    .listen()
   ssaoFolder
     .add(GUI_PARAMS, 'SSAO Kernel Size', 8, 128, 1)
     .onChange((v: number) => {
@@ -250,10 +255,13 @@ function onIntroAnimComplete() {
   const ssrFolder = gui.addFolder('Screen space Reflections')
   ssrFolder.open()
 
-  ssrFolder.add(GUI_PARAMS, 'Enable SSR').onChange((v: boolean) => {
-    renderer.ssrEnabled = v
-    ssrEnabledManuallySet = true
-  })
+  ssrFolder
+    .add(GUI_PARAMS, 'Enable SSR')
+    .onChange((v: boolean) => {
+      renderer.ssrEnabled = v
+      ssrEnabledManuallySet = true
+    })
+    .listen()
   ssrFolder
     .add(GUI_PARAMS, 'SSR Method', ['hi-z', 'linear'])
     .onChange((v: SSRMethod) => {
@@ -270,13 +278,13 @@ function onIntroAnimComplete() {
 
   const bloomFolder = gui.addFolder('Bloom')
   bloomFolder.open()
-  const bloomEnabledCtrl = bloomFolder
+  bloomFolder
     .add(GUI_PARAMS, 'Enable Bloom')
     .onChange((v: boolean) => {
       bloomEnabledManuallySet = true
       renderer.bloomEnabled = v
     })
-  bloomEnabledCtrl.listen()
+    .listen()
   bloomFolder
     .add(GUI_PARAMS, 'Bloom Filter Radius', 0.001, 0.005, 0.0005)
     .onChange((v: number) => {
