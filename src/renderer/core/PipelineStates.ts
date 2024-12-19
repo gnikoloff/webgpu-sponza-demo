@@ -1,3 +1,4 @@
+import BaseUtilObject from './BaseUtilObject'
 import { PBR_TEXTURES_LOCATIONS, SAMPLER_LOCATIONS } from './RendererBindings'
 import RenderingContext from './RenderingContext'
 
@@ -9,8 +10,8 @@ let _instanceBindGroupLayout: GPUBindGroupLayout
 
 const cachedShaderModules: Map<string, GPUShaderModule> = new Map([])
 
-const PipelineStates = {
-  get defaultCameraPlusLightsBindGroupLayout(): GPUBindGroupLayout {
+export class PipelineStates extends BaseUtilObject {
+  public static get defaultCameraPlusLightsBindGroupLayout(): GPUBindGroupLayout {
     if (_cameraPlusLightsBindGroupLayout) {
       return _cameraPlusLightsBindGroupLayout
     }
@@ -37,9 +38,9 @@ const PipelineStates = {
       })
 
     return _cameraPlusLightsBindGroupLayout
-  },
+  }
 
-  get defaultCameraBindGroupLayout(): GPUBindGroupLayout {
+  public static get defaultCameraBindGroupLayout(): GPUBindGroupLayout {
     if (_cameraBindGroupLayout) {
       return _cameraBindGroupLayout
     }
@@ -58,9 +59,9 @@ const PipelineStates = {
     })
 
     return _cameraBindGroupLayout
-  },
+  }
 
-  get defaultModelBindGroupLayout(): GPUBindGroupLayout {
+  public static get defaultModelBindGroupLayout(): GPUBindGroupLayout {
     if (_modelBindGroupLayout) {
       return _modelBindGroupLayout
     }
@@ -77,9 +78,9 @@ const PipelineStates = {
       entries: bindGroupLayoutEntries,
     })
     return _modelBindGroupLayout
-  },
+  }
 
-  get defaultModelMaterialBindGroupLayout(): GPUBindGroupLayout {
+  public static get defaultModelMaterialBindGroupLayout(): GPUBindGroupLayout {
     if (_defaultModelMaterialBindGroupLayout) {
       return _defaultModelMaterialBindGroupLayout
     }
@@ -117,9 +118,9 @@ const PipelineStates = {
         entries: bindGroupLayoutEntries,
       })
     return _defaultModelMaterialBindGroupLayout
-  },
+  }
 
-  get instancesBindGroupLayout(): GPUBindGroupLayout {
+  public static get instancesBindGroupLayout(): GPUBindGroupLayout {
     if (_instanceBindGroupLayout) {
       return _instanceBindGroupLayout
     }
@@ -137,9 +138,9 @@ const PipelineStates = {
       entries: bindGroupLayoutEntries,
     })
     return _instanceBindGroupLayout
-  },
+  }
 
-  createShaderModule: (
+  public static createShaderModule = (
     shaderModuleSrc: string,
     debugLabel = `Shader Module #${cachedShaderModules.size}`
   ): GPUShaderModule => {
@@ -153,21 +154,21 @@ const PipelineStates = {
     })
     cachedShaderModules.set(shaderModuleSrc, shaderModule)
     return shaderModule
-  },
+  }
 
-  createRenderPipeline: (
+  public static createRenderPipeline = (
     descriptor: GPURenderPipelineDescriptor
   ): GPURenderPipeline => {
     // TODO: Some pipeline caching would be great
     const renderPSO = RenderingContext.device.createRenderPipeline(descriptor)
     return renderPSO
-  },
+  }
 
-  createComputePipeline: (
+  public static createComputePipeline = (
     descriptor: GPUComputePipelineDescriptor
   ): GPUComputePipeline => {
     const pipeline = RenderingContext.device.createComputePipeline(descriptor)
     return pipeline
-  },
+  }
 }
 export default PipelineStates
