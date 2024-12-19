@@ -8,7 +8,7 @@ import CubeTextureController from './CubeTextureController'
 import TextureController from './TextureController'
 
 // prettier-ignore
-const BAYERN_PATTERN = new Uint8Array([
+const BAYER_PATTERN = new Uint8Array([
   0, 32,  8, 40,  2, 34, 10, 42,   /* 8x8 Bayer ordered dithering  */
   48, 16, 56, 24, 50, 18, 58, 26,  /* pattern.  Each input pixel   */
   12, 44,  4, 36, 14, 46,  6, 38,  /* is scaled to the 0..63 range */
@@ -107,7 +107,7 @@ export default class TextureLoader extends BaseUtilObject {
     })
     RenderingContext.device.queue.writeTexture(
       { texture: _bayerDitherPattern, mipLevel: 0 },
-      BAYERN_PATTERN,
+      BAYER_PATTERN,
       { offset: 0, bytesPerRow: 8 },
       {
         width: 8,
@@ -241,15 +241,12 @@ export default class TextureLoader extends BaseUtilObject {
 
     VRAMUsageTracker.addTextureBytes(texture)
 
-    const debugCavas = document.createElement('canvas')
-    const ctx = debugCavas.getContext('2d')
-
-    debugCavas.width = texture.width / 2
-    debugCavas.height = texture.height / 2
-
-    ctx.drawImage(bitmap, 0, 0)
-
     if (showDebug) {
+      const debugCavas = document.createElement('canvas')
+      const ctx = debugCavas.getContext('2d')
+      debugCavas.width = texture.width / 2
+      debugCavas.height = texture.height / 2
+      ctx.drawImage(bitmap, 0, 0)
       debugCavas.style.setProperty('position', 'fixed')
       debugCavas.style.setProperty('z-index', '99')
       debugCavas.style.setProperty('left', '2rem')
@@ -261,7 +258,6 @@ export default class TextureLoader extends BaseUtilObject {
     }
 
     bitmap.close()
-
     return texture
   }
 }
