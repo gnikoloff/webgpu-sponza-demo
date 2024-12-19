@@ -12,9 +12,11 @@ import { RenderPassType } from '../../renderer/types'
 import SSAOShaderSrc, { SSAOShaderName } from '../shaders/SSAOShader'
 
 export default class SSAORenderPass extends RenderPass {
+  public static readonly SSAO_SCALE_FACTOR = 0.5
+
   private static noiseTexture: GPUTexture
   private static kernelBuffer: GPUBuffer
-  public static readonly SSAO_SCALE_FACTOR = 0.5
+  private static renderPSO: GPURenderPipeline
 
   private outTextureView: GPUTextureView
 
@@ -22,7 +24,6 @@ export default class SSAORenderPass extends RenderPass {
   private gbufferTexturesBindGroupEntries: GPUBindGroupEntry[] = []
   private gbufferTexturesBindGroup: GPUBindGroup
 
-  private renderPSO: GPURenderPipeline
   private settingsBuffer: GPUBuffer
 
   private startKernelSize = 64
@@ -184,22 +185,26 @@ export default class SSAORenderPass extends RenderPass {
       },
     ]
 
-    this.renderPSO = PipelineStates.createRenderPipeline({
-      label: `SSAO RenderPSO`,
-      layout: RenderingContext.device.createPipelineLayout({
-        label: `SSAO RenderPSO Layout`,
-        bindGroupLayouts: [this.gbufferCommonBindGroupLayout],
-      }),
-      vertex: {
-        module: PipelineStates.createShaderModule(FullScreenVertexShaderUtils),
-        entryPoint: FullScreenVertexShaderEntryFn,
-      },
-      fragment: {
-        module: PipelineStates.createShaderModule(SSAOShaderSrc),
-        entryPoint: SSAOShaderName,
-        targets: renderTargets,
-      },
-    })
+    if (!SSAORenderPass.renderPSO) {
+      SSAORenderPass.renderPSO = PipelineStates.createRenderPipeline({
+        label: `SSAO RenderPSO`,
+        layout: RenderingContext.device.createPipelineLayout({
+          label: `SSAO RenderPSO Layout`,
+          bindGroupLayouts: [this.gbufferCommonBindGroupLayout],
+        }),
+        vertex: {
+          module: PipelineStates.createShaderModule(
+            FullScreenVertexShaderUtils
+          ),
+          entryPoint: FullScreenVertexShaderEntryFn,
+        },
+        fragment: {
+          module: PipelineStates.createShaderModule(SSAOShaderSrc),
+          entryPoint: SSAOShaderName,
+          targets: renderTargets,
+        },
+      })
+    }
 
     this.outTextures.push(
       RenderingContext.device.createTexture({
@@ -328,7 +333,7 @@ export default class SSAORenderPass extends RenderPass {
     }
 
     renderPass.setBindGroup(0, this.gbufferTexturesBindGroup)
-    RenderingContext.bindRenderPSO(this.renderPSO)
+    RenderingContext.bindRenderPSO(SSAORenderPass.renderPSO)
     renderPass.draw(3)
 
     if (RenderingContext.ENABLE_DEBUG_GROUPS) {

@@ -14,7 +14,8 @@ export default class HiZCopyDepthComputePass extends RenderPass {
   private static readonly COMPUTE_WORKGROUP_SIZE_X = 8
   private static readonly COMPUTE_WORKGROUP_SIZE_Y = 8
 
-  private computePSO: GPUComputePipeline
+  private static computePSO: GPUComputePipeline
+
   private bindGroupLayout: GPUBindGroupLayout
   private bindGroup: GPUBindGroup
 
@@ -45,24 +46,30 @@ export default class HiZCopyDepthComputePass extends RenderPass {
       entries: bindGroupLayoutEntries,
     })
 
-    this.computePSO = PipelineStates.createComputePipeline({
-      label: 'Hi-Z Copy Depth Compute PSO',
-      layout: RenderingContext.device.createPipelineLayout({
-        label: 'Hi-Z Copy Depth Compute PSO Layout',
-        bindGroupLayouts: [this.bindGroupLayout],
-      }),
-      compute: {
-        entryPoint: HI_Z_COPY_DEPTH_COMPUTE_SHADER_ENTRY_FN,
-        module: PipelineStates.createShaderModule(
-          HI_Z_COPY_DEPTH_COMPUTE_SHADER_SRC,
-          'Hi-Z Depth Copy Compute Shader Module'
-        ),
-        constants: {
-          WORKGROUP_SIZE_X: HiZCopyDepthComputePass.COMPUTE_WORKGROUP_SIZE_X,
-          WORKGROUP_SIZE_Y: HiZCopyDepthComputePass.COMPUTE_WORKGROUP_SIZE_Y,
-        },
-      },
-    })
+    if (!HiZCopyDepthComputePass.computePSO) {
+      HiZCopyDepthComputePass.computePSO = PipelineStates.createComputePipeline(
+        {
+          label: 'Hi-Z Copy Depth Compute PSO',
+          layout: RenderingContext.device.createPipelineLayout({
+            label: 'Hi-Z Copy Depth Compute PSO Layout',
+            bindGroupLayouts: [this.bindGroupLayout],
+          }),
+          compute: {
+            entryPoint: HI_Z_COPY_DEPTH_COMPUTE_SHADER_ENTRY_FN,
+            module: PipelineStates.createShaderModule(
+              HI_Z_COPY_DEPTH_COMPUTE_SHADER_SRC,
+              'Hi-Z Depth Copy Compute Shader Module'
+            ),
+            constants: {
+              WORKGROUP_SIZE_X:
+                HiZCopyDepthComputePass.COMPUTE_WORKGROUP_SIZE_X,
+              WORKGROUP_SIZE_Y:
+                HiZCopyDepthComputePass.COMPUTE_WORKGROUP_SIZE_Y,
+            },
+          },
+        }
+      )
+    }
 
     this.outTextures.push(
       RenderingContext.device.createTexture({
@@ -123,7 +130,7 @@ export default class HiZCopyDepthComputePass extends RenderPass {
       this.createComputePassDescriptor()
     )
 
-    computePass.setPipeline(this.computePSO)
+    computePass.setPipeline(HiZCopyDepthComputePass.computePSO)
     computePass.setBindGroup(0, this.bindGroup)
 
     const workgroupCountX = Math.ceil(

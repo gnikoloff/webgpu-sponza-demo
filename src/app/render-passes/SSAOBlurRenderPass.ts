@@ -12,9 +12,10 @@ import SSAOBlurShaderSrc, {
 } from '../shaders/SSAOBlurShader'
 
 export default class SSAOBlurRenderPass extends RenderPass {
+  private static renderPSO: GPURenderPipeline
+
   private outTextureView: GPUTextureView
 
-  private renderPSO: GPURenderPipeline
   private bindGroupLayout: GPUBindGroupLayout
   private bindGroup!: GPUBindGroup
 
@@ -42,22 +43,26 @@ export default class SSAOBlurRenderPass extends RenderPass {
       entries: blurBindGroupLayoutEntries,
     })
 
-    this.renderPSO = PipelineStates.createRenderPipeline({
-      label: 'SSAO Blur RenderPSO',
-      layout: RenderingContext.device.createPipelineLayout({
-        label: 'SSAO Blur RenderPSO Layout',
-        bindGroupLayouts: [this.bindGroupLayout],
-      }),
-      vertex: {
-        module: PipelineStates.createShaderModule(FullScreenVertexShaderUtils),
-        entryPoint: FullScreenVertexShaderEntryFn,
-      },
-      fragment: {
-        module: PipelineStates.createShaderModule(SSAOBlurShaderSrc),
-        entryPoint: SSSAOBlurShaderName,
-        targets: renderTargets,
-      },
-    })
+    if (!SSAOBlurRenderPass.renderPSO) {
+      SSAOBlurRenderPass.renderPSO = PipelineStates.createRenderPipeline({
+        label: 'SSAO Blur RenderPSO',
+        layout: RenderingContext.device.createPipelineLayout({
+          label: 'SSAO Blur RenderPSO Layout',
+          bindGroupLayouts: [this.bindGroupLayout],
+        }),
+        vertex: {
+          module: PipelineStates.createShaderModule(
+            FullScreenVertexShaderUtils
+          ),
+          entryPoint: FullScreenVertexShaderEntryFn,
+        },
+        fragment: {
+          module: PipelineStates.createShaderModule(SSAOBlurShaderSrc),
+          entryPoint: SSSAOBlurShaderName,
+          targets: renderTargets,
+        },
+      })
+    }
 
     // width *= SSAORenderPass.SSAO_SCALE_FACTOR;
     // height *= SSAORenderPass.SSAO_SCALE_FACTOR;
@@ -127,7 +132,7 @@ export default class SSAOBlurRenderPass extends RenderPass {
     }
 
     renderPass.setBindGroup(0, this.bindGroup)
-    renderPass.setPipeline(this.renderPSO)
+    renderPass.setPipeline(SSAOBlurRenderPass.renderPSO)
     renderPass.draw(3)
 
     if (RenderingContext.ENABLE_DEBUG_GROUPS) {

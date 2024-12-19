@@ -17,7 +17,8 @@ import {
 export default class BlitRenderPass extends RenderPass {
   private static readonly BLOOM_MIX_FACTOR = 0.035
 
-  private renderPSO: GPURenderPipeline
+  private static renderPSO: GPURenderPipeline
+
   private texturesBindGroupLayout: GPUBindGroupLayout
   private textureBindGroup: GPUBindGroup
   private bloomMixFactorBuffer: GPUBuffer
@@ -110,26 +111,29 @@ export default class BlitRenderPass extends RenderPass {
         entries: texturesBindGroupLayoutEntries,
       })
 
-    const renderPSODescriptor: GPURenderPipelineDescriptor = {
-      layout: RenderingContext.device.createPipelineLayout({
-        bindGroupLayouts: [this.texturesBindGroupLayout],
-      }),
-      vertex: {
-        module: vertexShaderModule,
-        entryPoint: FullScreenVertexShaderEntryFn,
-      },
-      fragment: {
-        module: fragmentShaderModule,
-        entryPoint: BLIT_FRAGMENT_SHADER_ENTRY_NAME,
-        targets,
-      },
-      primitive: {
-        topology: 'triangle-list',
-        cullMode: 'back',
-      },
-    }
+    if (!BlitRenderPass.renderPSO) {
+      const renderPSODescriptor: GPURenderPipelineDescriptor = {
+        layout: RenderingContext.device.createPipelineLayout({
+          bindGroupLayouts: [this.texturesBindGroupLayout],
+        }),
+        vertex: {
+          module: vertexShaderModule,
+          entryPoint: FullScreenVertexShaderEntryFn,
+        },
+        fragment: {
+          module: fragmentShaderModule,
+          entryPoint: BLIT_FRAGMENT_SHADER_ENTRY_NAME,
+          targets,
+        },
+        primitive: {
+          topology: 'triangle-list',
+          cullMode: 'back',
+        },
+      }
 
-    this.renderPSO = PipelineStates.createRenderPipeline(renderPSODescriptor)
+      BlitRenderPass.renderPSO =
+        PipelineStates.createRenderPipeline(renderPSODescriptor)
+    }
 
     this.bloomMixFactorBuffer = RenderingContext.device.createBuffer({
       label: 'Bloom Mix Factor GPU Buffer',
@@ -253,7 +257,7 @@ export default class BlitRenderPass extends RenderPass {
 
     RenderingContext.setActiveRenderPass(this.type, renderPassEncoder)
 
-    RenderingContext.bindRenderPSO(this.renderPSO)
+    RenderingContext.bindRenderPSO(BlitRenderPass.renderPSO)
     renderPassEncoder.setBindGroup(0, this.textureBindGroup)
     renderPassEncoder.draw(6)
 

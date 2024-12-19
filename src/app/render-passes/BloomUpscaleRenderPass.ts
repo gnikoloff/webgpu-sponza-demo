@@ -15,7 +15,8 @@ import {
 } from '../shaders/BloomUpscaleShader'
 
 export default class BloomUpscaleRenderPass extends RenderPass {
-  private renderPSO: GPURenderPipeline
+  private static renderPSO: GPURenderPipeline
+
   private bindGroupLayout: GPUBindGroupLayout
   private sampler: GPUSampler
   private filterRadiusBuffer: GPUBuffer
@@ -99,22 +100,27 @@ export default class BloomUpscaleRenderPass extends RenderPass {
         },
       },
     ]
-    this.renderPSO = PipelineStates.createRenderPipeline({
-      label: 'Bloom Upscale Render PSO',
-      layout: RenderingContext.device.createPipelineLayout({
-        label: 'Bloom Upscale Render PSO Layout',
-        bindGroupLayouts: [this.bindGroupLayout],
-      }),
-      vertex: {
-        entryPoint: FullScreenVertexShaderEntryFn,
-        module: PipelineStates.createShaderModule(FullScreenVertexShaderUtils),
-      },
-      fragment: {
-        entryPoint: BloomUpscaleShaderEntryFn,
-        module: PipelineStates.createShaderModule(BloomUpscaleShaderSrc),
-        targets: colorTargets,
-      },
-    })
+
+    if (!BloomUpscaleRenderPass.renderPSO) {
+      BloomUpscaleRenderPass.renderPSO = PipelineStates.createRenderPipeline({
+        label: 'Bloom Upscale Render PSO',
+        layout: RenderingContext.device.createPipelineLayout({
+          label: 'Bloom Upscale Render PSO Layout',
+          bindGroupLayouts: [this.bindGroupLayout],
+        }),
+        vertex: {
+          entryPoint: FullScreenVertexShaderEntryFn,
+          module: PipelineStates.createShaderModule(
+            FullScreenVertexShaderUtils
+          ),
+        },
+        fragment: {
+          entryPoint: BloomUpscaleShaderEntryFn,
+          module: PipelineStates.createShaderModule(BloomUpscaleShaderSrc),
+          targets: colorTargets,
+        },
+      })
+    }
   }
 
   public override render(
@@ -163,7 +169,7 @@ export default class BloomUpscaleRenderPass extends RenderPass {
       })
 
       const renderPass = commandEncoder.beginRenderPass(renderPassDesc)
-      renderPass.setPipeline(this.renderPSO)
+      renderPass.setPipeline(BloomUpscaleRenderPass.renderPSO)
 
       bindGroupEntries[0].resource = inputs[0].createView({
         baseMipLevel: i,

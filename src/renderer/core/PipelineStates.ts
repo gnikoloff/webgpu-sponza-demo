@@ -11,6 +11,13 @@ let _instanceBindGroupLayout: GPUBindGroupLayout
 const cachedShaderModules: Map<string, GPUShaderModule> = new Map([])
 
 export class PipelineStates extends BaseUtilObject {
+  public static renderPipelinesCount = 0
+  public static computePipelinesCount = 0
+
+  public static pipelinesCount(): number {
+    return this.renderPipelinesCount + this.computePipelinesCount
+  }
+
   public static get defaultCameraPlusLightsBindGroupLayout(): GPUBindGroupLayout {
     if (_cameraPlusLightsBindGroupLayout) {
       return _cameraPlusLightsBindGroupLayout
@@ -161,13 +168,16 @@ export class PipelineStates extends BaseUtilObject {
   ): GPURenderPipeline => {
     // TODO: Some pipeline caching would be great
     const renderPSO = RenderingContext.device.createRenderPipeline(descriptor)
+    this.renderPipelinesCount++
     return renderPSO
   }
 
   public static createComputePipeline = (
     descriptor: GPUComputePipelineDescriptor
   ): GPUComputePipeline => {
+    // TODO: Some pipeline caching would be great
     const pipeline = RenderingContext.device.createComputePipeline(descriptor)
+    this.computePipelinesCount++
     return pipeline
   }
 }

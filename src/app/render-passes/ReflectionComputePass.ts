@@ -14,7 +14,8 @@ export default class ReflectionComputePass extends RenderPass {
   private static readonly COMPUTE_WORKGROUP_SIZE_X = 8
   private static readonly COMPUTE_WORKGROUP_SIZE_Y = 8
 
-  private computePSO: GPUComputePipeline
+  private static computePSO: GPUComputePipeline
+
   private bindGroupLayout: GPUBindGroupLayout
   private bindGroup!: GPUBindGroup
 
@@ -112,23 +113,26 @@ export default class ReflectionComputePass extends RenderPass {
       label: 'Reflection Pass ComputePSO Bind Group Layout',
       entries: bindGroupLayoutEntries,
     })
-    this.computePSO = PipelineStates.createComputePipeline({
-      label: 'Reflection Pass Compute PSO',
-      layout: RenderingContext.device.createPipelineLayout({
-        label: 'Reflection PASS ComputePSO Layout',
-        bindGroupLayouts: [this.bindGroupLayout],
-      }),
-      compute: {
-        entryPoint: REFLECTION_PASS_COMPUTE_SHADER_ENTRY_NAME,
-        module: PipelineStates.createShaderModule(
-          getReflectionComputeShader('rgba16float')
-        ),
-        constants: {
-          WORKGROUP_SIZE_X: ReflectionComputePass.COMPUTE_WORKGROUP_SIZE_X,
-          WORKGROUP_SIZE_Y: ReflectionComputePass.COMPUTE_WORKGROUP_SIZE_Y,
+
+    if (!ReflectionComputePass.computePSO) {
+      ReflectionComputePass.computePSO = PipelineStates.createComputePipeline({
+        label: 'Reflection Pass Compute PSO',
+        layout: RenderingContext.device.createPipelineLayout({
+          label: 'Reflection PASS ComputePSO Layout',
+          bindGroupLayouts: [this.bindGroupLayout],
+        }),
+        compute: {
+          entryPoint: REFLECTION_PASS_COMPUTE_SHADER_ENTRY_NAME,
+          module: PipelineStates.createShaderModule(
+            getReflectionComputeShader('rgba16float')
+          ),
+          constants: {
+            WORKGROUP_SIZE_X: ReflectionComputePass.COMPUTE_WORKGROUP_SIZE_X,
+            WORKGROUP_SIZE_Y: ReflectionComputePass.COMPUTE_WORKGROUP_SIZE_Y,
+          },
         },
-      },
-    })
+      })
+    }
 
     this.settingsBuffer = RenderingContext.device.createBuffer({
       label: 'SSR Settings Buffer',
@@ -238,7 +242,7 @@ export default class ReflectionComputePass extends RenderPass {
       computeEncoder.pushDebugGroup('Begin Reflection Compute Pass')
     }
 
-    computeEncoder.setPipeline(this.computePSO)
+    computeEncoder.setPipeline(ReflectionComputePass.computePSO)
     computeEncoder.setBindGroup(0, this.bindGroup)
     const workgroupCountX = Math.ceil(
       this.outTextures[0].width / ReflectionComputePass.COMPUTE_WORKGROUP_SIZE_X

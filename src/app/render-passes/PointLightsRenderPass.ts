@@ -15,7 +15,7 @@ import GeometryCache from '../utils/GeometryCache'
 import LightRenderPass from './LightRenderPass'
 
 export default class PointLightsRenderPass extends LightRenderPass {
-  private renderPSO: GPURenderPipeline
+  private static renderPSO: GPURenderPipeline
 
   constructor(width: number, height: number) {
     super(RenderPassType.PointLightsLighting, width, height)
@@ -33,44 +33,46 @@ export default class PointLightsRenderPass extends LightRenderPass {
       passOp: 'keep',
     }
 
-    const pointLightRenderPSODescriptor: GPURenderPipelineDescriptor = {
-      label: 'Point Light Render PSO',
-      layout: pointLightRenderPSOLayout,
-      vertex: {
-        module: PipelineStates.createShaderModule(
-          GetGBufferVertexShader(RenderPassType.PointLightsLighting),
-          'Point Light Render Pass Vertex Shader'
-        ),
-        entryPoint: GBufferVertexEntryFn,
-        buffers: VertexDescriptor.defaultLayout,
-        constants: {
-          // ANIMATED_PARTICLES_OFFSET_START: 5,
+    if (!PointLightsRenderPass.renderPSO) {
+      const pointLightRenderPSODescriptor: GPURenderPipelineDescriptor = {
+        label: 'Point Light Render PSO',
+        layout: pointLightRenderPSOLayout,
+        vertex: {
+          module: PipelineStates.createShaderModule(
+            GetGBufferVertexShader(RenderPassType.PointLightsLighting),
+            'Point Light Render Pass Vertex Shader'
+          ),
+          entryPoint: GBufferVertexEntryFn,
+          buffers: VertexDescriptor.defaultLayout,
+          constants: {
+            // ANIMATED_PARTICLES_OFFSET_START: 5,
+          },
         },
-      },
-      fragment: {
-        module: PipelineStates.createShaderModule(
-          GetGBufferIntegrateShader(RenderPassType.PointLightsLighting),
-          'Point Light Render Pass Fragment Shader'
-        ),
-        entryPoint: GBufferIntegrateShaderEntryFn,
-        targets: PointLightsRenderPass.RENDER_TARGETS,
-      },
-      depthStencil: {
-        format: RenderingContext.depthStencilFormat,
-        depthWriteEnabled: false,
-        depthCompare: 'less-equal',
-        stencilReadMask: 0xff,
-        stencilWriteMask: 0x0,
-        stencilBack: lightRenderStencilState,
-        stencilFront: lightRenderStencilState,
-      },
-      primitive: {
-        cullMode: 'back',
-      },
+        fragment: {
+          module: PipelineStates.createShaderModule(
+            GetGBufferIntegrateShader(RenderPassType.PointLightsLighting),
+            'Point Light Render Pass Fragment Shader'
+          ),
+          entryPoint: GBufferIntegrateShaderEntryFn,
+          targets: PointLightsRenderPass.RENDER_TARGETS,
+        },
+        depthStencil: {
+          format: RenderingContext.depthStencilFormat,
+          depthWriteEnabled: false,
+          depthCompare: 'less-equal',
+          stencilReadMask: 0xff,
+          stencilWriteMask: 0x0,
+          stencilBack: lightRenderStencilState,
+          stencilFront: lightRenderStencilState,
+        },
+        primitive: {
+          cullMode: 'back',
+        },
+      }
+      PointLightsRenderPass.renderPSO = PipelineStates.createRenderPipeline(
+        pointLightRenderPSODescriptor
+      )
     }
-    this.renderPSO = PipelineStates.createRenderPipeline(
-      pointLightRenderPSODescriptor
-    )
   }
 
   protected override createRenderPassDescriptor(): GPURenderPassDescriptor {
@@ -150,7 +152,7 @@ export default class PointLightsRenderPass extends LightRenderPass {
       renderPass.pushDebugGroup('Begin Point LightingSystem')
     }
 
-    RenderingContext.bindRenderPSO(this.renderPSO)
+    RenderingContext.bindRenderPSO(PointLightsRenderPass.renderPSO)
     renderPass.setBindGroup(0, this.gbufferTexturesBindGroup)
     renderPass.setVertexBuffer(
       0,

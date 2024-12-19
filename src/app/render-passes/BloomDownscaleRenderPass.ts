@@ -15,7 +15,8 @@ export default class BloomDownscaleRenderPass extends RenderPass {
   private static readonly COMPUTE_WORKGROUP_SIZE_X = 8
   private static readonly COMPUTE_WORKGROUP_SIZE_Y = 8
 
-  private computePSO: GPUComputePipeline
+  private static computePSO: GPUComputePipeline
+
   private bindGroupLayout: GPUBindGroupLayout
   private mipLevelCount: number
   private sampler: GPUSampler
@@ -74,21 +75,26 @@ export default class BloomDownscaleRenderPass extends RenderPass {
       entries: bindGroupLayoutEntries,
     })
 
-    this.computePSO = PipelineStates.createComputePipeline({
-      label: 'Bloom Downscale Render PSO',
-      layout: RenderingContext.device.createPipelineLayout({
-        label: 'Bloom Downscale Render PSO Layout',
-        bindGroupLayouts: [this.bindGroupLayout],
-      }),
-      compute: {
-        entryPoint: BloomDownscaleShaderEntryFn,
-        module: PipelineStates.createShaderModule(BloomDownscaleShaderSrc),
-        constants: {
-          WORKGROUP_SIZE_X: BloomDownscaleRenderPass.COMPUTE_WORKGROUP_SIZE_X,
-          WORKGROUP_SIZE_Y: BloomDownscaleRenderPass.COMPUTE_WORKGROUP_SIZE_Y,
-        },
-      },
-    })
+    if (!BloomDownscaleRenderPass.computePSO) {
+      BloomDownscaleRenderPass.computePSO =
+        PipelineStates.createComputePipeline({
+          label: 'Bloom Downscale Render PSO',
+          layout: RenderingContext.device.createPipelineLayout({
+            label: 'Bloom Downscale Render PSO Layout',
+            bindGroupLayouts: [this.bindGroupLayout],
+          }),
+          compute: {
+            entryPoint: BloomDownscaleShaderEntryFn,
+            module: PipelineStates.createShaderModule(BloomDownscaleShaderSrc),
+            constants: {
+              WORKGROUP_SIZE_X:
+                BloomDownscaleRenderPass.COMPUTE_WORKGROUP_SIZE_X,
+              WORKGROUP_SIZE_Y:
+                BloomDownscaleRenderPass.COMPUTE_WORKGROUP_SIZE_Y,
+            },
+          },
+        })
+    }
   }
 
   public override render(
@@ -127,7 +133,7 @@ export default class BloomDownscaleRenderPass extends RenderPass {
     const computePass = commandEncoder.beginComputePass({
       label: 'Bloom Downscale Compute Pass',
     })
-    computePass.setPipeline(this.computePSO)
+    computePass.setPipeline(BloomDownscaleRenderPass.computePSO)
 
     for (let i = 1; i < this.mipLevelCount; i++) {
       bindGroupEntries[0].resource = this.outTextures[0].createView({

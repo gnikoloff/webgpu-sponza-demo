@@ -16,12 +16,13 @@ import {
 export default class TAAResolveRenderPass extends RenderPass {
   private static readonly HISTORY_MIX_FACTOR = 0.9
 
+  private static renderPSO: GPURenderPipeline
+
   private outTextureView: GPUTextureView
   private historyTextureView: GPUTextureView
   private sourceCopyTextureInfo: GPUTexelCopyTextureInfo
   private destCopyTextureInfo: GPUTexelCopyTextureInfo
   private copyTextureExtend: GPUExtent3DStrict
-  private renderPSO: GPURenderPipeline
   private texturesBindGroupLayout: GPUBindGroupLayout
   private textureBindGroup: GPUBindGroup
   private historyMixFactorBuffer: GPUBuffer
@@ -88,26 +89,29 @@ export default class TAAResolveRenderPass extends RenderPass {
         entries: texturesBindGroupLayoutEntries,
       })
 
-    const renderPSODescriptor: GPURenderPipelineDescriptor = {
-      layout: RenderingContext.device.createPipelineLayout({
-        bindGroupLayouts: [this.texturesBindGroupLayout],
-      }),
-      vertex: {
-        module: vertexShaderModule,
-        entryPoint: FullScreenVertexShaderEntryFn,
-      },
-      fragment: {
-        module: fragmentShaderModule,
-        entryPoint: TAA_RESOLVE_FRAGMENT_SHADER_ENTRY_NAME,
-        targets,
-      },
-      primitive: {
-        topology: 'triangle-list',
-        cullMode: 'back',
-      },
-    }
+    if (!TAAResolveRenderPass.renderPSO) {
+      const renderPSODescriptor: GPURenderPipelineDescriptor = {
+        layout: RenderingContext.device.createPipelineLayout({
+          bindGroupLayouts: [this.texturesBindGroupLayout],
+        }),
+        vertex: {
+          module: vertexShaderModule,
+          entryPoint: FullScreenVertexShaderEntryFn,
+        },
+        fragment: {
+          module: fragmentShaderModule,
+          entryPoint: TAA_RESOLVE_FRAGMENT_SHADER_ENTRY_NAME,
+          targets,
+        },
+        primitive: {
+          topology: 'triangle-list',
+          cullMode: 'back',
+        },
+      }
 
-    this.renderPSO = PipelineStates.createRenderPipeline(renderPSODescriptor)
+      TAAResolveRenderPass.renderPSO =
+        PipelineStates.createRenderPipeline(renderPSODescriptor)
+    }
 
     this.outTextures.push(
       RenderingContext.device.createTexture({
@@ -240,7 +244,7 @@ export default class TAAResolveRenderPass extends RenderPass {
 
     RenderingContext.setActiveRenderPass(this.type, renderPassEncoder)
 
-    RenderingContext.bindRenderPSO(this.renderPSO)
+    RenderingContext.bindRenderPSO(TAAResolveRenderPass.renderPSO)
     renderPassEncoder.setBindGroup(0, this.textureBindGroup)
     renderPassEncoder.draw(3)
     renderPassEncoder.end()

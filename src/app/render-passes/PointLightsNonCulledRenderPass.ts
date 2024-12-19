@@ -22,54 +22,63 @@ export default class PointLightsNonCulledRenderPass extends LightRenderPass {
   private static readonly BACK_FACE_RENDER_PSO_LABEL =
     'Render Non-Instanced Non-Culled Point Lights Back Face PSO Descriptor'
 
-  private frontFaceCullRenderPSO: GPURenderPipeline
-  private backFaceCullRenderPSO: GPURenderPipeline
+  private static frontFaceCullRenderPSO: GPURenderPipeline
+  private static backFaceCullRenderPSO: GPURenderPipeline
 
   constructor(width: number, height: number) {
     super(RenderPassType.PointLightsNonCulledLighting, width, height)
 
-    const renderPSOLayout = RenderingContext.device.createPipelineLayout({
-      label: 'Render Non-Instanced Non-Culled Point Lights PSO Layout',
-      bindGroupLayouts: [
-        this.gbufferCommonBindGroupLayout,
-        CameraFaceCulledPointLight.bindGroupLayout,
-      ],
-    })
-    const renderPSODescriptor: GPURenderPipelineDescriptor = {
-      label: PointLightsNonCulledRenderPass.FRONT_FACE_RENDER_PSO_LABEL,
-      layout: renderPSOLayout,
-      vertex: {
-        module: PipelineStates.createShaderModule(
-          GetGBufferVertexShader(RenderPassType.PointLightsNonCulledLighting),
-          'Non-Instanced Non-Culled Point Lights Vertex Shader'
-        ),
-        entryPoint: GBufferVertexEntryFn,
-        buffers: VertexDescriptor.defaultLayout,
-      },
-      fragment: {
-        module: PipelineStates.createShaderModule(
-          GetGBufferIntegrateShader(RenderPassType.PointLightsNonCulledLighting)
-        ),
-        entryPoint: GBufferIntegrateShaderEntryFn,
-        targets: PointLightsNonCulledRenderPass.RENDER_TARGETS,
-      },
-      depthStencil: {
-        format: RenderingContext.depthStencilFormat,
-        depthWriteEnabled: false,
-      },
-      primitive: {
-        cullMode: 'back',
-      },
+    if (
+      !(
+        PointLightsNonCulledRenderPass.frontFaceCullRenderPSO &&
+        PointLightsNonCulledRenderPass.backFaceCullRenderPSO
+      )
+    ) {
+      const renderPSOLayout = RenderingContext.device.createPipelineLayout({
+        label: 'Render Non-Instanced Non-Culled Point Lights PSO Layout',
+        bindGroupLayouts: [
+          this.gbufferCommonBindGroupLayout,
+          CameraFaceCulledPointLight.bindGroupLayout,
+        ],
+      })
+      const renderPSODescriptor: GPURenderPipelineDescriptor = {
+        label: PointLightsNonCulledRenderPass.FRONT_FACE_RENDER_PSO_LABEL,
+        layout: renderPSOLayout,
+        vertex: {
+          module: PipelineStates.createShaderModule(
+            GetGBufferVertexShader(RenderPassType.PointLightsNonCulledLighting),
+            'Non-Instanced Non-Culled Point Lights Vertex Shader'
+          ),
+          entryPoint: GBufferVertexEntryFn,
+          buffers: VertexDescriptor.defaultLayout,
+        },
+        fragment: {
+          module: PipelineStates.createShaderModule(
+            GetGBufferIntegrateShader(
+              RenderPassType.PointLightsNonCulledLighting
+            )
+          ),
+          entryPoint: GBufferIntegrateShaderEntryFn,
+          targets: PointLightsNonCulledRenderPass.RENDER_TARGETS,
+        },
+        depthStencil: {
+          format: RenderingContext.depthStencilFormat,
+          depthWriteEnabled: false,
+        },
+        primitive: {
+          cullMode: 'back',
+        },
+      }
+      PointLightsNonCulledRenderPass.frontFaceCullRenderPSO =
+        PipelineStates.createRenderPipeline(renderPSODescriptor)
+
+      renderPSODescriptor.label =
+        PointLightsNonCulledRenderPass.BACK_FACE_RENDER_PSO_LABEL
+      renderPSODescriptor.primitive.cullMode = 'front'
+
+      PointLightsNonCulledRenderPass.backFaceCullRenderPSO =
+        PipelineStates.createRenderPipeline(renderPSODescriptor)
     }
-    this.frontFaceCullRenderPSO =
-      PipelineStates.createRenderPipeline(renderPSODescriptor)
-
-    renderPSODescriptor.label =
-      PointLightsNonCulledRenderPass.BACK_FACE_RENDER_PSO_LABEL
-    renderPSODescriptor.primitive.cullMode = 'front'
-
-    this.backFaceCullRenderPSO =
-      PipelineStates.createRenderPipeline(renderPSODescriptor)
   }
 
   protected override createRenderPassDescriptor(): GPURenderPassDescriptor {
@@ -152,13 +161,17 @@ export default class PointLightsNonCulledRenderPass extends LightRenderPass {
 
       if (dist > pLight.radius + 0.1) {
         if (!isPrevFrontFaceCullPSOBound) {
-          renderPass.setPipeline(this.frontFaceCullRenderPSO)
+          renderPass.setPipeline(
+            PointLightsNonCulledRenderPass.frontFaceCullRenderPSO
+          )
         }
         isPrevFrontFaceCullPSOBound = true
         isPrevBackFaceCullPSOBound = false
       } else {
         if (!isPrevBackFaceCullPSOBound) {
-          renderPass.setPipeline(this.backFaceCullRenderPSO)
+          renderPass.setPipeline(
+            PointLightsNonCulledRenderPass.backFaceCullRenderPSO
+          )
         }
         isPrevFrontFaceCullPSOBound = false
         isPrevBackFaceCullPSOBound = true

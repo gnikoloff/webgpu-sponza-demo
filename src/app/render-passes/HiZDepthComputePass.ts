@@ -13,7 +13,8 @@ export default class HiZDepthComputePass extends RenderPass {
   private static readonly COMPUTE_WORKGROUP_SIZE_X = 8
   private static readonly COMPUTE_WORKGROUP_SIZE_Y = 8
 
-  private computePSO: GPUComputePipeline
+  private static computePSO: GPUComputePipeline
+
   private bindGroupLayout: GPUBindGroupLayout
   private mipTexSizes: Vec2[] = []
   private mipTexViews: GPUTextureView[] = []
@@ -44,24 +45,26 @@ export default class HiZDepthComputePass extends RenderPass {
       entries: bindGroupLayoutEntries,
     })
 
-    this.computePSO = PipelineStates.createComputePipeline({
-      label: 'Hi-Z Compute PSO',
-      layout: RenderingContext.device.createPipelineLayout({
-        label: 'Hi-Z Compute PSO Layout',
-        bindGroupLayouts: [this.bindGroupLayout],
-      }),
-      compute: {
-        entryPoint: HI_Z_DEPTH_COMPUTE_SHADER_ENTRY_FN,
-        module: PipelineStates.createShaderModule(
-          COMPUTE_HI_Z_DEPTH_COMPUTE_SHADER_SRC,
-          'Compute Hi-Z Shader Module'
-        ),
-        constants: {
-          WORKGROUP_SIZE_X: HiZDepthComputePass.COMPUTE_WORKGROUP_SIZE_X,
-          WORKGROUP_SIZE_Y: HiZDepthComputePass.COMPUTE_WORKGROUP_SIZE_Y,
+    if (!HiZDepthComputePass.computePSO) {
+      HiZDepthComputePass.computePSO = PipelineStates.createComputePipeline({
+        label: 'Hi-Z Compute PSO',
+        layout: RenderingContext.device.createPipelineLayout({
+          label: 'Hi-Z Compute PSO Layout',
+          bindGroupLayouts: [this.bindGroupLayout],
+        }),
+        compute: {
+          entryPoint: HI_Z_DEPTH_COMPUTE_SHADER_ENTRY_FN,
+          module: PipelineStates.createShaderModule(
+            COMPUTE_HI_Z_DEPTH_COMPUTE_SHADER_SRC,
+            'Compute Hi-Z Shader Module'
+          ),
+          constants: {
+            WORKGROUP_SIZE_X: HiZDepthComputePass.COMPUTE_WORKGROUP_SIZE_X,
+            WORKGROUP_SIZE_Y: HiZDepthComputePass.COMPUTE_WORKGROUP_SIZE_Y,
+          },
         },
-      },
-    })
+      })
+    }
   }
 
   protected override createComputePassDescriptor(): GPUComputePassDescriptor {
@@ -123,7 +126,7 @@ export default class HiZDepthComputePass extends RenderPass {
     const computePass = commandEncoder.beginComputePass(
       this.createComputePassDescriptor()
     )
-    computePass.setPipeline(this.computePSO)
+    computePass.setPipeline(HiZDepthComputePass.computePSO)
 
     for (let nextLevel = 1; nextLevel < mipsLevelCount; nextLevel++) {
       const invocationCountX = this.mipTexSizes[nextLevel][0]

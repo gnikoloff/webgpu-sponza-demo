@@ -14,9 +14,10 @@ import GetGBufferIntegrateShader, {
 import LightRenderPass from './LightRenderPass'
 
 export default class DirectionalAmbientLightRenderPass extends LightRenderPass {
+  private static renderPSO: GPURenderPipeline
+
   private outTextureView: GPUTextureView
 
-  private renderPSO: GPURenderPipeline
   private dirLightShadowBindGroupLayout: GPUBindGroupLayout
 
   private shadowSampler: GPUSampler
@@ -207,30 +208,35 @@ export default class DirectionalAmbientLightRenderPass extends LightRenderPass {
       },
     ]
 
-    const renderPSODescriptor: GPURenderPipelineDescriptor = {
-      label: 'Directional Light Render PSO',
-      layout: dirLightRenderPSOLayout,
-      vertex: {
-        module: PipelineStates.createShaderModule(
-          FullScreenVertexShaderUtils,
-          'Fullscreen Vertex Shader Module'
-        ),
-        entryPoint: FullScreenVertexShaderEntryFn,
-      },
-      fragment: {
-        module: PipelineStates.createShaderModule(
-          GetGBufferIntegrateShader(RenderPassType.DirectionalAmbientLighting),
-          'Directional Light Pass Shader Module'
-        ),
-        entryPoint: GBufferIntegrateShaderEntryFn,
-        targets: DirectionalAmbientLightRenderPass.RENDER_TARGETS,
-      },
-      depthStencil: {
-        format: RenderingContext.depthStencilFormat,
-        depthWriteEnabled: false,
-      },
+    if (!DirectionalAmbientLightRenderPass.renderPSO) {
+      const renderPSODescriptor: GPURenderPipelineDescriptor = {
+        label: 'Directional Light Render PSO',
+        layout: dirLightRenderPSOLayout,
+        vertex: {
+          module: PipelineStates.createShaderModule(
+            FullScreenVertexShaderUtils,
+            'Fullscreen Vertex Shader Module'
+          ),
+          entryPoint: FullScreenVertexShaderEntryFn,
+        },
+        fragment: {
+          module: PipelineStates.createShaderModule(
+            GetGBufferIntegrateShader(
+              RenderPassType.DirectionalAmbientLighting
+            ),
+            'Directional Light Pass Shader Module'
+          ),
+          entryPoint: GBufferIntegrateShaderEntryFn,
+          targets: DirectionalAmbientLightRenderPass.RENDER_TARGETS,
+        },
+        depthStencil: {
+          format: RenderingContext.depthStencilFormat,
+          depthWriteEnabled: false,
+        },
+      }
+      DirectionalAmbientLightRenderPass.renderPSO =
+        PipelineStates.createRenderPipeline(renderPSODescriptor)
     }
-    this.renderPSO = PipelineStates.createRenderPipeline(renderPSODescriptor)
 
     this.outTextures.push(
       RenderingContext.device.createTexture({
@@ -347,7 +353,7 @@ export default class DirectionalAmbientLightRenderPass extends LightRenderPass {
     if (RenderingContext.ENABLE_DEBUG_GROUPS) {
       renderPass.pushDebugGroup('Begin Directional + Ambient LightingSystem')
     }
-    RenderingContext.bindRenderPSO(this.renderPSO)
+    RenderingContext.bindRenderPSO(DirectionalAmbientLightRenderPass.renderPSO)
     renderPass.setBindGroup(0, this.gbufferTexturesBindGroup)
     renderPass.setBindGroup(1, this.dirLightShadowBindGroup)
     renderPass.draw(3)
