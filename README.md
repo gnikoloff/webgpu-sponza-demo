@@ -16,7 +16,7 @@ A WebGPU deferred rendering playground written as a personal project to familiar
 2. Physically based shading
 3. Cascaded Shadow Mapping
 4. Deferred Renderer (3 MRT) with culled light volumes using a stencil buffer
-5. Multiple dynamic light sources moved in compute shader
+5. 400+ dynamic light sources moved in compute shader
 6. Separate forward pass for alpha masked objects (foliage)
 7. SSAO
 8. Screen Space Reflections with the ability to switch between Hi-Z and Linear raymarching
