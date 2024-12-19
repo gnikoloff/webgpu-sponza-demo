@@ -790,11 +790,12 @@ export default class Renderer extends RenderingContext {
           RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE
         )
       )
-      // .setTextureGBufferSection(
-      //   TextureDebugMeshType.AO,
-      //   this.renderPassComposer.getTexture(RENDER_PASS_SSAO_BLUR_TEXTURE) ||
-      //     TextureLoader.dummyR16FTexture
-      // )
+      .setTextureGBufferSection(
+        TextureDebugMeshType.AO,
+        this._ssaoEnabled
+          ? this.renderPassComposer.getTexture(RENDER_PASS_SSAO_BLUR_TEXTURE)
+          : TextureLoader.dummyR16FTexture
+      )
       .setTextureGBufferSection(
         TextureDebugMeshType.Reflectance,
         this.renderPassComposer.getTexture(

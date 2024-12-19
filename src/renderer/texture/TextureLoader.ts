@@ -56,8 +56,8 @@ export default class TextureLoader extends BaseUtilObject {
       return _dummyR16FTexture
     }
     _dummyR16FTexture = RenderingContext.device.createTexture({
-      label: 'Dummy 1x1 R16F Texture',
-      size: { width: 1, height: 1 },
+      label: 'Dummy 8x8 R16F Texture',
+      size: { width: 8, height: 8, depthOrArrayLayers: 1 },
       format: 'r16float',
       usage: GPUTextureUsage.TEXTURE_BINDING,
     })
@@ -73,7 +73,10 @@ export default class TextureLoader extends BaseUtilObject {
       dimension: '2d',
       size: { width: 8, height: 8, depthOrArrayLayers: 1 },
       format: 'r8unorm',
-      usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+      usage:
+        GPUTextureUsage.TEXTURE_BINDING |
+        GPUTextureUsage.COPY_DST |
+        GPUTextureUsage.COPY_SRC,
     })
     RenderingContext.device.queue.writeTexture(
       { texture: _dummyTexture, mipLevel: 0 },
