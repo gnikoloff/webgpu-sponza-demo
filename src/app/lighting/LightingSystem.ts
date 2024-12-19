@@ -334,8 +334,6 @@ export default class LightingSystem extends LightingManager {
       )
     }
 
-    console.log(this.lightsCount)
-
     // this.particlesLength = this.particles.length;
 
     this.updateGPUBuffer()

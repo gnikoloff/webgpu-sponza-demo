@@ -66,6 +66,7 @@ const GetGBufferIntegrateShader = (
 
     #if ${lightPassType === RenderPassType.DirectionalAmbientLighting}
     material.ambientOcclusion = mix(1.0, ao, ssaoMixFactor);
+    // return vec4f(ao, 0, 0, 1);
     #endif
     
     let viewSpacePos = calcViewSpacePos(camera, coord.xy, depth);

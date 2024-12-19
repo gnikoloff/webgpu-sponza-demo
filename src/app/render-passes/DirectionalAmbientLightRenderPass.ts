@@ -308,16 +308,23 @@ export default class DirectionalAmbientLightRenderPass extends LightRenderPass {
           aspect: 'all',
         })
       )
-      this.inputTextureViews.push(inputs[3].createView())
       this.inputTextureViews.push(
-        inputs[4].createView({
+        inputs[3].createView({
           dimension: '2d-array',
         })
       )
+
+      let ssaoTexture = inputs[4]
+      if (!ssaoTexture) {
+        ssaoTexture = TextureLoader.dummyR16FTexture
+      }
+
+      this.inputTextureViews.push(ssaoTexture.createView())
+
       this.updateGbufferBindGroupEntryAt(0, this.inputTextureViews[0])
         .updateGbufferBindGroupEntryAt(1, this.inputTextureViews[1])
         .updateGbufferBindGroupEntryAt(2, this.inputTextureViews[2])
-        .updateGbufferBindGroupEntryAt(3, this.inputTextureViews[4])
+        .updateGbufferBindGroupEntryAt(3, this.inputTextureViews[5])
         .updateGbufferBindGroupEntryAt(4, {
           buffer: this.camera.gpuBuffer,
         })
@@ -327,7 +334,7 @@ export default class DirectionalAmbientLightRenderPass extends LightRenderPass {
         .recreateGBufferTexturesBindGroup()
 
       this.dirLightShadowBindGroupEntries[2].resource =
-        this.inputTextureViews[5]
+        this.inputTextureViews[4]
       this.recreateDirLightShadowBindGroup()
     }
 

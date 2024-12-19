@@ -5,6 +5,7 @@ import VertexDescriptor from '../../renderer/core/VertexDescriptor'
 import CameraFaceCulledPointLight from '../../renderer/lighting/CameraFaceCulledPointLight'
 import Drawable from '../../renderer/scene/Drawable'
 import Scene from '../../renderer/scene/Scene'
+import TextureLoader from '../../renderer/texture/TextureLoader'
 import { RenderPassType } from '../../renderer/types'
 import GetGBufferIntegrateShader, {
   GBufferIntegrateShaderEntryFn,
@@ -77,7 +78,7 @@ export default class PointLightsNonCulledRenderPass extends LightRenderPass {
     }
     const renderPassColorAttachments: GPURenderPassColorAttachment[] = [
       {
-        view: this.inputTextureViews[5],
+        view: this.inputTextureViews[4],
         loadOp: 'load',
         storeOp: 'store',
       },
@@ -114,12 +115,18 @@ export default class PointLightsNonCulledRenderPass extends LightRenderPass {
         })
       )
       this.inputTextureViews.push(inputs[3].createView())
-      this.inputTextureViews.push(inputs[4].createView())
+
+      let ssaoTexture = inputs[4]
+      if (!ssaoTexture) {
+        ssaoTexture = TextureLoader.dummyR16FTexture
+      }
+
+      this.inputTextureViews.push(ssaoTexture.createView())
 
       this.updateGbufferBindGroupEntryAt(0, this.inputTextureViews[0])
         .updateGbufferBindGroupEntryAt(1, this.inputTextureViews[1])
         .updateGbufferBindGroupEntryAt(2, this.inputTextureViews[3])
-        .updateGbufferBindGroupEntryAt(3, this.inputTextureViews[4])
+        .updateGbufferBindGroupEntryAt(3, this.inputTextureViews[5])
         .updateGbufferBindGroupEntryAt(4, {
           buffer: this.camera.gpuBuffer,
         })
@@ -164,6 +171,7 @@ export default class PointLightsNonCulledRenderPass extends LightRenderPass {
 
     this.postRender(commandEncoder)
 
-    return [inputs[4]]
+    const out = inputs[3]
+    return [out]
   }
 }

@@ -32,10 +32,38 @@ const DEBUG_PATTERN = new Uint8Array([
 ]);
 
 let _dummyTexture: GPUTexture
+let _dummyRGBA16FTexture: GPUTexture
+let _dummyR16FTexture: GPUTexture
 let _dummyCubeTexture: GPUTexture
 let _bayerDitherPattern: GPUTexture
 
 export default class TextureLoader extends BaseUtilObject {
+  public static get dummyRGBA16FTexture(): GPUTexture {
+    if (_dummyRGBA16FTexture) {
+      return _dummyRGBA16FTexture
+    }
+    _dummyRGBA16FTexture = RenderingContext.device.createTexture({
+      label: 'Dummy 1x1 RGBA16F Texture',
+      size: { width: 1, height: 1 },
+      format: 'rgba16float',
+      usage: GPUTextureUsage.TEXTURE_BINDING,
+    })
+    return _dummyRGBA16FTexture
+  }
+
+  public static get dummyR16FTexture(): GPUTexture {
+    if (_dummyR16FTexture) {
+      return _dummyR16FTexture
+    }
+    _dummyR16FTexture = RenderingContext.device.createTexture({
+      label: 'Dummy 1x1 R16F Texture',
+      size: { width: 1, height: 1 },
+      format: 'r16float',
+      usage: GPUTextureUsage.TEXTURE_BINDING,
+    })
+    return _dummyR16FTexture
+  }
+
   public static get dummyTexture(): GPUTexture {
     if (_dummyTexture) {
       return _dummyTexture
@@ -50,7 +78,7 @@ export default class TextureLoader extends BaseUtilObject {
     RenderingContext.device.queue.writeTexture(
       { texture: _dummyTexture, mipLevel: 0 },
       DEBUG_PATTERN,
-      { offset: 0, bytesPerRow: 8 },
+      { offset: 0, bytesPerRow: 8 * Uint8Array.BYTES_PER_ELEMENT },
       {
         width: 8,
         height: 8,

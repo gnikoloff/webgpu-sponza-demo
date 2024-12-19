@@ -7,6 +7,7 @@ import Scene from '../../renderer/scene/Scene'
 import FullScreenVertexShaderUtils, {
   FullScreenVertexShaderEntryFn,
 } from '../../renderer/shader/FullScreenVertexShaderUtils'
+import TextureLoader from '../../renderer/texture/TextureLoader'
 import { EaseType, RenderPassType } from '../../renderer/types'
 import {
   BLIT_FRAGMENT_SHADER_ENTRY_NAME,
@@ -194,8 +195,15 @@ export default class BlitRenderPass extends RenderPass {
     inputs: GPUTexture[]
   ): GPUTexture[] {
     if (!this.inputTextureViews.length) {
-      this.inputTextureViews.push(inputs[0].createView())
-      this.inputTextureViews.push(inputs[1].createView())
+      if (inputs.length === 1) {
+        this.inputTextureViews.push(
+          TextureLoader.dummyRGBA16FTexture.createView()
+        )
+        this.inputTextureViews.push(inputs[0].createView())
+      } else {
+        this.inputTextureViews.push(inputs[0].createView())
+        this.inputTextureViews.push(inputs[1].createView())
+      }
 
       const texturesBindGroupEntries: GPUBindGroupEntry[] = [
         {

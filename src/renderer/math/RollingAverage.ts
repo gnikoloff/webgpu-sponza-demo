@@ -10,6 +10,10 @@ export default class RollingAverage {
     this.cursor = (this.cursor + 1) % this.numSamples
   }
 
+  public getSamplesCount(): number {
+    return this.samples.length
+  }
+
   public get(): number {
     return this.total / this.samples.length
   }

@@ -1,5 +1,7 @@
 import * as dat from 'dat.gui'
 import Renderer from './app/Renderer'
+import { PROFILE_MAX_FRAMES_COUNT } from './app/constants'
+import RollingAverage from './renderer/math/RollingAverage'
 import { IGUIParams, SSRMethod } from './types'
 
 const $canvas = document.getElementById('c') as HTMLCanvasElement
@@ -41,18 +43,69 @@ const GUI_PARAMS: IGUIParams = {
   // "Debug Bounding Boxes": false,
   // "Debug Point Lines Curve": false,
   'Enable SSAO': true,
-  'SSAO Kernel Size': 8,
-  'SSAO Radius': 0.2,
-  'SSAO Strength': 3,
+  'SSAO Kernel Size': 64,
+  'SSAO Radius': 0.5,
+  'SSAO Strength': 2,
 }
 
-renderer.onIntroAnimComplete = createGUI
+const fpsDisplayAverage = new RollingAverage(2000)
+let oldTimeMs = 0
+let introAnimPlayed = false
+let ssrEnabledManuallySet = false
+let ssrEnabledPerfAutomaticallySet = false
+let bloomEnabledManuallySet = false
+let bloomEnabledPerfAutomaticallySet = false
+let ssaoEnabledManuallySet = false
+
+renderer.onIntroAnimComplete = onIntroAnimComplete
 requestAnimationFrame(renderFrame)
 window.addEventListener('resize', resize)
 resize()
 
 function renderFrame() {
   const nowMs = performance.now()
+  const dt = (nowMs - oldTimeMs) / 1000
+  oldTimeMs = nowMs
+
+  fpsDisplayAverage.addSample(1 / dt)
+  const fpsAverageStat = fpsDisplayAverage.get()
+
+  if (
+    GUI_PARAMS['Enable SSR'] &&
+    !ssrEnabledManuallySet &&
+    fpsDisplayAverage.getSamplesCount() > PROFILE_MAX_FRAMES_COUNT &&
+    fpsAverageStat < 60
+  ) {
+    console.log('1. performance too low. disabling ssr')
+    GUI_PARAMS['Enable SSR'] = false
+    renderer.ssrEnabled = false
+    ssrEnabledPerfAutomaticallySet = true
+  }
+
+  if (
+    GUI_PARAMS['Enable Bloom'] &&
+    !bloomEnabledManuallySet &&
+    ssrEnabledPerfAutomaticallySet &&
+    fpsDisplayAverage.getSamplesCount() > PROFILE_MAX_FRAMES_COUNT &&
+    fpsAverageStat < 60
+  ) {
+    console.log('2. performance still too low. disabling bloom')
+    GUI_PARAMS['Enable Bloom'] = false
+    renderer.bloomEnabled = false
+    bloomEnabledPerfAutomaticallySet = true
+  }
+
+  if (
+    GUI_PARAMS['Enable SSAO'] &&
+    !ssaoEnabledManuallySet &&
+    bloomEnabledPerfAutomaticallySet &&
+    fpsDisplayAverage.getSamplesCount() > PROFILE_MAX_FRAMES_COUNT &&
+    fpsAverageStat < 60
+  ) {
+    console.log('3. performance still too low. disabling ssao')
+    GUI_PARAMS['Enable SSAO'] = false
+    renderer.ssaoEnabled = false
+  }
 
   renderer.renderFrame(nowMs)
   requestAnimationFrame(renderFrame)
@@ -74,7 +127,8 @@ function offsetLogoAndStats() {
   document.getElementById('timings-debug-container').classList.toggle('faded')
 }
 
-function createGUI() {
+function onIntroAnimComplete() {
+  introAnimPlayed = true
   const gui = new dat.GUI({ width: 270 })
   gui.close()
 
@@ -155,10 +209,12 @@ function createGUI() {
       if (v) {
         lastBloomEnabled = GUI_PARAMS['Enable Bloom']
         GUI_PARAMS['Enable Bloom'] = false
+        bloomEnabledManuallySet = true
         renderer.bloomEnabled = false
       } else {
         if (lastBloomEnabled) {
           GUI_PARAMS['Enable Bloom'] = true
+          bloomEnabledManuallySet = true
           renderer.bloomEnabled = true
         }
       }
@@ -173,6 +229,7 @@ function createGUI() {
   const ssaoFolder = gui.addFolder('Screen space Ambient Occlusion')
   ssaoFolder.open()
   ssaoFolder.add(GUI_PARAMS, 'Enable SSAO').onChange((v: boolean) => {
+    ssaoEnabledManuallySet = true
     renderer.ssaoEnabled = v
   })
   ssaoFolder
@@ -192,6 +249,7 @@ function createGUI() {
 
   ssrFolder.add(GUI_PARAMS, 'Enable SSR').onChange((v: boolean) => {
     renderer.ssrEnabled = v
+    ssrEnabledManuallySet = true
   })
   ssrFolder
     .add(GUI_PARAMS, 'SSR Method', ['hi-z', 'linear'])
@@ -212,6 +270,7 @@ function createGUI() {
   const bloomEnabledCtrl = bloomFolder
     .add(GUI_PARAMS, 'Enable Bloom')
     .onChange((v: boolean) => {
+      bloomEnabledManuallySet = true
       renderer.bloomEnabled = v
     })
   bloomEnabledCtrl.listen()

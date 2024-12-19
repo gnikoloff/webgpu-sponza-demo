@@ -20,7 +20,6 @@ import {
   RenderPassType,
   placeholderFunc,
 } from '../renderer/types'
-import { TextureDebugMeshType } from '../types'
 import {
   BLIT_PASS_REVEAL_ANIM_DURATION_MS,
   ENVIRONMENT_CUBE_TEXTURE_FACE_URLS,
@@ -56,6 +55,7 @@ import {
 } from './constants'
 
 import { lerp } from '../renderer/math/math'
+import { TextureDebugMeshType } from '../types'
 import LineDebugDrawable from './debug/LineDebugDrawable'
 import TexturesDebugContainer from './debug/textures-debug/TexturesDebugContainer'
 import DebugStatsContainer from './debug/timings-debug/DebugStatsContainer'
@@ -144,6 +144,9 @@ export default class Renderer extends RenderingContext {
 
   private resizeCounter = 0
 
+  private viewportWidth = 0
+  private viewportHeight = 0
+
   public set sunPositionX(v: number) {
     this.lightingManager.sunPositionX = v
   }
@@ -160,12 +163,10 @@ export default class Renderer extends RenderingContext {
     this.lightingManager.sunIntensity = v
   }
 
+  private _ssaoEnabled = true
   public set ssaoEnabled(v: boolean) {
-    ;(
-      this.renderPassComposer.getPass(
-        RenderPassType.DirectionalAmbientLighting
-      ) as DirectionalAmbientLightRenderPass
-    ).ssaoMixFactor = v ? 1 : 0
+    this._ssaoEnabled = v
+    this.recreateRenderComposer()
   }
 
   public set ssaoKernelSize(v: number) {
@@ -302,25 +303,18 @@ export default class Renderer extends RenderingContext {
     ).debugMissedIntersections = v
   }
 
+  private _ssrEnabled = true
+
   public set ssrEnabled(v: boolean) {
-    this.renderPassComposer.getPass(RenderPassType.Reflection).enabled = v
-    this.renderPassComposer
-      .getPass(RenderPassType.TAAResolve)
-      .clearInputTextures()
-      .addInputTextures([
-        v
-          ? RENDER_PASS_COMPUTED_REFLECTIONS_TEXTURE
-          : RENDER_PASS_LIGHTING_RESULT_TEXTURE,
-        RENDER_PASS_VELOCITY_TEXTURE,
-      ])
+    this._ssrEnabled = v
+    this.recreateRenderComposer()
   }
 
+  private _bloomEnabled = true
   public set bloomEnabled(v: boolean) {
-    this.renderPassComposer.getPass(RenderPassType.BloomDownsample).enabled = v
-    this.renderPassComposer.getPass(RenderPassType.BloomUpsample).enabled = v
-    ;(
-      this.renderPassComposer.getPass(RenderPassType.Blit) as BlitRenderPass
-    ).bloomEnabled = v
+    this._bloomEnabled = v
+
+    this.recreateRenderComposer()
   }
 
   public set bloomFilterRadius(v: number) {
@@ -513,7 +507,10 @@ export default class Renderer extends RenderingContext {
     })
   }
 
-  private recreateRenderComposer(width: number, height: number) {
+  private recreateRenderComposer(
+    width = this.viewportWidth,
+    height = this.viewportHeight
+  ) {
     this.renderPassComposer?.destroy()
 
     this.renderPassComposer = new RenderPassComposer()
@@ -536,17 +533,33 @@ export default class Renderer extends RenderingContext {
         RENDER_PASS_DEPTH_STENCIL_TEXTURE,
       ])
 
-    const ssaoRenderPass = new SSAORenderPass(width, height)
-      .setCamera(this.mainCamera)
-      .addInputTextures([
-        RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
-        RENDER_PASS_DEPTH_STENCIL_TEXTURE,
-      ])
-      .addOutputTexture(RENDER_PASS_SSAO_TEXTURE)
+    let ssaoRenderPass: SSAORenderPass
+    let ssaoBlurRenderPass: SSAOBlurRenderPass
 
-    const ssaoBlurRenderPass = new SSAOBlurRenderPass(width, height)
-      .addInputTexture(RENDER_PASS_SSAO_TEXTURE)
-      .addOutputTexture(RENDER_PASS_SSAO_BLUR_TEXTURE)
+    if (this._ssaoEnabled) {
+      ssaoRenderPass = new SSAORenderPass(width, height)
+        .addInputTextures([
+          RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
+          RENDER_PASS_DEPTH_STENCIL_TEXTURE,
+        ])
+        .addOutputTexture(RENDER_PASS_SSAO_TEXTURE)
+        .setCamera(this.mainCamera)
+
+      ssaoBlurRenderPass = new SSAOBlurRenderPass(width, height)
+        .addInputTexture(RENDER_PASS_SSAO_TEXTURE)
+        .addOutputTexture(RENDER_PASS_SSAO_BLUR_TEXTURE)
+    }
+
+    const dirAmbientLightRenderPassInputTexNames = [
+      RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
+      RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
+      RENDER_PASS_DEPTH_STENCIL_TEXTURE,
+      RENDER_PASS_DIRECTIONAL_LIGHT_DEPTH_TEXTURE,
+    ]
+
+    if (this._ssaoEnabled) {
+      dirAmbientLightRenderPassInputTexNames.push(RENDER_PASS_SSAO_TEXTURE)
+    }
 
     const directionalAmbientLightRenderPass =
       new DirectionalAmbientLightRenderPass(
@@ -555,14 +568,10 @@ export default class Renderer extends RenderingContext {
         height
       )
         .setCamera(this.mainCamera)
-        .addInputTextures([
-          RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
-          RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
-          RENDER_PASS_DEPTH_STENCIL_TEXTURE,
-          RENDER_PASS_SSAO_BLUR_TEXTURE,
-          RENDER_PASS_DIRECTIONAL_LIGHT_DEPTH_TEXTURE,
-        ])
+        .addInputTextures(dirAmbientLightRenderPassInputTexNames)
         .addOutputTexture(RENDER_PASS_LIGHTING_RESULT_TEXTURE)
+
+    directionalAmbientLightRenderPass.ssaoMixFactor = this._ssaoEnabled ? 1 : 0
 
     if (this.envDiffuseTexture) {
       directionalAmbientLightRenderPass.setDiffuseIBLTexture(
@@ -581,16 +590,21 @@ export default class Renderer extends RenderingContext {
       )
     }
 
+    const pointLightNonInstancedTexInputNames = [
+      RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
+      RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
+      RENDER_PASS_DEPTH_STENCIL_TEXTURE,
+      RENDER_PASS_LIGHTING_RESULT_TEXTURE,
+    ]
+
+    if (this._ssaoEnabled) {
+      pointLightNonInstancedTexInputNames.push(RENDER_PASS_SSAO_TEXTURE)
+    }
+
     const pointLightsNonInstancedNonCulledRenderPass =
       new PointLightsNonCulledRenderPass(width, height)
         .setCamera(this.mainCamera)
-        .addInputTextures([
-          RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
-          RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
-          RENDER_PASS_DEPTH_STENCIL_TEXTURE,
-          RENDER_PASS_SSAO_BLUR_TEXTURE,
-          RENDER_PASS_LIGHTING_RESULT_TEXTURE,
-        ])
+        .addInputTextures(pointLightNonInstancedTexInputNames)
         .addOutputTexture(RENDER_PASS_LIGHTING_RESULT_TEXTURE)
 
     const pointLightsStencilMaskPass = new PointLightsMaskPass(width, height)
@@ -600,15 +614,20 @@ export default class Renderer extends RenderingContext {
       .setLightsBuffer(this.lightingManager.gpuBuffer)
       .updateLightsMaskBindGroup()
 
+    const pointLightsRenderPassInputTexNames = [
+      RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
+      RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
+      RENDER_PASS_DEPTH_STENCIL_TEXTURE,
+      RENDER_PASS_LIGHTING_RESULT_TEXTURE,
+    ]
+
+    if (this._ssaoEnabled) {
+      pointLightsRenderPassInputTexNames.push(RENDER_PASS_SSAO_TEXTURE)
+    }
+
     const pointLightsRenderPass = new PointLightsRenderPass(width, height)
       .setCamera(this.mainCamera)
-      .addInputTextures([
-        RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
-        RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
-        RENDER_PASS_DEPTH_STENCIL_TEXTURE,
-        RENDER_PASS_SSAO_BLUR_TEXTURE,
-        RENDER_PASS_LIGHTING_RESULT_TEXTURE,
-      ])
+      .addInputTextures(pointLightsRenderPassInputTexNames)
       .addOutputTexture(RENDER_PASS_LIGHTING_RESULT_TEXTURE)
 
     const transparentRenderPass = new TransparentRenderPass(width, height)
@@ -633,70 +652,104 @@ export default class Renderer extends RenderingContext {
         RENDER_PASS_DEPTH_STENCIL_TEXTURE,
       ])
 
-    const hiZCopyDepthComputePass = new HiZCopyDepthComputePass(width, height)
-      .addInputTexture(RENDER_PASS_DEPTH_STENCIL_TEXTURE)
-      .addOutputTexture(RENDER_PASS_HI_Z_DEPTH_TEXTURE)
+    let hiZCopyDepthComputePass: HiZCopyDepthComputePass
+    let hiZDepthComputePass: HiZDepthComputePass
+    let reflectionsComputePass: ReflectionComputePass
 
-    const hiZDepthComputePass = new HiZDepthComputePass(width, height)
-      .addInputTexture(RENDER_PASS_HI_Z_DEPTH_TEXTURE)
-      .addOutputTexture(RENDER_PASS_HI_Z_DEPTH_TEXTURE)
+    if (this._ssrEnabled) {
+      hiZCopyDepthComputePass = new HiZCopyDepthComputePass(width, height)
+        .addInputTexture(RENDER_PASS_DEPTH_STENCIL_TEXTURE)
+        .addOutputTexture(RENDER_PASS_HI_Z_DEPTH_TEXTURE)
 
-    const reflectionsComputePass = new ReflectionComputePass(width, height)
-      .setCamera(this.mainCamera)
-      .addInputTextures([
-        RENDER_PASS_LIGHTING_RESULT_TEXTURE,
-        RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
-        RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
-        RENDER_PASS_HI_Z_DEPTH_TEXTURE,
-      ])
-      .addOutputTexture(RENDER_PASS_COMPUTED_REFLECTIONS_TEXTURE)
+      hiZDepthComputePass = new HiZDepthComputePass(width, height)
+        .addInputTexture(RENDER_PASS_HI_Z_DEPTH_TEXTURE)
+        .addOutputTexture(RENDER_PASS_HI_Z_DEPTH_TEXTURE)
+      reflectionsComputePass = new ReflectionComputePass(width, height)
+        .setCamera(this.mainCamera)
+        .addInputTextures([
+          RENDER_PASS_LIGHTING_RESULT_TEXTURE,
+          RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
+          RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
+          RENDER_PASS_HI_Z_DEPTH_TEXTURE,
+        ])
+        .addOutputTexture(RENDER_PASS_COMPUTED_REFLECTIONS_TEXTURE)
+    }
 
     const taaResolveRenderPass = new TAAResolveRenderPass(width, height)
       .addInputTextures([
-        RENDER_PASS_COMPUTED_REFLECTIONS_TEXTURE,
+        this._ssrEnabled
+          ? RENDER_PASS_COMPUTED_REFLECTIONS_TEXTURE
+          : RENDER_PASS_LIGHTING_RESULT_TEXTURE,
         RENDER_PASS_VELOCITY_TEXTURE,
       ])
       .addOutputTexture(RENDER_PASS_TAA_RESOLVE_TEXTURE)
 
-    const bloomDownscaleRenderPass = new BloomDownscaleRenderPass(width, height)
-      .addInputTexture(RENDER_PASS_TAA_RESOLVE_TEXTURE)
-      .addOutputTexture(RENDER_PASS_BLOOM_TEXTURE)
+    let bloomDownscaleRenderPass: BloomDownscaleRenderPass
+    let bloomUpscaleRenderPass: BloomUpscaleRenderPass
 
-    const bloomUpscaleRenderPass = new BloomUpscaleRenderPass(width, height)
-      .addInputTexture(RENDER_PASS_BLOOM_TEXTURE)
-      .addOutputTexture(RENDER_PASS_BLOOM_TEXTURE)
+    if (this._bloomEnabled) {
+      bloomDownscaleRenderPass = new BloomDownscaleRenderPass(width, height)
+        .addInputTexture(RENDER_PASS_TAA_RESOLVE_TEXTURE)
+        .addOutputTexture(RENDER_PASS_BLOOM_TEXTURE)
+
+      bloomUpscaleRenderPass = new BloomUpscaleRenderPass(width, height)
+        .addInputTexture(RENDER_PASS_BLOOM_TEXTURE)
+        .addOutputTexture(RENDER_PASS_BLOOM_TEXTURE)
+    }
+
+    const blitRenderPassInputs: string[] = []
+
+    if (this._bloomEnabled) {
+      blitRenderPassInputs.push(RENDER_PASS_BLOOM_TEXTURE)
+    }
+    blitRenderPassInputs.push(RENDER_PASS_TAA_RESOLVE_TEXTURE)
 
     const blitRenderPass = new BlitRenderPass(
       width,
       height,
       this.resizeCounter > 0
-    ).addInputTextures([
-      RENDER_PASS_BLOOM_TEXTURE,
-      RENDER_PASS_TAA_RESOLVE_TEXTURE,
-    ])
+    ).addInputTextures(blitRenderPassInputs)
+
+    blitRenderPass.bloomEnabled = this._bloomEnabled
+
+    this.renderPassComposer.addPass(shadowRenderPass).addPass(gbufferRenderPass)
+
+    if (this._ssaoEnabled) {
+      this.renderPassComposer
+        .addPass(ssaoRenderPass)
+        .addPass(ssaoBlurRenderPass)
+    }
 
     this.renderPassComposer
-      .addPass(shadowRenderPass)
-      .addPass(gbufferRenderPass)
-      .addPass(ssaoRenderPass)
-      .addPass(ssaoBlurRenderPass)
       .addPass(directionalAmbientLightRenderPass)
       .addPass(pointLightsNonInstancedNonCulledRenderPass)
       .addPass(pointLightsStencilMaskPass)
       .addPass(pointLightsRenderPass)
       .addPass(transparentRenderPass)
       .addPass(skyboxRenderPass)
-      .addPass(hiZCopyDepthComputePass)
-      .addPass(hiZDepthComputePass)
-      .addPass(reflectionsComputePass)
-      .addPass(taaResolveRenderPass)
-      .addPass(bloomDownscaleRenderPass)
-      .addPass(bloomUpscaleRenderPass)
-      // .addPass(debugBBoxesPass)
-      .addPass(blitRenderPass)
+
+    if (this._ssrEnabled) {
+      this.renderPassComposer
+        .addPass(hiZCopyDepthComputePass)
+        .addPass(hiZDepthComputePass)
+        .addPass(reflectionsComputePass)
+    }
+
+    this.renderPassComposer.addPass(taaResolveRenderPass)
+
+    if (this._bloomEnabled) {
+      this.renderPassComposer
+        .addPass(bloomDownscaleRenderPass)
+        .addPass(bloomUpscaleRenderPass)
+    }
+
+    this.renderPassComposer.addPass(blitRenderPass)
   }
 
   public resize(w: number, h: number) {
+    this.viewportWidth = w
+    this.viewportHeight = h
+
     this.debugCamera.onResize(w, h)
     this.mainCamera.onResize(w, h)
 
@@ -749,10 +802,11 @@ export default class Renderer extends RenderingContext {
           RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE
         )
       )
-      .setTextureGBufferSection(
-        TextureDebugMeshType.AO,
-        this.renderPassComposer.getTexture(RENDER_PASS_SSAO_BLUR_TEXTURE)
-      )
+      // .setTextureGBufferSection(
+      //   TextureDebugMeshType.AO,
+      //   this.renderPassComposer.getTexture(RENDER_PASS_SSAO_BLUR_TEXTURE) ||
+      //     TextureLoader.dummyR16FTexture
+      // )
       .setTextureGBufferSection(
         TextureDebugMeshType.Reflectance,
         this.renderPassComposer.getTexture(
@@ -814,9 +868,7 @@ export default class Renderer extends RenderingContext {
     const fpsAverageStat = this.fpsDisplayAverage.get()
     const gpuAverageStat = this.gpuAverage.get()
 
-    if (fpsAverageStat > 70) {
-      this.mainCameraCtrl.speed = 20
-    }
+    this.mainCameraCtrl.speed = fpsAverageStat > 70 ? 20 : 40
 
     if (RenderingContext.supportsGPUTimestampQuery) {
       this.timingDebugContainer.setDisplayValue(
