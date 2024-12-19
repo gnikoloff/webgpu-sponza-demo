@@ -464,21 +464,23 @@ export default class Renderer extends RenderingContext {
             this.sunIntensity = sunIntensity
           },
           onComplete: () => {
-            new Tween({
-              durationMS: FIREWORK_PARTICLES_LOAD_ANIM_DURATION_MS,
-              delayMS: FIREWORK_PARTICLES_LOAD_ANIM_DELAY_MS,
-              easeName: FIREWORK_PARTICLES_LOAD_ANIM_EASE,
-              onUpdate: (t) => {
-                this.lightingManager.fireParticlesRevealFactor = t
-              },
-              onComplete: () => {
-                document.getElementById('logo').classList.toggle('faded')
-                this.mainCameraCtrl.revealTouchControls()
-                if (this.onIntroAnimComplete) {
-                  this.onIntroAnimComplete()
-                }
-              },
-            }).start()
+            // ...
+          },
+        }).start()
+
+        new Tween({
+          durationMS: FIREWORK_PARTICLES_LOAD_ANIM_DURATION_MS,
+          delayMS: FIREWORK_PARTICLES_LOAD_ANIM_DELAY_MS,
+          easeName: FIREWORK_PARTICLES_LOAD_ANIM_EASE,
+          onUpdate: (t) => {
+            this.lightingManager.fireParticlesRevealFactor = t
+          },
+          onComplete: () => {
+            document.getElementById('logo').classList.toggle('faded')
+            this.mainCameraCtrl.revealTouchControls()
+            if (this.onIntroAnimComplete) {
+              this.onIntroAnimComplete()
+            }
           },
         }).start()
 
