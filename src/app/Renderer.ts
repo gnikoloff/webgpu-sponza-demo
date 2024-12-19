@@ -64,7 +64,7 @@ import Skybox from './meshes/Skybox'
 import BlitRenderPass from './render-passes/BlitRenderPass'
 import BloomDownscaleRenderPass from './render-passes/BloomDownscaleRenderPass'
 import BloomUpscaleRenderPass from './render-passes/BloomUpscaleRenderPass'
-import DebugBoundsPass from './render-passes/DebugBoundsPass'
+
 import DirectionalAmbientLightRenderPass from './render-passes/DirectionalAmbientLightRenderPass'
 import DirectionalShadowRenderPass from './render-passes/DirectionalShadowRenderPass'
 import GBufferRenderPass from './render-passes/GBufferRenderPass'
@@ -326,11 +326,7 @@ export default class Renderer extends RenderingContext {
   }
 
   public set debugBoundingBoxes(v: boolean) {
-    ;(
-      this.renderPassComposer.getPass(
-        RenderPassType.DebugBounds
-      ) as DebugBoundsPass
-    ).enabled = v
+    // ...
   }
 
   public set debugMovementCurve(v: boolean) {
