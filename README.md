@@ -24,6 +24,7 @@ A WebGPU deferred rendering playground written as a personal project to familiar
 10. TAA
 11. UI controls to tweak various different rendering parameters
 12. Dynamic performance degradation if the framerate dips below 60fps for longer than 2 seconds
+13. Mobile support
 
 ## Requirements
 
