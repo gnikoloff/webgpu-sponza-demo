@@ -1,7 +1,6 @@
 import * as dat from 'dat.gui'
 import Renderer from './app/Renderer'
-import { PROFILE_MAX_FRAMES_COUNT } from './app/constants'
-import RollingAverage from './renderer/math/RollingAverage'
+import { TIME_TO_MEASURE_PERFORMANCE_IN_SECONDS } from './app/constants'
 import { IGUIParams, SSRMethod } from './types'
 
 const $canvas = document.getElementById('c') as HTMLCanvasElement
@@ -48,8 +47,8 @@ const GUI_PARAMS: IGUIParams = {
   'SSAO Strength': 2,
 }
 
-const fpsDisplayAverage = new RollingAverage(200)
-let oldTimeMs = 0
+let oldTime = 0
+let measuredTime = 0
 let introAnimPlayed = false
 let ssrEnabledManuallySet = false
 let ssrEnabledPerfAutomaticallySet = false
@@ -64,15 +63,21 @@ window.addEventListener('resize', resize)
 resize()
 
 function renderFrame() {
-  const nowMs = performance.now()
-  const dt = (nowMs - oldTimeMs) / 1000
-  oldTimeMs = nowMs
+  const now = performance.now()
+  const dt = (now - oldTime) / 1000
+  oldTime = now
 
+  if (introAnimPlayed) {
+    measuredTime += dt
+  }
+
+  const { fpsDisplayAverage } = renderer
   const fpsAverageStat = fpsDisplayAverage.get()
   if (
+    introAnimPlayed &&
     GUI_PARAMS['Enable Bloom'] &&
     !bloomEnabledManuallySet &&
-    fpsDisplayAverage.getSamplesCount() > PROFILE_MAX_FRAMES_COUNT &&
+    measuredTime > TIME_TO_MEASURE_PERFORMANCE_IN_SECONDS &&
     fpsAverageStat < 55
   ) {
     console.log('1. performance too low. disabling bloom')
@@ -83,24 +88,26 @@ function renderFrame() {
   }
 
   if (
+    introAnimPlayed &&
     GUI_PARAMS['Enable SSAO'] &&
     !ssaoEnabledManuallySet &&
     bloomEnabledPerfAutomaticallySet &&
-    fpsDisplayAverage.getSamplesCount() > PROFILE_MAX_FRAMES_COUNT &&
+    measuredTime > TIME_TO_MEASURE_PERFORMANCE_IN_SECONDS &&
     fpsAverageStat < 55
   ) {
     console.log('2. performance still too low. disabling ssao')
     GUI_PARAMS['Enable SSAO'] = false
     renderer.ssaoEnabled = false
     ssaoEnabledPerfAutomaticallySet = true
-    fpsDisplayAverage.clearSamples()
+    // fpsDisplayAverage.clearSamples()
   }
 
   if (
+    introAnimPlayed &&
     GUI_PARAMS['Enable SSR'] &&
     !ssrEnabledManuallySet &&
     ssaoEnabledPerfAutomaticallySet &&
-    fpsDisplayAverage.getSamplesCount() > PROFILE_MAX_FRAMES_COUNT &&
+    measuredTime > TIME_TO_MEASURE_PERFORMANCE_IN_SECONDS &&
     fpsAverageStat < 55
   ) {
     console.log('3. performance still too low. disabling ssr')
@@ -110,10 +117,8 @@ function renderFrame() {
     // fpsDisplayAverage.clearSamples()
   }
 
-  renderer.renderFrame(nowMs)
+  renderer.renderFrame(now)
   requestAnimationFrame(renderFrame)
-
-  fpsDisplayAverage.addSample(1 / dt)
 }
 
 function resize() {

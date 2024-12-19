@@ -137,7 +137,7 @@ export default class Renderer extends RenderingContext {
 
   private cpuAverage = new RollingAverage()
   private gpuAverage = new RollingAverage()
-  private fpsDisplayAverage = new RollingAverage()
+  public fpsDisplayAverage = new RollingAverage()
 
   private texturesDebugContainer: TexturesDebugContainer
   private timingDebugContainer: DebugStatsContainer
