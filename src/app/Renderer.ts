@@ -187,38 +187,11 @@ export default class Renderer extends RenderingContext {
     ).strength = v
   }
 
+  private _enableTAA = true
   public set enableTAA(v: boolean) {
     this.mainCamera.shouldJitter = v
-    const taaPass = this.renderPassComposer.getPass(
-      RenderPassType.TAAResolve
-    ) as TAAResolveRenderPass
-    const bloomDownscaleRenderPass = this.renderPassComposer.getPass(
-      RenderPassType.BloomDownsample
-    ) as BloomDownscaleRenderPass
-    const blitPass = this.renderPassComposer.getPass(
-      RenderPassType.Blit
-    ) as BlitRenderPass
-    taaPass.enabled = v
-
-    if (v) {
-      taaPass.resetHistory()
-    }
-
-    bloomDownscaleRenderPass
-      .resetInputs()
-      .addInputTexture(
-        v
-          ? RENDER_PASS_TAA_RESOLVE_TEXTURE
-          : RENDER_PASS_COMPUTED_REFLECTIONS_TEXTURE
-      )
-    blitPass
-      .resetInputs()
-      .addInputTextures([
-        RENDER_PASS_BLOOM_TEXTURE,
-        v
-          ? RENDER_PASS_TAA_RESOLVE_TEXTURE
-          : RENDER_PASS_COMPUTED_REFLECTIONS_TEXTURE,
-      ])
+    this._enableTAA = v
+    this.recreateRenderComposer()
   }
 
   public set debugGBuffer(v: boolean) {
@@ -671,21 +644,31 @@ export default class Renderer extends RenderingContext {
         .addOutputTexture(RENDER_PASS_COMPUTED_REFLECTIONS_TEXTURE)
     }
 
-    const taaResolveRenderPass = new TAAResolveRenderPass(width, height)
-      .addInputTextures([
-        this._ssrEnabled
-          ? RENDER_PASS_COMPUTED_REFLECTIONS_TEXTURE
-          : RENDER_PASS_LIGHTING_RESULT_TEXTURE,
-        RENDER_PASS_VELOCITY_TEXTURE,
-      ])
-      .addOutputTexture(RENDER_PASS_TAA_RESOLVE_TEXTURE)
+    let taaResolveRenderPass: TAAResolveRenderPass
+
+    if (this._enableTAA) {
+      taaResolveRenderPass = new TAAResolveRenderPass(width, height)
+        .addInputTextures([
+          this._ssrEnabled
+            ? RENDER_PASS_COMPUTED_REFLECTIONS_TEXTURE
+            : RENDER_PASS_LIGHTING_RESULT_TEXTURE,
+          RENDER_PASS_VELOCITY_TEXTURE,
+        ])
+        .addOutputTexture(RENDER_PASS_TAA_RESOLVE_TEXTURE)
+    }
 
     let bloomDownscaleRenderPass: BloomDownscaleRenderPass
     let bloomUpscaleRenderPass: BloomUpscaleRenderPass
 
     if (this._bloomEnabled) {
       bloomDownscaleRenderPass = new BloomDownscaleRenderPass(width, height)
-        .addInputTexture(RENDER_PASS_TAA_RESOLVE_TEXTURE)
+        .addInputTexture(
+          this._enableTAA
+            ? RENDER_PASS_TAA_RESOLVE_TEXTURE
+            : this._ssrEnabled
+              ? RENDER_PASS_COMPUTED_REFLECTIONS_TEXTURE
+              : RENDER_PASS_LIGHTING_RESULT_TEXTURE
+        )
         .addOutputTexture(RENDER_PASS_BLOOM_TEXTURE)
 
       bloomUpscaleRenderPass = new BloomUpscaleRenderPass(width, height)
@@ -698,7 +681,13 @@ export default class Renderer extends RenderingContext {
     if (this._bloomEnabled) {
       blitRenderPassInputs.push(RENDER_PASS_BLOOM_TEXTURE)
     }
-    blitRenderPassInputs.push(RENDER_PASS_TAA_RESOLVE_TEXTURE)
+    if (this._enableTAA) {
+      blitRenderPassInputs.push(RENDER_PASS_TAA_RESOLVE_TEXTURE)
+    } else if (this._ssrEnabled) {
+      blitRenderPassInputs.push(RENDER_PASS_COMPUTED_REFLECTIONS_TEXTURE)
+    } else {
+      blitRenderPassInputs.push(RENDER_PASS_LIGHTING_RESULT_TEXTURE)
+    }
 
     const blitRenderPass = new BlitRenderPass(
       width,
@@ -707,6 +696,7 @@ export default class Renderer extends RenderingContext {
     ).addInputTextures(blitRenderPassInputs)
 
     blitRenderPass.bloomEnabled = this._bloomEnabled
+    console.log(this._bloomEnabled)
 
     this.renderPassComposer.addPass(shadowRenderPass).addPass(gbufferRenderPass)
 
@@ -731,7 +721,9 @@ export default class Renderer extends RenderingContext {
         .addPass(reflectionsComputePass)
     }
 
-    this.renderPassComposer.addPass(taaResolveRenderPass)
+    if (this._enableTAA) {
+      this.renderPassComposer.addPass(taaResolveRenderPass)
+    }
 
     if (this._bloomEnabled) {
       this.renderPassComposer

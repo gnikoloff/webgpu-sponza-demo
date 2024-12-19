@@ -248,7 +248,8 @@ export default class DirectionalAmbientLightRenderPass extends LightRenderPass {
         usage:
           GPUTextureUsage.STORAGE_BINDING |
           GPUTextureUsage.RENDER_ATTACHMENT |
-          GPUTextureUsage.TEXTURE_BINDING,
+          GPUTextureUsage.TEXTURE_BINDING |
+          GPUTextureUsage.COPY_SRC,
         label: 'GBuffer Result Texture',
       })
     )
