@@ -1,5 +1,4 @@
 import { Vec3, mat4, vec2, vec3 } from 'wgpu-matrix'
-import RenderingContext from '../core/RenderingContext'
 import Camera from './Camera'
 
 const DIR = vec3.create()
@@ -28,6 +27,7 @@ export default class CameraFlyController {
 
   private lastX = 0
   private lastY = 0
+  private oldTime = 0
 
   private presedKeys: string[] = new Array(128)
 
@@ -267,11 +267,13 @@ export default class CameraFlyController {
     cancelAnimationFrame(this.rafId)
   }
 
-  private update = (_deltaTime: number) => {
+  private update = () => {
     const speed = this.speed * 0.001
     vec3.set(0, 0, 0, DIR)
 
-    const dt = RenderingContext.deltaTimeMs
+    const now = performance.now() * 0.001
+    const dt = now - this.oldTime
+    this.oldTime = now
 
     if (isTouchDevice) {
       this.touchMoveX += (this.touchMoveTargetX - this.touchMoveX) * dt * 5
