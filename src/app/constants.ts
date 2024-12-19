@@ -96,7 +96,7 @@ export const SUN_LOAD_START_POSITION = vec3.create(3, 20, 3)
 export const SUN_LOAD_END_POSITION = vec3.create(0.1, 20, 0.1)
 export const SUN_LOAD_ANIM_DURATION_MS = 1500
 export const SUN_LOAD_ANIM_DELAY_MS = 100
-export const SUN_LOAD_ANIM_EASE: EaseType = 'sine_InOut'
+export const SUN_LOAD_ANIM_EASE: EaseType = 'exp_Out'
 export const BLIT_PASS_REVEAL_ANIM_DURATION_MS = 800
 export const MAIN_CAMERA_START_LOAD_START_POSITION = vec3.create(
   9.7,
