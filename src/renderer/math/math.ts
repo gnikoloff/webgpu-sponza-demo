@@ -2,6 +2,20 @@ import { RotationOrder, mat4 } from 'wgpu-matrix'
 export const clamp = (num: number, min: number, max: number): number =>
   Math.min(Math.max(num, min), max)
 
+export const mapNumberRange = (
+  v: number,
+  inMin: number,
+  inMax: number,
+  outMin: number,
+  outMax: number
+): number => {
+  return clamp(
+    ((v - inMin) * (outMax - outMin)) / (inMax - inMin) + outMin,
+    outMin,
+    outMax
+  )
+}
+
 export const lerp = (a: number, b: number, t: number) => a + t * (b - a)
 
 export const deg2Rad = (deg: number): number => (deg * Math.PI) / 180

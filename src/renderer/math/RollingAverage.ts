@@ -4,6 +4,10 @@ export default class RollingAverage {
   private cursor = 0
   constructor(private numSamples = 200) {}
 
+  public clearSamples() {
+    this.samples.length = 0
+  }
+
   public addSample(v: number) {
     this.total += v - (this.samples[this.cursor] || 0)
     this.samples[this.cursor] = v

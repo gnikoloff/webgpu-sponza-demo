@@ -54,7 +54,7 @@ import {
   SUN_LOAD_START_POSITION,
 } from './constants'
 
-import { lerp } from '../renderer/math/math'
+import { lerp, mapNumberRange } from '../renderer/math/math'
 import { TextureDebugMeshType } from '../types'
 import LineDebugDrawable from './debug/LineDebugDrawable'
 import TexturesDebugContainer from './debug/textures-debug/TexturesDebugContainer'
@@ -868,7 +868,7 @@ export default class Renderer extends RenderingContext {
     const fpsAverageStat = this.fpsDisplayAverage.get()
     const gpuAverageStat = this.gpuAverage.get()
 
-    this.mainCameraCtrl.speed = fpsAverageStat > 70 ? 20 : 40
+    this.mainCameraCtrl.speed = mapNumberRange(fpsAverageStat, 60, 120, 30, 30)
 
     if (RenderingContext.supportsGPUTimestampQuery) {
       this.timingDebugContainer.setDisplayValue(

@@ -26,7 +26,7 @@ export default class SSAORenderPass extends RenderPass {
 
   private settingsBuffer: GPUBuffer
 
-  private startKernelSize = 64
+  private startKernelSize = 8
 
   private _kernelSize = 128
   public get kernelSize(): number {

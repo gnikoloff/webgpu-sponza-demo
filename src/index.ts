@@ -43,7 +43,7 @@ const GUI_PARAMS: IGUIParams = {
   // "Debug Bounding Boxes": false,
   // "Debug Point Lines Curve": false,
   'Enable SSAO': true,
-  'SSAO Kernel Size': 64,
+  'SSAO Kernel Size': 8,
   'SSAO Radius': 0.5,
   'SSAO Strength': 2,
 }
@@ -74,37 +74,40 @@ function renderFrame() {
     GUI_PARAMS['Enable SSR'] &&
     !ssrEnabledManuallySet &&
     fpsDisplayAverage.getSamplesCount() > PROFILE_MAX_FRAMES_COUNT &&
-    fpsAverageStat < 60
+    fpsAverageStat < 55
   ) {
     console.log('1. performance too low. disabling ssr')
     GUI_PARAMS['Enable SSR'] = false
     renderer.ssrEnabled = false
     ssrEnabledPerfAutomaticallySet = true
+    fpsDisplayAverage.clearSamples()
   }
 
   if (
     GUI_PARAMS['Enable Bloom'] &&
     !bloomEnabledManuallySet &&
     ssrEnabledPerfAutomaticallySet &&
-    fpsDisplayAverage.getSamplesCount() > PROFILE_MAX_FRAMES_COUNT &&
-    fpsAverageStat < 60
+    fpsDisplayAverage.getSamplesCount() > PROFILE_MAX_FRAMES_COUNT / 2 &&
+    fpsAverageStat < 55
   ) {
     console.log('2. performance still too low. disabling bloom')
     GUI_PARAMS['Enable Bloom'] = false
     renderer.bloomEnabled = false
     bloomEnabledPerfAutomaticallySet = true
+    fpsDisplayAverage.clearSamples()
   }
 
   if (
     GUI_PARAMS['Enable SSAO'] &&
     !ssaoEnabledManuallySet &&
     bloomEnabledPerfAutomaticallySet &&
-    fpsDisplayAverage.getSamplesCount() > PROFILE_MAX_FRAMES_COUNT &&
-    fpsAverageStat < 60
+    fpsDisplayAverage.getSamplesCount() > PROFILE_MAX_FRAMES_COUNT / 3 &&
+    fpsAverageStat < 55
   ) {
     console.log('3. performance still too low. disabling ssao')
     GUI_PARAMS['Enable SSAO'] = false
     renderer.ssaoEnabled = false
+    fpsDisplayAverage.clearSamples()
   }
 
   renderer.renderFrame(nowMs)
