@@ -48,6 +48,8 @@ WebGPU is still considered experimental technology and might not be implemented 
 6. [Physically Based Bloom](https://learnopengl.com/Guest-Articles/2022/Phys.-Based-Bloom)
 7. [Cascaded Shadow Mapping](https://learnopengl.com/Guest-Articles/2021/CSM)
 8. [Satin - A 3D Graphics Framework built on Apple's Metal](https://github.com/Hi-Rez/Satin)
+9. [WebGPU Spec](https://www.w3.org/TR/webgpu/)
+10. [WGSL Spec](https://www.w3.org/TR/WGSL/)
 
 ## Running Locally
 
