@@ -14,7 +14,7 @@ const BDRFLutShaderUtils = /* wgsl */ `
 
   // https://blog.selfshadow.com/publications/s2013-shading-course/karis/s2013_pbs_epic_notes_v2.pdf
   // Karis 2014
-  @must_use
+  
   fn integrate(NdotV: f32, roughness: f32) -> vec2f {
     var V = vec3f(0.0);
     V.x = sqrt(1.0 - NdotV * NdotV); // sin

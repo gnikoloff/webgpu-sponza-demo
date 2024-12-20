@@ -1,6 +1,6 @@
 const CSMShadowShaderUtils = /* wgsl */ `
 
-  @must_use
+  
   fn ShadowLayerIdxCalculate(
     worldPos: vec3f,
     camera: Camera,

@@ -65,7 +65,7 @@ export const PARTICLES_RENDER_SHADER_SRC = /* wgsl */ `
     if (mask < 0.2) {
       discard;
     }
-    let lightColor = light.color;
-    return vec4f(light.color * mask * 0.8, 1);
+    let lightColor = (*light).color;
+    return vec4f((*light).color * mask * 0.8, 1);
   }
 `
