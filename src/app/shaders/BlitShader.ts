@@ -7,7 +7,7 @@ export const BLIT_FRAGMENT_SHADER_SRC = /* wgsl */ `
   @group(0) @binding(3) var<uniform> time: f32;
   @group(0) @binding(4) var<uniform> revealFactor: f32;
 
-  @must_use
+  
   fn ACESFilm(x: vec3f) -> vec3f {
     let v = x;
     let a = 2.51f;

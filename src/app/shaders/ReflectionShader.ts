@@ -77,7 +77,7 @@ export const getReflectionComputeShader = (
     (*outMaxDistance) = min(*outMaxDistance, select((1 - outSamplePosInTexSpace.z) / outReflDirInTexSpace.z, -outSamplePosInTexSpace.z / outReflDirInTexSpace.z, outReflDirInTexSpace.z < 0));
   }
 
-  @must_use
+  
   fn FindIntersectionLinear(
     samplePosInTexSpace: vec3f,
     reflDirInTexSpace: vec3f,
@@ -139,22 +139,22 @@ export const getReflectionComputeShader = (
     return select(0.0, 1.0, intersected);
   }
 
-  @must_use
+  
   fn getCellCount(mipLevel: i32, depthTexture: texture_2d<f32>) -> vec2f {
     return vec2f(textureDimensions(depthTexture, mipLevel));
   }
 
-  @must_use
+  
   fn getCell(pos: vec2f, cell_count: vec2f) -> vec2f {
     return vec2f(floor(pos * cell_count));
   }
 
-  @must_use
+  
   fn intersectDepthPlane(o: vec3f, d: vec3f, z: f32) -> vec3f {
 	  return o + d * z;
   }
 
-  @must_use
+  
   fn intersectCellBoundary(
     o: vec3f,
     d: vec3f,
@@ -178,7 +178,7 @@ export const getReflectionComputeShader = (
     return intersection;
   }
 
-  @must_use
+  
   fn getMinimumDepthPlane(
     p: vec2f,
     mipLevel: i32,
@@ -187,12 +187,12 @@ export const getReflectionComputeShader = (
     return textureLoad(depthTexture, vec2u(p), mipLevel).r;
   }
 
-  @must_use
+  
   fn crossedCellBoundary(oldCellIndex: vec2f, newCellIndex: vec2f) -> bool {
 	  return (oldCellIndex.x != newCellIndex.x) || (oldCellIndex.y != newCellIndex.y);
   }
 
-  @must_use
+  
   fn FindIntersectionHiZ(
     samplePosInTexSpace: vec3f,
     reflDirInTexSpace: vec3f,
@@ -277,7 +277,7 @@ export const getReflectionComputeShader = (
     return intensity;
   }
 
-  @must_use
+  
   fn ComputeReflectionColor(
     intensity: f32,
     intersection: vec3f,

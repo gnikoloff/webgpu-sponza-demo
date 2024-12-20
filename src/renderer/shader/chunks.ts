@@ -78,7 +78,7 @@ export const SHADER_CHUNKS = Object.freeze({
         jitterOffset: vec2f,
       };
 
-      @must_use
+      
       fn calcWorldPos(
         camera: Camera,
         coord: vec2f,
@@ -92,7 +92,7 @@ export const SHADER_CHUNKS = Object.freeze({
         return worldSpacePos.xyz / worldSpacePos.w;
       }
 
-      @must_use
+      
       fn calcViewSpacePos(
         camera: Camera,
         coord: vec2f,
@@ -223,7 +223,7 @@ export const SHADER_CHUNKS = Object.freeze({
   get MathHelpers(): string {
     return /* wgsl */ `
 
-      @must_use
+      
       fn rotateAxisAngle(inAxis: vec3f, angle: f32) -> mat3x3f {
         let axis = normalize(inAxis);
         let s = sin(angle);

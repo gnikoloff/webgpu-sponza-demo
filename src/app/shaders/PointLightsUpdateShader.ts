@@ -26,14 +26,14 @@ export const POINT_LIGHTS_UPDATE_SHADER_SRC = /* wgsl */ `
   override CURVE_PARTICLES_COUNT: u32;
   override CURVE_POSITIONS_COUNT: u32;
   
-  @must_use
+  
   fn noise(p: vec3f) -> f32 {
     return fract(
       sin(dot(p, vec3f(12.9898, 78.233, 45.164))) * 43758.5453
     );
   }
 
-  @must_use
+  
   fn random(seed: f32) -> f32 {
     return fract(sin(seed * 12.9898) * 43758.5453);
   }

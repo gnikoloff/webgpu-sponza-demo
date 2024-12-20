@@ -79,7 +79,7 @@ var am=Object.defineProperty;var um=(Je,st,nt)=>st in Je?am(Je,st,{enumerable:!0
         jitterOffset: vec2f,
       };
 
-      @must_use
+      
       fn calcWorldPos(
         camera: Camera,
         coord: vec2f,
@@ -93,7 +93,7 @@ var am=Object.defineProperty;var um=(Je,st,nt)=>st in Je?am(Je,st,{enumerable:!0
         return worldSpacePos.xyz / worldSpacePos.w;
       }
 
-      @must_use
+      
       fn calcViewSpacePos(
         camera: Camera,
         coord: vec2f,
@@ -191,7 +191,7 @@ var am=Object.defineProperty;var um=(Je,st,nt)=>st in Je?am(Je,st,{enumerable:!0
       );
     `},get MathHelpers(){return`
 
-      @must_use
+      
       fn rotateAxisAngle(inAxis: vec3f, angle: f32) -> mat3x3f {
         let axis = normalize(inAxis);
         let s = sin(angle);
@@ -373,7 +373,7 @@ EXPOSURE=1.0
 
   // https://blog.selfshadow.com/publications/s2013-shading-course/karis/s2013_pbs_epic_notes_v2.pdf
   // Karis 2014
-  @must_use
+  
   fn integrate(NdotV: f32, roughness: f32) -> vec2f {
     var V = vec3f(0.0);
     V.x = sqrt(1.0 - NdotV * NdotV); // sin
@@ -727,14 +727,14 @@ EXPOSURE=1.0
   override CURVE_PARTICLES_COUNT: u32;
   override CURVE_POSITIONS_COUNT: u32;
   
-  @must_use
+  
   fn noise(p: vec3f) -> f32 {
     return fract(
       sin(dot(p, vec3f(12.9898, 78.233, 45.164))) * 43758.5453
     );
   }
 
-  @must_use
+  
   fn random(seed: f32) -> f32 {
     return fract(sin(seed * 12.9898) * 43758.5453);
   }
@@ -855,7 +855,7 @@ EXPOSURE=1.0
   @group(0) @binding(3) var<uniform> time: f32;
   @group(0) @binding(4) var<uniform> revealFactor: f32;
 
-  @must_use
+  
   fn ACESFilm(x: vec3f) -> vec3f {
     let v = x;
     let a = 2.51f;
@@ -1009,7 +1009,7 @@ EXPOSURE=1.0
     return vec4f(upsample, 1.0);
   }
 `;class zr extends Se{async destroy(){super.destroy(),await B.device.queue.onSubmittedWorkDone(),$.removeBufferBytes(this.filterRadiusBuffer),this.filterRadiusBuffer.destroy()}set bloomFilterRadius(e){B.device.queue.writeBuffer(this.filterRadiusBuffer,0,new Float32Array([e]))}constructor(e,t){super(H.BloomUpsample,e,t),this.sampler=Xe.createSampler({label:"Bloom Downscale Sampler",addressModeU:"clamp-to-edge",addressModeV:"clamp-to-edge",minFilter:"linear",magFilter:"linear"}),this.filterRadiusBuffer=B.device.createBuffer({label:"Bloom Upscale Filter Radius GPU Buffer",size:1*Float32Array.BYTES_PER_ELEMENT,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST,mappedAtCreation:!0}),$.addBufferBytes(this.filterRadiusBuffer),new Float32Array(this.filterRadiusBuffer.getMappedRange()).set([.0035]),this.filterRadiusBuffer.unmap();const r=[{binding:0,texture:{},visibility:GPUShaderStage.FRAGMENT},{binding:1,sampler:{},visibility:GPUShaderStage.FRAGMENT},{binding:2,buffer:{},visibility:GPUShaderStage.FRAGMENT}];this.bindGroupLayout=B.device.createBindGroupLayout({label:"Bloom Upscale Bind Group Layout",entries:r});const n=[{format:"rgba16float",blend:{color:{operation:"add",srcFactor:"one",dstFactor:"one"},alpha:{operation:"add",srcFactor:"one",dstFactor:"one"}}}];zr.renderPSO||(zr.renderPSO=J.createRenderPipeline({label:"Bloom Upscale Render PSO",layout:B.device.createPipelineLayout({label:"Bloom Upscale Render PSO Layout",bindGroupLayouts:[this.bindGroupLayout]}),vertex:{entryPoint:Tt,module:J.createShaderModule(Wt)},fragment:{entryPoint:Vc,module:J.createShaderModule(qp),targets:n}}))}render(e,t,r){const n=[{binding:0,resource:null},{binding:1,resource:this.sampler},{binding:2,resource:{buffer:this.filterRadiusBuffer}}],i={colorAttachments:[{loadOp:"load",storeOp:"store",view:null}]};for(let o=Math.ceil(.5*It(r[0].width,r[0].height))-1;o>0;o--){i.label=`Bloom Upscale Mip Level ${o}`,i.colorAttachments[0].view=r[0].createView({baseMipLevel:o-1,mipLevelCount:1});const u=e.beginRenderPass(i);u.setPipeline(zr.renderPSO),n[0].resource=r[0].createView({baseMipLevel:o,mipLevelCount:1});const l=B.device.createBindGroup({label:`Bloom Upscale Bind Group for Mip ${o}`,entries:n,layout:this.bindGroupLayout});u.setBindGroup(0,l),u.draw(3),u.end()}return this.postRender(e),r}}const Hc=s=>St`
-  @must_use
+  
   fn DistributionGGX(viewSpaceNormal: vec3f, H: vec3f, roughness: f32) -> f32 {
     let a = roughness*roughness;
     let a2 = a*a;
@@ -1023,7 +1023,7 @@ EXPOSURE=1.0
     return nom / denom;
 }
 
-  @must_use
+  
   fn GeometrySchlickGGX(NdotV: f32, roughness: f32) -> f32 {
     let r = (roughness + 1.0);
     let k = (r * r) / 8;
@@ -1033,7 +1033,7 @@ EXPOSURE=1.0
     return nom / denom;
   }
 
-  @must_use
+  
   fn GeometrySmith(viewSpaceNormal: vec3f, V: vec3f, L: vec3f, roughness: f32) -> f32 {
     let NdotV = max(dot(viewSpaceNormal, V), 0.0);
     let NdotL = max(dot(viewSpaceNormal, L), 0.0);
@@ -1042,17 +1042,17 @@ EXPOSURE=1.0
     return ggx1 * ggx2;
   }
 
-  @must_use
+  
   fn FresnelSchlick(cosTheta: f32, F0: vec3f) -> vec3f {
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
   }
 
-  @must_use
+  
   fn FresnelSchlickRoughness(cosTheta: f32, F0: vec3f, roughness: f32) -> vec3f {
     return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
   }
 
-  @must_use
+  
   fn PBRLighting(
     material: Material,
     instanceId: u32,
@@ -1197,7 +1197,7 @@ EXPOSURE=1.0
   ${Hc(s)}
   ${`
 
-  @must_use
+  
   fn ShadowLayerIdxCalculate(
     worldPos: vec3f,
     camera: Camera,
@@ -1624,7 +1624,7 @@ EXPOSURE=1.0
     (*outMaxDistance) = min(*outMaxDistance, select((1 - outSamplePosInTexSpace.z) / outReflDirInTexSpace.z, -outSamplePosInTexSpace.z / outReflDirInTexSpace.z, outReflDirInTexSpace.z < 0));
   }
 
-  @must_use
+  
   fn FindIntersectionLinear(
     samplePosInTexSpace: vec3f,
     reflDirInTexSpace: vec3f,
@@ -1686,22 +1686,22 @@ EXPOSURE=1.0
     return select(0.0, 1.0, intersected);
   }
 
-  @must_use
+  
   fn getCellCount(mipLevel: i32, depthTexture: texture_2d<f32>) -> vec2f {
     return vec2f(textureDimensions(depthTexture, mipLevel));
   }
 
-  @must_use
+  
   fn getCell(pos: vec2f, cell_count: vec2f) -> vec2f {
     return vec2f(floor(pos * cell_count));
   }
 
-  @must_use
+  
   fn intersectDepthPlane(o: vec3f, d: vec3f, z: f32) -> vec3f {
 	  return o + d * z;
   }
 
-  @must_use
+  
   fn intersectCellBoundary(
     o: vec3f,
     d: vec3f,
@@ -1725,7 +1725,7 @@ EXPOSURE=1.0
     return intersection;
   }
 
-  @must_use
+  
   fn getMinimumDepthPlane(
     p: vec2f,
     mipLevel: i32,
@@ -1734,12 +1734,12 @@ EXPOSURE=1.0
     return textureLoad(depthTexture, vec2u(p), mipLevel).r;
   }
 
-  @must_use
+  
   fn crossedCellBoundary(oldCellIndex: vec2f, newCellIndex: vec2f) -> bool {
 	  return (oldCellIndex.x != newCellIndex.x) || (oldCellIndex.y != newCellIndex.y);
   }
 
-  @must_use
+  
   fn FindIntersectionHiZ(
     samplePosInTexSpace: vec3f,
     reflDirInTexSpace: vec3f,
@@ -1824,7 +1824,7 @@ EXPOSURE=1.0
     return intensity;
   }
 
-  @must_use
+  
   fn ComputeReflectionColor(
     intensity: f32,
     intersection: vec3f,
