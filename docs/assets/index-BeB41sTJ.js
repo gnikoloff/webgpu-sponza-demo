@@ -1088,10 +1088,10 @@ EXPOSURE=1.0
     #if ${s===H.DirectionalAmbientLighting}
     let light = &lightsBuffer[instanceId];
     // let isPointLight = light.lightType == ${Nt.Point};
-    let lightViewSpacePos = (camera.viewMatrix * vec4f(light.position, 0.0)).xyz;
+    let lightViewSpacePos = (camera.viewMatrix * vec4f((*light).position, 0.0)).xyz;
     
-    let lightColor = light.color;
-    let lightIntensity = light.intensity;
+    let lightColor = (*light).color;
+    let lightIntensity = (*light).intensity;
     let L = normalize(lightViewSpacePos);
     let attenuation = 1.0;
 
@@ -1099,12 +1099,12 @@ EXPOSURE=1.0
 
     #elif ${s===H.PointLightsLighting}
     let light = &lightsBuffer[instanceId];
-    let lightColor = light.color;
-    let lightIntensity = light.intensity;
-    let lightViewSpacePos = (camera.viewMatrix * vec4f(light.position, 1.0)).xyz;
+    let lightColor = (*light).color;
+    let lightIntensity = (*light).intensity;
+    let lightViewSpacePos = (camera.viewMatrix * vec4f((*light).position, 1.0)).xyz;
     let dist = lightViewSpacePos.xyz - viewSpacePos.xyz;
     let d = length(dist);
-    var attenuation = 1 - smoothstep(0.0, light.radius, d);
+    var attenuation = 1 - smoothstep(0.0, (*light).radius, d);
     attenuation *= attenuation;
     let L = normalize(dist);
     #elif ${s===H.PointLightsNonCulledLighting}

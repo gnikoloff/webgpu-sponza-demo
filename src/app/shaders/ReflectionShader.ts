@@ -72,9 +72,9 @@ export const getReflectionComputeShader = (
       vReflectionDir.z
     );
 
-    (*outMaxDistance) = select(-outSamplePosInTexSpace.x / outReflDirInTexSpace.x, (1 - outSamplePosInTexSpace.x) / outReflDirInTexSpace.x, outReflDirInTexSpace.x >= 0);
-    (*outMaxDistance) = min(*outMaxDistance, select((1 - outSamplePosInTexSpace.y) / outReflDirInTexSpace.y, -outSamplePosInTexSpace.y / outReflDirInTexSpace.y, outReflDirInTexSpace.y < 0));
-    (*outMaxDistance) = min(*outMaxDistance, select((1 - outSamplePosInTexSpace.z) / outReflDirInTexSpace.z, -outSamplePosInTexSpace.z / outReflDirInTexSpace.z, outReflDirInTexSpace.z < 0));
+    (*outMaxDistance) = select(-(*outSamplePosInTexSpace).x / (*outReflDirInTexSpace).x, (1 - (*outSamplePosInTexSpace).x) / (*outReflDirInTexSpace).x, (*outReflDirInTexSpace).x >= 0);
+    (*outMaxDistance) = min(*outMaxDistance, select((1 - (*outSamplePosInTexSpace).y) / (*outReflDirInTexSpace).y, -(*outSamplePosInTexSpace).y / (*outReflDirInTexSpace).y, (*outReflDirInTexSpace).y < 0));
+    (*outMaxDistance) = min(*outMaxDistance, select((1 - (*outSamplePosInTexSpace).z) / (*outReflDirInTexSpace).z, -(*outSamplePosInTexSpace).z / (*outReflDirInTexSpace).z, (*outReflDirInTexSpace).z < 0));
   }
 
   
