@@ -8,6 +8,17 @@ import envPzImgUrl from '../assets/textures/pz.hdr?url'
 import { RENDER_TARGET_LOCATIONS } from '../renderer/core/RendererBindings'
 import { EaseType } from '../renderer/types'
 
+export enum BlitRenderMode {
+  Final,
+  Albedo,
+  ViewSpaceNormal,
+  Metallic,
+  Roughness,
+  SSAO,
+  Depth,
+  Reflectance,
+}
+
 export const MAIN_CAMERA_NEAR = 0.1
 export const MAIN_CAMERA_FAR = 100
 export const ORTHO_CAMERA_NEAR = 0.1
@@ -35,6 +46,7 @@ export const RENDER_PASS_HI_Z_DEPTH_TEXTURE = 'hi-z depth texture'
 export const RENDER_PASS_COMPUTED_REFLECTIONS_TEXTURE =
   'computed reflections texture'
 export const RENDER_PASS_BLOOM_TEXTURE = 'bloom downscale texture'
+export const RENDER_PASS_COMBINE_TEXTURE = 'combine texture'
 
 export const GBUFFER_OUTPUT_TARGETS: GPUColorTargetState[] = new Array(3)
 
@@ -91,7 +103,7 @@ export const SECOND_FLOOR_PARTICLES_CATMULL_CURVE_POINT_POSITIONS: Vec3[] = [
 
 // Loading animation
 export const SUN_LOAD_START_INTENSITY = 0
-export const SUN_LOAD_END_INTENSITY = 2
+export const SUN_LOAD_END_INTENSITY = 1
 export const SUN_LOAD_START_POSITION = vec3.create(3, 20, 3)
 export const SUN_LOAD_END_POSITION = vec3.create(0.1, 20, 0.1)
 export const SUN_LOAD_ANIM_DURATION_MS = 1500

@@ -89,6 +89,10 @@ a {
   line-height: 21px;
 }
 
+.dg {
+  display: none !important;
+}
+
 .dg .property-name {
   width: 55% !important;
 }

@@ -71,6 +71,7 @@ export enum RenderPassType {
   BloomDownsample,
   BloomUpsample,
   DebugBounds,
+  Combine,
   Blit,
 }
 
@@ -90,7 +91,7 @@ export enum DebugStatType {
   ShadowRenderPass,
   TAAResolveRenderPass,
   ReflectionRenderPass,
-  BlitRenderPass,
+  CombineRenderPass,
 }
 
 export type RenderPassTimingRange = [number, number]

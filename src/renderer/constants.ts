@@ -37,7 +37,7 @@ export const AllDebugStatTypes: DebugStatType[] = [
   // DebugStatType.ShadowRenderPass,
   // DebugStatType.TAAResolveRenderPass,
   // DebugStatType.ReflectionRenderPass,
-  // DebugStatType.BlitRenderPass,
+  // DebugStatType.CombineRenderPass,
 ]
 
 export const RenderPassNames: Map<RenderPassType, string> = new Map([
@@ -59,6 +59,7 @@ export const RenderPassNames: Map<RenderPassType, string> = new Map([
   [RenderPassType.HiZ, 'Hi-Z Depth Render Pass'],
   [RenderPassType.Reflection, 'SSR Render Pass'],
   [RenderPassType.DebugBounds, 'Debug Bounds Render Pass'],
+  [RenderPassType.Combine, 'Combine Render Pass'],
   [RenderPassType.Blit, 'Blit Render Pass'],
   [RenderPassType.BloomDownsample, 'Bloom Downsample Render Pass'],
   [RenderPassType.BloomUpsample, 'Bloom Upsample Render Pass'],

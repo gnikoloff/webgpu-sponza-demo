@@ -20,7 +20,7 @@ const DebugTimingTypeToDebugIds: Map<DebugStatType, string> = new Map([
   [DebugStatType.ShadowRenderPass, 'shadow'],
   [DebugStatType.TAAResolveRenderPass, 'taa-resolve'],
   [DebugStatType.ReflectionRenderPass, 'reflection'],
-  [DebugStatType.BlitRenderPass, 'blit'],
+  [DebugStatType.CombineRenderPass, 'blit'],
 ])
 
 const DebugTimingTypeToNames: Map<DebugStatType, string> = new Map([
@@ -42,7 +42,7 @@ const DebugTimingTypeToNames: Map<DebugStatType, string> = new Map([
   [DebugStatType.ShadowRenderPass, 'Directional Shadow Render Pass'],
   [DebugStatType.TAAResolveRenderPass, 'TAA Resolve Render Pass'],
   [DebugStatType.ReflectionRenderPass, 'Reflection Render Pass'],
-  [DebugStatType.BlitRenderPass, 'Blit Render Pass'],
+  [DebugStatType.CombineRenderPass, 'Blit Render Pass'],
 ])
 
 interface TimingDisplay {

@@ -1,7 +1,6 @@
 import { vec3 } from 'wgpu-matrix'
 import sponzaGltfModelUrl from '../assets/sponza/Sponza.gltf?url'
 import { Tween } from '../renderer/animation/Tween'
-import CameraFlyController from '../renderer/camera/CameraFlyController'
 import PerspectiveCamera from '../renderer/camera/PerspectiveCamera'
 import RenderPassComposer from '../renderer/core/RenderPassComposer'
 import RenderingContext from '../renderer/core/RenderingContext'
@@ -22,6 +21,7 @@ import {
 } from '../renderer/types'
 import {
   BLIT_PASS_REVEAL_ANIM_DURATION_MS,
+  BlitRenderMode,
   ENVIRONMENT_CUBE_TEXTURE_FACE_URLS,
   FIREWORK_PARTICLES_LOAD_ANIM_DELAY_MS,
   FIREWORK_PARTICLES_LOAD_ANIM_DURATION_MS,
@@ -34,6 +34,7 @@ import {
   MAIN_CAMERA_START_LOAD_START_POSITION,
   RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
   RENDER_PASS_BLOOM_TEXTURE,
+  RENDER_PASS_COMBINE_TEXTURE,
   RENDER_PASS_COMPUTED_REFLECTIONS_TEXTURE,
   RENDER_PASS_DEPTH_STENCIL_TEXTURE,
   RENDER_PASS_DIRECTIONAL_LIGHT_DEPTH_TEXTURE,
@@ -54,17 +55,18 @@ import {
   SUN_LOAD_START_POSITION,
 } from './constants'
 
-import { lerp, mapNumberRange } from '../renderer/math/math'
+import { lerp } from '../renderer/math/math'
 import { TextureDebugMeshType } from '../types'
 import LineDebugDrawable from './debug/LineDebugDrawable'
 import TexturesDebugContainer from './debug/textures-debug/TexturesDebugContainer'
 import DebugStatsContainer from './debug/timings-debug/DebugStatsContainer'
 import LightingSystem from './lighting/LightingSystem'
 import Skybox from './meshes/Skybox'
-import BlitRenderPass from './render-passes/BlitRenderPass'
 import BloomDownscaleRenderPass from './render-passes/BloomDownscaleRenderPass'
 import BloomUpscaleRenderPass from './render-passes/BloomUpscaleRenderPass'
+import CombineRenderPass from './render-passes/CombineRenderPass'
 
+import BlitRenderPass from './render-passes/BlitRenderPass'
 import DirectionalAmbientLightRenderPass from './render-passes/DirectionalAmbientLightRenderPass'
 import DirectionalShadowRenderPass from './render-passes/DirectionalShadowRenderPass'
 import GBufferRenderPass from './render-passes/GBufferRenderPass'
@@ -124,7 +126,7 @@ export default class Renderer extends RenderingContext {
 
   public mainCamera: PerspectiveCamera
   public debugCamera: PerspectiveCamera
-  public mainCameraCtrl: CameraFlyController
+  // public mainCameraCtrl: CameraFlyController
 
   private curveMoveLine: LineDebugDrawable
   private lightingManager: LightingSystem
@@ -187,7 +189,7 @@ export default class Renderer extends RenderingContext {
     ).strength = v
   }
 
-  private _enableTAA = true
+  private _enableTAA = false
   public set enableTAA(v: boolean) {
     this.mainCamera.shouldJitter = v
     this._enableTAA = v
@@ -306,6 +308,8 @@ export default class Renderer extends RenderingContext {
     this.curveMoveLine.visible = v
   }
 
+  private blitRenderMode = BlitRenderMode.Final
+
   public toggleStatsVisibility() {
     this.timingDebugContainer.toggleVisibility()
   }
@@ -320,17 +324,17 @@ export default class Renderer extends RenderingContext {
       MAIN_CAMERA_NEAR,
       MAIN_CAMERA_FAR
     )
-    this.mainCamera.shouldJitter = true
+    this.mainCamera.shouldJitter = this._enableTAA
     this.mainCamera.setPositionAsVec3(MAIN_CAMERA_START_LOAD_START_POSITION)
     this.mainCamera.setLookAt(0, 2, 0)
     this.mainCamera.updateViewMatrix()
 
-    this.mainCameraCtrl = new CameraFlyController(
-      this.mainCamera,
-      document.body,
-      RenderingContext.$canvas
-    )
-    this.mainCameraCtrl.startTick()
+    // this.mainCameraCtrl = new CameraFlyController(
+    //   this.mainCamera,
+    //   document.body,
+    //   RenderingContext.$canvas
+    // )
+    // this.mainCameraCtrl.startTick()
 
     this.debugCamera = new PerspectiveCamera(
       70,
@@ -439,8 +443,8 @@ export default class Renderer extends RenderingContext {
             this.lightingManager.fireParticlesRevealFactor = t
           },
           onComplete: () => {
-            document.getElementById('logo').classList.toggle('faded')
-            this.mainCameraCtrl.revealTouchControls()
+            // document.getElementById('logo').classList.toggle('faded')
+            // this.mainCameraCtrl.revealTouchControls()
             if (this.onIntroAnimComplete) {
               this.onIntroAnimComplete()
             }
@@ -468,11 +472,32 @@ export default class Renderer extends RenderingContext {
         }).start()
 
         const blitPass = this.renderPassComposer.getPass(
-          RenderPassType.Blit
-        ) as BlitRenderPass
+          RenderPassType.Combine
+        ) as CombineRenderPass
 
         blitPass.revealWithAnimation(BLIT_PASS_REVEAL_ANIM_DURATION_MS)
       }, 500)
+    })
+
+    document.body.addEventListener('keydown', (e) => {
+      if (e.key === '1') {
+        this.blitRenderMode = BlitRenderMode.Final
+      } else if (e.key === '2') {
+        this.blitRenderMode = BlitRenderMode.Albedo
+      } else if (e.key === '3') {
+        this.blitRenderMode = BlitRenderMode.Depth
+      } else if (e.key === '4') {
+        this.blitRenderMode = BlitRenderMode.ViewSpaceNormal
+      } else if (e.key === '5') {
+        this.blitRenderMode = BlitRenderMode.Metallic
+      } else if (e.key === '6') {
+        this.blitRenderMode = BlitRenderMode.Roughness
+      } else if (e.key === '7') {
+        this.blitRenderMode = BlitRenderMode.SSAO
+      } else if (e.key === '8') {
+        this.blitRenderMode = BlitRenderMode.Reflectance
+      }
+      this.recreateRenderComposer()
     })
   }
 
@@ -676,27 +701,51 @@ export default class Renderer extends RenderingContext {
         .addOutputTexture(RENDER_PASS_BLOOM_TEXTURE)
     }
 
-    const blitRenderPassInputs: string[] = []
+    const combineRenderPassInputs: string[] = []
 
     if (this._bloomEnabled) {
-      blitRenderPassInputs.push(RENDER_PASS_BLOOM_TEXTURE)
+      combineRenderPassInputs.push(RENDER_PASS_BLOOM_TEXTURE)
     }
     if (this._enableTAA) {
-      blitRenderPassInputs.push(RENDER_PASS_TAA_RESOLVE_TEXTURE)
+      combineRenderPassInputs.push(RENDER_PASS_TAA_RESOLVE_TEXTURE)
     } else if (this._ssrEnabled) {
-      blitRenderPassInputs.push(RENDER_PASS_COMPUTED_REFLECTIONS_TEXTURE)
+      combineRenderPassInputs.push(RENDER_PASS_COMPUTED_REFLECTIONS_TEXTURE)
     } else {
-      blitRenderPassInputs.push(RENDER_PASS_LIGHTING_RESULT_TEXTURE)
+      combineRenderPassInputs.push(RENDER_PASS_LIGHTING_RESULT_TEXTURE)
     }
 
-    const blitRenderPass = new BlitRenderPass(
+    const combineRenderPass = new CombineRenderPass(
       width,
       height,
       this.resizeCounter > 0
-    ).addInputTextures(blitRenderPassInputs)
+    )
+      .addInputTextures(combineRenderPassInputs)
+      .addOutputTexture(RENDER_PASS_COMBINE_TEXTURE)
 
-    blitRenderPass.bloomEnabled = this._bloomEnabled
-    console.log(this._bloomEnabled)
+    combineRenderPass.bloomEnabled = this._bloomEnabled
+
+    var blitInTexture = RENDER_PASS_COMBINE_TEXTURE
+    if (
+      this.blitRenderMode === BlitRenderMode.ViewSpaceNormal ||
+      this.blitRenderMode === BlitRenderMode.Metallic ||
+      this.blitRenderMode === BlitRenderMode.Roughness
+    ) {
+      blitInTexture = RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE
+    } else if (this.blitRenderMode === BlitRenderMode.SSAO) {
+      blitInTexture = RENDER_PASS_SSAO_BLUR_TEXTURE
+    } else if (this.blitRenderMode === BlitRenderMode.Albedo) {
+      blitInTexture = RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE
+    } else if (this.blitRenderMode === BlitRenderMode.Reflectance) {
+      blitInTexture = RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE
+    } else if (this.blitRenderMode === BlitRenderMode.Depth) {
+      blitInTexture = RENDER_PASS_DEPTH_STENCIL_TEXTURE
+    }
+
+    const blitRenderPass = new BlitRenderPass(
+      this.blitRenderMode,
+      width,
+      height
+    ).addInputTexture(blitInTexture)
 
     this.renderPassComposer.addPass(shadowRenderPass).addPass(gbufferRenderPass)
 
@@ -731,7 +780,7 @@ export default class Renderer extends RenderingContext {
         .addPass(bloomUpscaleRenderPass)
     }
 
-    this.renderPassComposer.addPass(blitRenderPass)
+    this.renderPassComposer.addPass(combineRenderPass).addPass(blitRenderPass)
   }
 
   public resize(w: number, h: number) {
@@ -754,6 +803,12 @@ export default class Renderer extends RenderingContext {
       ? Math.min(deltaDiff, 0.5)
       : 0
     const jsPerfStartTime = performance.now()
+
+    this.mainCamera.position[0] -= deltaDiff * 0.2
+    this.mainCamera.lookAt[2] = -0.25
+    this.mainCamera.lookAt[1] = 4
+    this.mainCamera.lookAt[0] = this.mainCamera.position[0] - 10
+    this.mainCamera.updateViewMatrix()
 
     this.debugCamera.onFrameStart()
     this.mainCamera.onFrameStart()
@@ -857,7 +912,7 @@ export default class Renderer extends RenderingContext {
     const fpsAverageStat = this.fpsDisplayAverage.get()
     const gpuAverageStat = this.gpuAverage.get()
 
-    this.mainCameraCtrl.speed = mapNumberRange(fpsAverageStat, 60, 120, 30, 30)
+    // this.mainCameraCtrl.speed = mapNumberRange(fpsAverageStat, 60, 120, 30, 30)
 
     if (RenderingContext.supportsGPUTimestampQuery) {
       this.timingDebugContainer.setDisplayValue(
