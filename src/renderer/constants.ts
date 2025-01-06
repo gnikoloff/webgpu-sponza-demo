@@ -24,7 +24,7 @@ export const AllRenderPassTypes: RenderPassType[] = [
 export const AllDebugStatTypes: DebugStatType[] = [
   DebugStatType.CPUTotal,
   // DebugStatType.GPUTotal,
-  DebugStatType.FPS,
+  DebugStatType.FrameTime,
   DebugStatType.VRAM,
   DebugStatType.VisibleMeshes,
   DebugStatType.LightsCount,
