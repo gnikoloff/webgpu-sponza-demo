@@ -4,7 +4,7 @@ import { DebugStatType } from '../../../renderer/types'
 const DebugTimingTypeToDebugIds: Map<DebugStatType, string> = new Map([
   [DebugStatType.CPUTotal, 'cpu-total'],
   [DebugStatType.GPUTotal, 'gpu-total'],
-  [DebugStatType.FPS, 'fps'],
+  [DebugStatType.FrameTime, 'fps'],
   [DebugStatType.VRAM, 'vram'],
   [DebugStatType.VisibleMeshes, 'culled-meshes'],
   [DebugStatType.LightsCount, 'lights-count'],
@@ -26,7 +26,7 @@ const DebugTimingTypeToDebugIds: Map<DebugStatType, string> = new Map([
 const DebugTimingTypeToNames: Map<DebugStatType, string> = new Map([
   [DebugStatType.CPUTotal, 'CPU'],
   [DebugStatType.GPUTotal, 'GPU'],
-  [DebugStatType.FPS, 'FPS'],
+  [DebugStatType.FrameTime, 'Frame Time'],
   [DebugStatType.VRAM, 'VRAM Usage'],
   [DebugStatType.VisibleMeshes, 'Visible Meshes'],
   [DebugStatType.LightsCount, 'Lights Count'],

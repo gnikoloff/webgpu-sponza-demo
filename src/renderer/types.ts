@@ -77,7 +77,7 @@ export enum RenderPassType {
 export enum DebugStatType {
   CPUTotal,
   GPUTotal,
-  FPS,
+  FrameTime,
   VRAM,
   VisibleMeshes,
   LightsCount,

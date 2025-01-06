@@ -872,7 +872,7 @@ export default class Renderer extends RenderingContext {
         cpuAverageStat !== 0 ? `${cpuAverageStat.toFixed(1)}ms` : 'N/A'
       )
       .setDisplayValue(
-        DebugStatType.FPS,
+        DebugStatType.FrameTime,
         fpsAverageStat !== 0 ? `${fpsAverageStat.toFixed(1)}ms` : 'N/A'
       )
       .setDisplayValue(DebugStatType.VRAM, VRAMUsageTracker.getFormattedSize())
