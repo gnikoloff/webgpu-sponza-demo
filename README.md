@@ -8,7 +8,7 @@ WebGPU tech demo showcasing various rendering techniques.
 
 ## About
 
-A WebGPU deferred rendering playground written as a personal project to familiarize myself better with the API and explore various rendering techniques. As WebGPU is still considered experimental browser technology certain things might break for you.
+A WebGPU deferred rendering playground written as a personal project to familiarize myself better with the API and explore various rendering techniques. Check out the accompanying article [here](https://georgi-nikolov.com/blog/webgpu-sponza-frame-analysis#depth-stencil-render-pipeline). As WebGPU is still considered experimental browser technology certain things might break for you.
 
 ## Features
 
