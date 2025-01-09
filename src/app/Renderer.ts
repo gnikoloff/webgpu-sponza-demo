@@ -90,6 +90,9 @@ export default class Renderer extends RenderingContext {
     }
 
     const adapter = await navigator.gpu.requestAdapter()
+    if (!adapter) {
+      return undefined
+    }
     RenderingContext.$canvas = canvas
     RenderingContext.canvasContext = canvas.getContext(
       'webgpu'

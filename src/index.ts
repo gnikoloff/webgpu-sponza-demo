@@ -16,6 +16,8 @@ if (renderer === undefined) {
   const previewImg = document.createElement('img')
   previewImg.src = 'no-webgpu.png'
   document.getElementById('no-webgpu-preview').appendChild(previewImg)
+
+  throw new Error('WebGPU not supported')
 }
 
 const GUI_PARAMS: IGUIParams = {
