@@ -5,7 +5,7 @@ import { LightType, RenderPassType } from '../types'
 const GetPBRLightingShaderUtils = (
   lightPassType: LightPassType
 ) => wgsl/* wgsl */ `
-  @must_use
+  
   fn DistributionGGX(viewSpaceNormal: vec3f, H: vec3f, roughness: f32) -> f32 {
     let a = roughness*roughness;
     let a2 = a*a;
@@ -19,7 +19,7 @@ const GetPBRLightingShaderUtils = (
     return nom / denom;
 }
 
-  @must_use
+  
   fn GeometrySchlickGGX(NdotV: f32, roughness: f32) -> f32 {
     let r = (roughness + 1.0);
     let k = (r * r) / 8;
@@ -29,7 +29,7 @@ const GetPBRLightingShaderUtils = (
     return nom / denom;
   }
 
-  @must_use
+  
   fn GeometrySmith(viewSpaceNormal: vec3f, V: vec3f, L: vec3f, roughness: f32) -> f32 {
     let NdotV = max(dot(viewSpaceNormal, V), 0.0);
     let NdotL = max(dot(viewSpaceNormal, L), 0.0);
@@ -38,17 +38,17 @@ const GetPBRLightingShaderUtils = (
     return ggx1 * ggx2;
   }
 
-  @must_use
+  
   fn FresnelSchlick(cosTheta: f32, F0: vec3f) -> vec3f {
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
   }
 
-  @must_use
+  
   fn FresnelSchlickRoughness(cosTheta: f32, F0: vec3f, roughness: f32) -> vec3f {
     return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
   }
 
-  @must_use
+  
   fn PBRLighting(
     material: Material,
     instanceId: u32,
@@ -83,11 +83,11 @@ const GetPBRLightingShaderUtils = (
 
     #if ${lightPassType === RenderPassType.DirectionalAmbientLighting}
     let light = &lightsBuffer[instanceId];
-    // let isPointLight = light.lightType == ${LightType.Point};
-    let lightViewSpacePos = (camera.viewMatrix * vec4f(light.position, 0.0)).xyz;
+    // let isPointLight = (*light).lightType == ${LightType.Point};
+    let lightViewSpacePos = (camera.viewMatrix * vec4f((*light).position, 0.0)).xyz;
     
-    let lightColor = light.color;
-    let lightIntensity = light.intensity;
+    let lightColor = (*light).color;
+    let lightIntensity = (*light).intensity;
     let L = normalize(lightViewSpacePos);
     let attenuation = 1.0;
 
@@ -95,12 +95,12 @@ const GetPBRLightingShaderUtils = (
 
     #elif ${lightPassType === RenderPassType.PointLightsLighting}
     let light = &lightsBuffer[instanceId];
-    let lightColor = light.color;
-    let lightIntensity = light.intensity;
-    let lightViewSpacePos = (camera.viewMatrix * vec4f(light.position, 1.0)).xyz;
+    let lightColor = (*light).color;
+    let lightIntensity = (*light).intensity;
+    let lightViewSpacePos = (camera.viewMatrix * vec4f((*light).position, 1.0)).xyz;
     let dist = lightViewSpacePos.xyz - viewSpacePos.xyz;
     let d = length(dist);
-    var attenuation = 1 - smoothstep(0.0, light.radius, d);
+    var attenuation = 1 - smoothstep(0.0, (*light).radius, d);
     attenuation *= attenuation;
     let L = normalize(dist);
     #elif ${lightPassType === RenderPassType.PointLightsNonCulledLighting}

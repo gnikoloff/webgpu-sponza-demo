@@ -26,14 +26,14 @@ export const POINT_LIGHTS_UPDATE_SHADER_SRC = /* wgsl */ `
   override CURVE_PARTICLES_COUNT: u32;
   override CURVE_POSITIONS_COUNT: u32;
   
-  @must_use
+  
   fn noise(p: vec3f) -> f32 {
     return fract(
       sin(dot(p, vec3f(12.9898, 78.233, 45.164))) * 43758.5453
     );
   }
 
-  @must_use
+  
   fn random(seed: f32) -> f32 {
     return fract(sin(seed * 12.9898) * 43758.5453);
   }
@@ -72,41 +72,41 @@ export const POINT_LIGHTS_UPDATE_SHADER_SRC = /* wgsl */ `
     let particle = &particles[idx];
     let light = &lights[idx + ANIMATED_PARTICLES_OFFSET_START];
 
-    particle.life += particle.lifeSpeed * simSettings.timeDelta;
+    (*particle).life += (*particle).lifeSpeed * simSettings.timeDelta;
 
-    if (particle.life >= 1) {
-      particle.position = particle.origPosition;
-      particle.life = 0;
+    if ((*particle).life >= 1) {
+      (*particle).position = (*particle).origPosition;
+      (*particle).life = 0;
     }
 
     if (idx >= FIREWORK_PARTICLES_OFFSET && idx < FIREWORK_PARTICLES_COUNT) {
       let turbulence = curlNoise(
-        particle.position * 0.05 + 
+        (*particle).position * 0.05 + 
         vec3<f32>(0.0, simSettings.time * 0.05, 0.0)
       ) * 0.2;
-      particle.position += (particle.velocity + turbulence) * simSettings.timeDelta;
-      light.intensity = saturate((1 - particle.life) * fireParticlesRevealFactor);
-      particle.radius = 0.025 * fireParticlesRevealFactor;
-      // light.radius *= fireParticlesRevealFactor;
-      // light.intensity *= fireParticlesRevealFactor;
+      (*particle).position += ((*particle).velocity + turbulence) * simSettings.timeDelta;
+      (*light).intensity = saturate((1 - (*particle).life) * fireParticlesRevealFactor);
+      (*particle).radius = 0.025 * fireParticlesRevealFactor;
+      // (*light).radius *= fireParticlesRevealFactor;
+      // (*light).intensity *= fireParticlesRevealFactor;
     }
 
     if (idx >= CURVE_PARTICLES_OFFSET && idx < CURVE_PARTICLES_OFFSET + CURVE_PARTICLES_COUNT) {
-      particle.position = interpolateLinePoint(particle.life) + particle.velocity;  
+      (*particle).position = interpolateLinePoint((*particle).life) + (*particle).velocity;  
     }
 
     if (idx >= CURVE_PARTICLES_OFFSET + CURVE_PARTICLES_COUNT) {
-      particle.position = vec3f(
-        particle.life * 15 - 7.5,
-        cos(particle.life + particle.life * particle.velocity.y * 30) * 1.2 + 3.5,
-        sin(particle.life + particle.life * particle.velocity.y * 30) * 1.075 + particle.velocity.x
+      (*particle).position = vec3f(
+        (*particle).life * 15 - 7.5,
+        cos((*particle).life + (*particle).life * (*particle).velocity.y * 30) * 1.2 + 3.5,
+        sin((*particle).life + (*particle).life * (*particle).velocity.y * 30) * 1.075 + (*particle).velocity.x
       );
-      let fadeIn = smoothstep(0.0, 0.1, particle.life);
-      let fadeOut = 1.0 - smoothstep(0.9, 1.0, particle.life);
-      light.intensity = 0.5 * fadeIn * fadeOut;
-      light.radius = 1 * fadeIn * fadeOut;
+      let fadeIn = smoothstep(0.0, 0.1, (*particle).life);
+      let fadeOut = 1.0 - smoothstep(0.9, 1.0, (*particle).life);
+      (*light).intensity = 0.5 * fadeIn * fadeOut;
+      (*light).radius = 1 * fadeIn * fadeOut;
     }
-    light.position = particle.position;
+    (*light).position = (*particle).position;
 
   }
 `
