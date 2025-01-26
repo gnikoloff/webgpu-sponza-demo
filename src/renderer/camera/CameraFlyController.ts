@@ -306,34 +306,38 @@ export default class CameraFlyController {
       }
     } else {
       if (
-        this.presedKeys[FORWARD_CHAR_CODE] ||
-        this.presedKeys[ARROW_FORWARD_CHAR_CODE]
+        this.presedKeys['w'] ||
+        this.presedKeys['W'] ||
+        this.presedKeys['ArrowUp']
       ) {
         DIR[2] -= speed
       }
       if (
-        this.presedKeys[BACKWARD_CHAR_CODE] ||
-        this.presedKeys[ARROW_BACKWARD_CHAR_CODE]
+        this.presedKeys['s'] ||
+        this.presedKeys['S'] ||
+        this.presedKeys['ArrowDown']
       ) {
         DIR[2] += speed
       }
       if (
-        this.presedKeys[LEFT_CHAR_CODE] ||
-        this.presedKeys[ARROW_LEFT_CHAR_CODE]
+        this.presedKeys['a'] ||
+        this.presedKeys['A'] ||
+        this.presedKeys['ArrowLeft']
       ) {
         DIR[0] -= speed
       }
       if (
-        this.presedKeys[RIGHT_CHAR_CODE] ||
-        this.presedKeys[ARROW_RIGHT_CHAR_CODE]
+        this.presedKeys['d'] ||
+        this.presedKeys['D'] ||
+        this.presedKeys['ArrowRight']
       ) {
         DIR[0] += speed
       }
-      if (this.presedKeys[UP_CHAR_CODE]) {
+      if (this.presedKeys['e'] || this.presedKeys['E']) {
         // Space, moves up
         DIR[1] += speed
       }
-      if (this.presedKeys[DOWN_CHAR_CODE]) {
+      if (this.presedKeys['q'] || this.presedKeys['Q']) {
         // Shift, moves down
         DIR[1] -= speed
       }
@@ -402,12 +406,11 @@ export default class CameraFlyController {
   }
 
   private onKeyDown = (e: KeyboardEvent) => {
-    // @ts-expect-error Deprecated but still available
-    this.presedKeys[e.keyCode] = true
+    this.presedKeys[e.key] = true
+    console.log(e.key)
   }
 
   private onKeyUp = (e: KeyboardEvent) => {
-    // @ts-expect-error Deprecated but still available
-    this.presedKeys[e.keyCode] = false
+    this.presedKeys[e.key] = false
   }
 }
