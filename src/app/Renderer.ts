@@ -219,17 +219,9 @@ export default class Renderer extends RenderingContext {
     const shadowPass = this.renderPassComposer.getPass(
       RenderPassType.Shadow
     ) as DirectionalShadowRenderPass
-    this.renderPassComposer
-      .getPass(RenderPassType.DirectionalAmbientLighting)
-      .resetInputs()
-      .addInputTextures([
-        RENDER_PASS_NORMAL_METALLIC_ROUGHNESS_TEXTURE,
-        RENDER_PASS_ALBEDO_REFLECTANCE_TEXTURE,
-        RENDER_PASS_DEPTH_STENCIL_TEXTURE,
-        RENDER_PASS_SSAO_BLUR_TEXTURE,
-        RENDER_PASS_DIRECTIONAL_LIGHT_DEPTH_TEXTURE,
-      ])
     shadowPass.shadowMapSize = v
+
+    this.recreateRenderComposer()
   }
 
   public set debugShadowCascadeIndex(v: boolean) {

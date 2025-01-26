@@ -37,8 +37,7 @@ export default class DirectionalShadowRenderPass extends RenderPass {
   private shadowCameraCascade1BufferUniformValues: StructuredView
 
   public set shadowMapSize(v: number) {
-    const oldTexture = this.outTextures[0]
-    this.outTextures[0] = RenderingContext.device.createTexture({
+    const outTex = RenderingContext.device.createTexture({
       label: 'Directional Shadow Depth Texture',
       format: 'depth32float',
       size: {
@@ -50,23 +49,24 @@ export default class DirectionalShadowRenderPass extends RenderPass {
         GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
     })
 
-    this.shadowTextureCascade0 = this.outTextures[0].createView({
+    this.shadowTextureCascade0 = outTex.createView({
       baseArrayLayer: 0,
       arrayLayerCount: 1,
       dimension: '2d',
     })
 
-    this.shadowTextureCascade1 = this.outTextures[0].createView({
+    this.shadowTextureCascade1 = outTex.createView({
       baseArrayLayer: 1,
       arrayLayerCount: 1,
       dimension: '2d',
     })
 
-    VRAMUsageTracker.addTextureBytes(this.outTextures[0])
-
+    VRAMUsageTracker.addTextureBytes(outTex)
     RenderingContext.device.queue.onSubmittedWorkDone().then(() => {
+      const oldTexture = this.outTextures[0]
       VRAMUsageTracker.removeTextureBytes(oldTexture)
       oldTexture.destroy()
+      this.outTextures[0] = outTex
     })
   }
 
@@ -361,6 +361,7 @@ export default class DirectionalShadowRenderPass extends RenderPass {
 
     this.renderPassDescriptor.depthStencilAttachment.view =
       this.shadowTextureCascade1
+
     this.renderPassDescriptor.label = 'Shadow Render Pass Cascade #1'
 
     const renderPassEncoderCascade1 = commandEncoder.beginRenderPass(
