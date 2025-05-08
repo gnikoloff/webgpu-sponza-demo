@@ -86,6 +86,13 @@ export default class DebugTextureCanvas {
       {
         binding: 1,
         visibility: GPUShaderStage.FRAGMENT,
+        sampler: {
+          type: 'non-filtering',
+        },
+      },
+      {
+        binding: 2,
+        visibility: GPUShaderStage.FRAGMENT,
         texture: {
           sampleType: this.isDepthTexture ? 'depth' : 'float',
         },
@@ -162,6 +169,13 @@ export default class DebugTextureCanvas {
       },
       {
         binding: 1,
+        resource: SamplerController.createSampler({
+          magFilter: 'nearest',
+          minFilter: 'nearest',
+        }),
+      },
+      {
+        binding: 2,
         resource: texture.createView({
           aspect: this.isDepthTexture ? 'depth-only' : 'all',
           baseArrayLayer,
